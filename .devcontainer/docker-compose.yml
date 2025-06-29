@@ -1,5 +1,4 @@
 version: '3'
-
 services:
   httpd:
     build:
@@ -12,17 +11,31 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
       - windir # Defined on Windows but not on other platforms
-  # db:
-  #   image: postgres:15.2
-  #   restart: unless-stopped
-  #   env_file:
-  #     - ../backend/.env
-  #   ports:
-  #     - '5432:5432'
-  #   volumes:
-  #     - csxl.unc.edu-postgres:/var/lib/postgresql/data
+  db-admin:
+    image: postgres:15.2
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tinkerbase_admin
+    volumes:
+      - tinkerbase-admin-db:/var/lib/postgresql/data
+  db-content:
+    image: postgres:15.2
+    restart: unless-stopped
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tinkerbase_content
+    volumes:
+      - tinkerbase-content-db:/var/lib/postgresql/data
 
 volumes:
   tinkerbase-monorepo-node_modules:
   tinkerbase-web-node_modules:
-  # csxl.unc.edu-postgres:
+  tinkerbase-admin-db:
+  tinkerbase-content-db:
