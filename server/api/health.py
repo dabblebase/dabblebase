@@ -6,7 +6,7 @@ from ..services import HealthService
 tag = "System Health"
 openapi_tags = {
     "name": tag,
-    "description": "Production systems monitor these end points upon deployment, and at regular intervals, to ensure the service is running.",
+    "description": "Production systems monitor these endpoints upon deployment, and at regular intervals, to ensure the service is running.",
 }
 
 api = APIRouter(prefix="/api/health")
