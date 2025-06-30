@@ -2,4 +2,4 @@
 
 from .base import BaseAdminEntity
 from .project import ProjectEntity
-from .user import UserEntity
+from .user import UserEntity, UserAuthenticationProvider

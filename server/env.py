@@ -10,6 +10,7 @@ class EnvModel(BaseModel):
     """Pydantic model to validate the environment variables."""
 
     MODE: str
+    HOST: str
     ADMIN_DB_USER: str
     ADMIN_DB_PASSWORD: str
     ADMIN_DB_HOST: str
@@ -21,26 +22,38 @@ class EnvModel(BaseModel):
     CONTENT_DB_PORT: str
     CONTENT_DB_DATABASE: str
     JWT_SECRET: str
+    AUTH_MASTER_SECRET: str
 
 
 # Load envirnment variables from .env file upon module start.
 dotenv.load_dotenv(f"{os.path.dirname(__file__)}/.env", verbose=True)
 
+
+# Create a helper function to get env variables or error out if not set.
+def get_env(var: str) -> str:
+    value = os.getenv(var)
+    if value is None:
+        raise ValueError(f"Environment variable {var} is not set.")
+    return value
+
+
 # Export the environment variables as a pydantic model instance for
 # easy access and validation.
 env = EnvModel(
-    MODE=os.getenv("MODE"),
-    ADMIN_DB_USER=os.getenv("ADMIN_DB_USER"),
-    ADMIN_DB_PASSWORD=os.getenv("ADMIN_DB_PASSWORD"),
-    ADMIN_DB_HOST=os.getenv("ADMIN_DB_HOST"),
-    ADMIN_DB_PORT=os.getenv("ADMIN_DB_PORT"),
-    ADMIN_DB_DATABASE=os.getenv("ADMIN_DB_DATABASE"),
-    CONTENT_DB_USER=os.getenv("CONTENT_DB_USER"),
-    CONTENT_DB_PASSWORD=os.getenv("CONTENT_DB_PASSWORD"),
-    CONTENT_DB_HOST=os.getenv("CONTENT_DB_HOST"),
-    CONTENT_DB_PORT=os.getenv("CONTENT_DB_PORT"),
-    CONTENT_DB_DATABASE=os.getenv("CONTENT_DB_DATABASE"),
-    JWT_SECRET=os.getenv("JWT_SECRET"),
+    MODE=get_env("MODE"),
+    HOST=get_env("HOST"),
+    ADMIN_DB_USER=get_env("ADMIN_DB_USER"),
+    ADMIN_DB_PASSWORD=get_env("ADMIN_DB_PASSWORD"),
+    ADMIN_DB_HOST=get_env("ADMIN_DB_HOST"),
+    ADMIN_DB_PORT=get_env("ADMIN_DB_PORT"),
+    ADMIN_DB_DATABASE=get_env("ADMIN_DB_DATABASE"),
+    CONTENT_DB_USER=get_env("CONTENT_DB_USER"),
+    CONTENT_DB_PASSWORD=get_env("CONTENT_DB_PASSWORD"),
+    CONTENT_DB_HOST=get_env("CONTENT_DB_HOST"),
+    CONTENT_DB_PORT=get_env("CONTENT_DB_PORT"),
+    CONTENT_DB_DATABASE=get_env("CONTENT_DB_DATABASE"),
+    JWT_SECRET=get_env("JWT_SECRET"),
+    AUTH_MASTER_SECRET=get_env("AUTH_MASTER_SECRET"),
 )
 
 

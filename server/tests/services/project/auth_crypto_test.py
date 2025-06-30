@@ -1,6 +1,8 @@
 """Testing suite for the health service."""
 
-from ...services import auth_crypto as crypto
+import jwt
+from ....services.project import auth_crypto as crypto
+from ....env import env
 
 
 def test_generate_rsa_keypair():
@@ -36,7 +38,7 @@ def test_generate_rsa_keypair():
 
 
 def test_encrpytion_decryption_with_hkdf_keygen():
-    secret = "AUTH_MASTER_SECRET"
+    secret = env.AUTH_MASTER_SECRET
     project_id = "1"
     private_key, _ = crypto.generate_serialied_rsa_keypair()
     encryption_key = crypto.hkdf_derive_encryption_key(secret, project_id)
@@ -51,3 +53,19 @@ def test_encrpytion_decryption_with_hkdf_keygen():
     assert (
         decrypted_private_key == private_key
     ), "Decrypted private key should match original"
+
+
+def test_jwt_signing_and_verifying_with_asymmetric_keys():
+    """Tests that a project's public key can verify a JWT signed by its private key."""
+    private_key, public_key = crypto.generate_serialied_rsa_keypair()
+    payload = {"id": 1}
+
+    # Sign the JWT with the private key
+    token = crypto.sign_jwt_with_asymmetric_keys(payload, private_key)
+
+    # Decode the JWT using the public key
+    decoded_payload = crypto.decode_jwt_with_asymmetric_keys(token, public_key)
+
+    assert (
+        decoded_payload["id"] == payload["id"]
+    ), "Decoded JWT should match original payload"

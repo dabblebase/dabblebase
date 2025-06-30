@@ -1,2 +1,2 @@
 from .health import HealthService
-from .project import ProjectService
+from .project import ProjectService, ProjectAuthService

@@ -1,8 +1,17 @@
 """Definition of the `users` table in the admin database."""
 
-from sqlalchemy import Integer
+from enum import Enum
+from sqlalchemy import Integer, String
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import BaseAdminEntity
+
+
+class UserAuthenticationProvider(Enum):
+    """Enum identifying the authentication provider used for a user."""
+
+    UNC_SSO = "unc-sso"
+    GOOGLE = "google"
 
 
 class UserEntity(BaseAdminEntity):
@@ -15,3 +24,9 @@ class UserEntity(BaseAdminEntity):
 
     # Unique ID
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # Unique identifier for the user according to their chosen authentication provider
+    auth_id: Mapped[str] = mapped_column(String, nullable=False)
+    # Auth provider used for the user
+    auth_provider: Mapped[UserAuthenticationProvider] = mapped_column(
+        SQLAlchemyEnum(UserAuthenticationProvider), nullable=False
+    )
