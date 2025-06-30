@@ -8,6 +8,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from ...env import env
 from ...database import _admin_db_url, _content_db_url
 from ...services import HealthService
+from ...entities import BaseAdminEntity
 
 
 def reset_database(database: str, user: str, database_url_fn: Callable[[str], str]):
@@ -46,8 +47,8 @@ def test_content_engine() -> Engine:
 
 @pytest.fixture(scope="function")
 def admin_db_session(test_admin_engine: Engine):
-    # entities.EntityBase.metadata.drop_all(test_admin_engine)
-    # entities.EntityBase.metadata.create_all(test_admin_engine)
+    BaseAdminEntity.metadata.drop_all(test_admin_engine)
+    BaseAdminEntity.metadata.create_all(test_admin_engine)
     session = Session(test_admin_engine)
     try:
         yield session
