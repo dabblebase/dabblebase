@@ -20,7 +20,7 @@ class BaseService:
         self._admin_db = admin_db
 
 
-class BaseContentDbService:
+class BaseContentService:
     _content_db: Session
 
     def __init__(self, content_db: Session = Depends(content_db_session)):
