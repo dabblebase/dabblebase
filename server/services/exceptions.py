@@ -10,5 +10,9 @@ class ResourceNotFoundException(Exception):
     """ResourceNotFoundException is raised when a user attempts to access a resource that does not exist."""
 
 
+class UserPermissionException(Exception):
+    """UserPermissionException is raised when a user attempts to acces a resource they are not allowed to access."""
+
+
 class ContentDatabaseTransactionException(Exception):
     """Exception raised when an error occurs performing an operation on the content database."""

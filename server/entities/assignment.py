@@ -1,8 +1,18 @@
 """Definition of the `assignments` table in the admin database."""
 
-from sqlalchemy import Integer, ForeignKey, Boolean, String
+from enum import Enum
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import Integer, ForeignKey, Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+
+
+class AssignmentState(Enum):
+    """Enum identifying the various states an assignment can be in."""
+
+    DRAFT = "draft"
+    UNPUBLISHED = "unpublished"
+    PUBLISHED = "published"
 
 
 class AssignmentEntity(BaseAdminEntity):
@@ -19,12 +29,50 @@ class AssignmentEntity(BaseAdminEntity):
     # Name of the assignment
     name: Mapped[str] = mapped_column(String, nullable=False)
 
+    # State of the assignment
+    state: Mapped[AssignmentState] = mapped_column(
+        SQLAlchemyEnum(AssignmentState), nullable=False, default=AssignmentState.DRAFT
+    )
+
     # Course the assignment is for
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"))
     course: Mapped["CourseEntity"] = relationship(back_populates="assignments")  # type: ignore
 
     # Whether or not the assignment is a group assignment - if false, the assignment is individual
     is_group_assignment: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    # Custom configuration SQL to run when creating projects for this assignment
+    project_configuration_sql: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Name of the test schema generated with the project
+    test_schema_name: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    # Name of the test schema user admin role for accessing the test schema
+    # This role is used internally by Tinkerbase to apply the configuration SQL.
+    test_schema_admin_role_name: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )
+
+    # Encrypted password of the test schema user admin role for accessing the test schema
+    # Encrypted using a key generated via key expansion of the auth secret + assignment ID
+    encrypted_test_schema_admin_role_password: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )
+
+    # Name of the test schema user admin role for accessing the test schema
+    # This role and password is ultimately shared with the instructor so that they can view
+    # their test schema after sql has been applied. The schema role has been separated from
+    # the test schema admin role so that this role can function as a read-only role that
+    # is exposed to the instructor
+    test_schema_view_role_name: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )
+
+    # Encrypted password of the test schema user role for accessing the test schema
+    # Encrypted using a key generated via key expansion of the auth secret + assignment ID
+    encrypted_test_schema_view_role_password: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )
 
     # Projects (relationship with `project_groups` table)
     projects: Mapped[list["ProjectEntity"]] = relationship(  # type: ignore

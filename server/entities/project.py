@@ -19,24 +19,29 @@ class ProjectEntity(BaseAdminEntity):
 
     # Assignment the project is for
     assignment_id: Mapped[int] = mapped_column(
-        ForeignKey("assignments.id"), primary_key=True, nullable=False
+        ForeignKey("assignments.id"), nullable=False
     )
     assignment: Mapped["AssignmentEntity"] = relationship(back_populates="projects")  # type: ignore
 
     # Group for the project if the assignment is a group project - otherwise, this is null
     group_id: Mapped[int | None] = mapped_column(
-        ForeignKey("project_groups.id"), primary_key=True, nullable=True
+        ForeignKey("project_groups.id"), nullable=True
     )
     group: Mapped[Optional["ProjectGroupEntity"]] = relationship(back_populates="project")  # type: ignore
 
     # User for the project if the assignment is an individual project - otherwise, this is null
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id"), primary_key=True, nullable=True
+    project_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("project_users.id"), nullable=True
     )
-    user: Mapped[Optional["UserEntity"]] = relationship(back_populates="individual_projects")  # type: ignore
+    project_user: Mapped[Optional["ProjectUserEntity"]] = relationship(back_populates="individual_project")  # type: ignore
 
-    # Name associated with the schema user that has permissions of the user, null if a group project
-    user_schema_role_name: Mapped[str] = mapped_column(String, nullable=False)
+    # Name of the schema associated to the project
+    schema_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Role generated with the schema that has permissions over the schema
+    # This role can then be granted to project users so that their roles
+    # have access to operations on the schema.
+    schema_role_name: Mapped[str] = mapped_column(String, nullable=False)
 
     # Encrypted private key used for project-specific authentication
     auth_encrypted_private_key: Mapped[str] = mapped_column(String, nullable=True)

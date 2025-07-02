@@ -2,6 +2,7 @@
 
 import jwt
 import base64
+import secrets
 from typing import Any, Union
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
@@ -138,3 +139,9 @@ def _convert_public_key_str_to_pem_key(public_key: str) -> bytes:
     if not pem_public_key:
         raise ValueError("Failed to convert DER public key to PEM format.")
     return pem_public_key
+
+
+def generate_secure_password() -> str:
+    """Generates a secure password"""
+    raw = secrets.token_bytes(32)
+    return base64.urlsafe_b64encode(raw).decode("utf-8").rstrip("=")

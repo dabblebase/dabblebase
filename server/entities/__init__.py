@@ -4,7 +4,8 @@ from .base import BaseAdminEntity
 from .project import ProjectEntity
 from .user import UserEntity, UserAuthenticationProvider
 from .course import CourseEntity
-from .course_member import CourseMemberEntity
+from .course_member import CourseMemberEntity, CourseMembershipRole
 from .project_group import ProjectGroupEntity
 from .project_group_member import ProjectGroupMemberEntity
-from .assignment import AssignmentEntity
+from .project_users import ProjectUserEntity
+from .assignment import AssignmentEntity, AssignmentState
