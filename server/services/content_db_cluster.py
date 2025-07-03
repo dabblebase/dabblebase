@@ -3,7 +3,6 @@
 from .base import BaseContentService
 from ..env import env
 from sqlalchemy import text, Engine, create_engine
-from ..services.content_database import ContentDatabaseNamingConventions
 from .exceptions import ContentDatabaseTransactionException
 from .project import auth_crypto as crypto
 from ..env import env, in_production
@@ -11,7 +10,7 @@ from ..env import env, in_production
 
 class ContentDbClusterService(BaseContentService):
 
-    def _provision_database(self, db_name: str) -> tuple[str, str]:
+    def provision_database(self, db_name: str) -> tuple[str, str]:
         """
         Provisions a new database in the content database cluster, creating an
         admin user with permissions to the database, and run any setup SQL
@@ -40,13 +39,11 @@ class ContentDbClusterService(BaseContentService):
                     text(f"REVOKE CONNECT ON DATABASE {db_name} FROM PUBLIC")
                 )
                 # Create a new role for the database
-                role_name = (
-                    ContentDatabaseNamingConventions.name_for_database_admin_role(
-                        db_name
-                    )
+                role_name = ContentDatabaseNamingConventions.name_for_db_admin_role(
+                    db_name
                 )
                 role_password = crypto.generate_secure_password()
-                self._provision_role_for_database(db_name, role_name, role_password)
+                self.provision_role_for_database(db_name, role_name, role_password)
                 # If all succeeds, return the role_name, and role_password
                 return role_name, role_password
             except Exception as e:
@@ -86,23 +83,14 @@ class ContentDbClusterService(BaseContentService):
                 f"Could not rollback provisioning the database. Error: {e}"
             )
 
-    def _provision_role_for_database(
+    def provision_role_for_database(
         self, db_name: str, role_name: str, role_password: str, readonly: bool = False
     ):
         """
-        Provisions a new role for the database with the provided name.
-        This method is run as a nested transaction.
+        Provisions a new role for the database with the provided name. The role will be granted
+        full access to the database and its public schema, assuming `readonly` is False.
 
         Critical
-            - This method is run as a nested transaction, meaning that it is
-              intended to be called within a transaction block. For example:
-              ```
-              with self._content_db.begin():
-                content_db_cluster_svc._provision_role_for_database(...)
-              ```
-              This ensures that if provisioning or any other subsequent cluster
-              tasks fail, the entire operation can be rolled back without
-              affecting the content database cluster.
             - The db name and role name must be generated using `ContentDbClusterNamingConventions`
               to avoid SQL injection.
         """
@@ -174,3 +162,48 @@ class ContentDbClusterService(BaseContentService):
             f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}",
             echo=not in_production(),
         )
+
+    def encrypt_role_password(self, password: str, assignment_id: int) -> str:
+        """Encrypts the password for a role in the content database."""
+        encryption_key = self._calculate_encryption_key_for_role_password(assignment_id)
+        return crypto.encrypt(password, encryption_key)
+
+    def decrypt_role_password(self, encrypted_password: str, assignment_id: int) -> str:
+        """Decrypts the password for a role in the content database."""
+        encryption_key = self._calculate_encryption_key_for_role_password(assignment_id)
+        return crypto.decrypt(encrypted_password, encryption_key)
+
+    def _calculate_encryption_key_for_role_password(self, assignment_id: int) -> bytes:
+        """Rule for how the encryption key is calculated for role passwords."""
+        return crypto.hkdf_derive_encryption_key(env.AUTH_MASTER_SECRET, assignment_id)
+
+
+class ContentDatabaseNamingConventions:
+    """
+    Collection of naming conventions for content databases and roles.
+
+    These must be used in conjunction with the `ContentDbClusterService` methods to
+    prevent potential SQL injection risks.
+    """
+
+    @classmethod
+    def name_for_assignment_test_db(cls, assignment_id: int) -> str:
+        return f"assignment_{assignment_id}_test"
+
+    @classmethod
+    def name_for_db_admin_role(cls, db_name: str) -> str:
+        return f"{db_name}_admin"
+
+    @classmethod
+    def name_for_assignment_test_db_readonly_role(cls, assignment_id: int) -> str:
+        return f"assignment_{assignment_id}_test_view"
+
+    @classmethod
+    def name_for_assignment_db(cls, assignment_id: int, project_id: int) -> str:
+        return f"assignment_{assignment_id}_project_{project_id}"
+
+    @classmethod
+    def name_for_assignment_db_user_role(
+        cls, assignment_id: int, project_id: int, user_id: int
+    ) -> str:
+        return f"assignment_{assignment_id}_project_{project_id}_user_{user_id}"

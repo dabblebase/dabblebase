@@ -56,7 +56,7 @@ def test_create_draft_assignment(assignment_svc: AssignmentService):
     # the generated read-only role and password
     role_user = draft_assignment.test_db_view_role_name
     if draft_assignment.encrypted_test_db_view_role_password is not None:
-        role_password = assignment_svc._content_db_svc.decrypt_role_password(
+        role_password = assignment_svc._content_db_cluster_svc.decrypt_role_password(
             draft_assignment.encrypted_test_db_view_role_password, draft_assignment.id
         )
     db_url = f"postgresql+psycopg2://{role_user}:{role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{env.CONTENT_DB_DATABASE}_test"

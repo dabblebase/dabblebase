@@ -3,11 +3,10 @@
 from fastapi import Depends
 from ..entities import CourseMembershipRole, AssignmentEntity
 from ..services.courses import CourseService
-from ..services.content_database import (
-    ContentDatabaseService,
+from ..services.content_db_cluster import (
+    ContentDbClusterService,
     ContentDatabaseNamingConventions,
 )
-from ..services.content_db_cluster import ContentDbClusterService
 from ..services.project import auth_crypto as crypto
 from ..models.auth import Subject
 from ..models.assignment import CreateDraftRequest
@@ -24,12 +23,10 @@ class AssignmentService:
         self,
         admin_db: Session = Depends(admin_db_session),
         courses_svc: CourseService = Depends(),
-        content_db_svc: ContentDatabaseService = Depends(),
         content_db_cluster_svc: ContentDbClusterService = Depends(),
     ):
         self._admin_db = admin_db
         self._courses_svc = courses_svc
-        self._content_db_svc = content_db_svc
         self._content_db_cluster_svc = content_db_cluster_svc
 
     def create_draft(self, subject: Subject, request: CreateDraftRequest):
@@ -54,29 +51,31 @@ class AssignmentService:
         # assignment can be reverted if operations in the content database fails
         try:
             # Create a test database for the assignment
-            test_db_name = (
-                ContentDatabaseNamingConventions.name_for_assignment_test_schema(
-                    assignment.id
-                )
+            test_db_name = ContentDatabaseNamingConventions.name_for_assignment_test_db(
+                assignment.id
             )
             admin_role_name, admin_role_password = (
-                self._content_db_cluster_svc._provision_database(test_db_name)
+                self._content_db_cluster_svc.provision_database(test_db_name)
             )
             # Create a read-only role for the test database
             view_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_db_readonly_role(
                 assignment.id
             )
             view_role_password = crypto.generate_secure_password()
-            self._content_db_cluster_svc._provision_role_for_database(
+            self._content_db_cluster_svc.provision_role_for_database(
                 test_db_name, view_role_name, view_role_password, readonly=True
             )
 
             # Encrypt the admin and view role passwords
-            encrypted_admin_role_password = self._content_db_svc.encrypt_role_password(
-                admin_role_password, assignment.id
+            encrypted_admin_role_password = (
+                self._content_db_cluster_svc.encrypt_role_password(
+                    admin_role_password, assignment.id
+                )
             )
-            encrypted_view_role_password = self._content_db_svc.encrypt_role_password(
-                view_role_password, assignment.id
+            encrypted_view_role_password = (
+                self._content_db_cluster_svc.encrypt_role_password(
+                    view_role_password, assignment.id
+                )
             )
 
             # Once all of the operations succeed, update the assignment

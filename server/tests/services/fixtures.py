@@ -8,7 +8,6 @@ from ...services import (
     ProjectAuthService,
     ProjectService,
 )
-from ...services.content_database import ContentDatabaseService
 from ...services.content_db_cluster import ContentDbClusterService
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -38,6 +37,5 @@ def assignment_svc(
     return AssignmentService(
         admin_db_session,
         CourseService(admin_db_session),
-        ContentDatabaseService(content_db_session, test_content_engine),
         ContentDbClusterService(content_db_session, test_content_engine),
     )
