@@ -44,33 +44,29 @@ class AssignmentEntity(BaseAdminEntity):
     # Custom configuration SQL to run when creating projects for this assignment
     project_configuration_sql: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Name of the test schema generated with the project
-    test_schema_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Name of the test db generated with the project
+    test_db_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Name of the test schema user admin role for accessing the test schema
+    # Name of the test db user admin role for accessing the test db
     # This role is used internally by Tinkerbase to apply the configuration SQL.
-    test_schema_admin_role_name: Mapped[str | None] = mapped_column(
-        String, nullable=True
-    )
+    test_db_admin_role_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Encrypted password of the test schema user admin role for accessing the test schema
+    # Encrypted password of the test db user admin role for accessing the test db
     # Encrypted using a key generated via key expansion of the auth secret + assignment ID
-    encrypted_test_schema_admin_role_password: Mapped[str | None] = mapped_column(
+    encrypted_test_db_admin_role_password: Mapped[str | None] = mapped_column(
         String, nullable=True
     )
 
-    # Name of the test schema user admin role for accessing the test schema
+    # Name of the test db user admin role for accessing the test db
     # This role and password is ultimately shared with the instructor so that they can view
-    # their test schema after sql has been applied. The schema role has been separated from
-    # the test schema admin role so that this role can function as a read-only role that
+    # their test db after sql has been applied. The db role has been separated from
+    # the test db admin role so that this role can function as a read-only role that
     # is exposed to the instructor
-    test_schema_view_role_name: Mapped[str | None] = mapped_column(
-        String, nullable=True
-    )
+    test_db_view_role_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Encrypted password of the test schema user role for accessing the test schema
+    # Encrypted password of the test db user role for accessing the test db
     # Encrypted using a key generated via key expansion of the auth secret + assignment ID
-    encrypted_test_schema_view_role_password: Mapped[str | None] = mapped_column(
+    encrypted_test_db_view_role_password: Mapped[str | None] = mapped_column(
         String, nullable=True
     )
 

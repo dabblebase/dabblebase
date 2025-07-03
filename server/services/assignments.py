@@ -59,78 +59,45 @@ class AssignmentService:
                     assignment.id
                 )
             )
-            self._content_db_cluster_svc._provision_database(test_db_name)
-            with self._content_db_cluster_svc._content_db.begin():
-                # Create an admin role for the test database
-                admin_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_schema_admin_role(
-                    assignment.id
-                )
-                admin_role_password = crypto.generate_secure_password()
-                encrypted_admin_role_password = (
-                    self._content_db_svc.encrypt_role_password(
-                        admin_role_password, assignment.id
-                    )
-                )
-                self._content_db_cluster_svc._provision_role_for_database(
-                    test_db_name,
-                    admin_role_name,
-                    admin_role_password,
-                )
+            admin_role_name, admin_role_password = (
+                self._content_db_cluster_svc._provision_database(test_db_name)
+            )
+            # Create a read-only role for the test database
+            view_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_db_readonly_role(
+                assignment.id
+            )
+            view_role_password = crypto.generate_secure_password()
+            self._content_db_cluster_svc._provision_role_for_database(
+                test_db_name, view_role_name, view_role_password, readonly=True
+            )
 
-            # with self._content_db_svc._content_db.begin():
-            #     # Create a test project schema for the assignment
-            #     test_schema_name = (
-            #         ContentDatabaseNamingConventions.name_for_assignment_test_schema(
-            #             assignment.id
-            #         )
-            #     )
-            #     self._content_db_svc.create_schema(test_schema_name)
-
-            #     # Create an admin role for the test schema
-            #     admin_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_schema_admin_role(
-            #         assignment.id
-            #     )
-            #     admin_role_password = crypto.generate_secure_password()
-            #     encrypted_admin_role_password = (
-            #         self._content_db_svc.encrypt_role_password(
-            #             admin_role_password, assignment.id
-            #         )
-            #     )
-            #     self._content_db_svc.create_role_scoped_to_schema(
-            #         admin_role_name, admin_role_password, test_schema_name
-            #     )
-
-            #     # Create a view (readonly) role for the test schema
-            #     view_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_schema_readonly_role(
-            #         assignment.id
-            #     )
-            #     view_role_password = crypto.generate_secure_password()
-            #     encrypted_view_role_password = (
-            #         self._content_db_svc.encrypt_role_password(
-            #             view_role_password, assignment.id
-            #         )
-            #     )
-            #     self._content_db_svc.create_role_scoped_to_schema(
-            #         view_role_name, view_role_password, test_schema_name, readonly=True
-            #     )
+            # Encrypt the admin and view role passwords
+            encrypted_admin_role_password = self._content_db_svc.encrypt_role_password(
+                admin_role_password, assignment.id
+            )
+            encrypted_view_role_password = self._content_db_svc.encrypt_role_password(
+                view_role_password, assignment.id
+            )
 
             # Once all of the operations succeed, update the assignment
-            assignment.test_schema_name = test_db_name
-            assignment.test_schema_admin_role_name = admin_role_name
-            assignment.encrypted_test_schema_admin_role_password = (
+            assignment.test_db_name = test_db_name
+            assignment.test_db_admin_role_name = admin_role_name
+            assignment.encrypted_test_db_admin_role_password = (
                 encrypted_admin_role_password
             )
-            # assignment.test_schema_view_role_name = view_role_name
-            # assignment.encrypted_test_schema_view_role_password = (
-            #     encrypted_view_role_password
-            # )
-
+            assignment.test_db_view_role_name = view_role_name
+            assignment.encrypted_test_db_view_role_password = (
+                encrypted_view_role_password
+            )
             # Update the assignment in the database
             self._admin_db.commit()
 
             return assignment
 
         except ContentDatabaseTransactionException as e:
+            # If an error occurs, we need to roll back the assignment creation including the
+            # database provision, if it succeded.
+            self._content_db_cluster_svc._provision_database_rollback(test_db_name)
             # Remove the draft assignment from the database
             ...
             raise e

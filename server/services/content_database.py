@@ -282,11 +282,15 @@ class ContentDatabaseNamingConventions:
         return f"assignment_{assignment_id}_test"
 
     @classmethod
-    def name_for_assignment_test_schema_admin_role(cls, assignment_id: int) -> str:
-        return f"assignment_{assignment_id}_test_admin"
+    def name_for_database_admin_role(cls, db_name: str) -> str:
+        return f"{db_name}_admin"
+
+    # @classmethod
+    # def name_for_assignment_test_schema_admin_role(cls, assignment_id: int) -> str:
+    #     return f"assignment_{assignment_id}_test_admin"
 
     @classmethod
-    def name_for_assignment_test_schema_readonly_role(cls, assignment_id: int) -> str:
+    def name_for_assignment_test_db_readonly_role(cls, assignment_id: int) -> str:
         return f"assignment_{assignment_id}_test_view"
 
     @classmethod

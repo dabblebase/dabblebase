@@ -2,32 +2,28 @@
 
 from .base import BaseContentService
 from ..env import env
-from sqlalchemy import text
+from sqlalchemy import text, Engine, create_engine
+from ..services.content_database import ContentDatabaseNamingConventions
 from .exceptions import ContentDatabaseTransactionException
 from .project import auth_crypto as crypto
-from ..env import env
+from ..env import env, in_production
 
 
 class ContentDbClusterService(BaseContentService):
 
-    def _provision_database(self, db_name: str):
+    def _provision_database(self, db_name: str) -> tuple[str, str]:
         """
         Provisions a new database in the content database cluster, creating an
         admin user with permissions to the database, and run any setup SQL
-        on the database as needed. This method is run as a nested transaction.
+        on the database as needed.
 
-        Critical
-            - This method is run as a nested transaction, meaning that it is
-               intended to be called within a transaction block. For example:
-               ```
-               with self._content_db.begin():
-                 content_db_cluster_svc._provision_database(...)
-               ```
-               This ensures that if provisioning or any other subsequent cluster
-               tasks fail, the entire operation can be rolled back without
-               affecting the content database cluster.
+        Critical:
             - The db name must be generated using `ContentDbClusterNamingConventions`
               to avoid SQL injection.
+
+        Returns:
+            - Admin role credentials of the generated database, displayed in a tuple
+              of format (admin_role_name, admin_role_password)
         """
         try:
             # Since creating a database cannot be run within a transaction and the
@@ -43,6 +39,16 @@ class ContentDbClusterService(BaseContentService):
                 self._content_db.execute(
                     text(f"REVOKE CONNECT ON DATABASE {db_name} FROM PUBLIC")
                 )
+                # Create a new role for the database
+                role_name = (
+                    ContentDatabaseNamingConventions.name_for_database_admin_role(
+                        db_name
+                    )
+                )
+                role_password = crypto.generate_secure_password()
+                self._provision_role_for_database(db_name, role_name, role_password)
+                # If all succeeds, return the role_name, and role_password
+                return role_name, role_password
             except Exception as e:
                 # If we fail to revoke connect permissions, we should delete the
                 # database we just created to avoid leaving it in a broken state.
@@ -70,8 +76,11 @@ class ContentDbClusterService(BaseContentService):
                 ),
                 {"db_name": db_name},
             )
-            # Now drop the database
-            self._content_db.execute(text(f"DROP DATABASE IF EXISTS {db_name}"))
+            # Now drop the database using the engine
+            with self._content_cluster_engine.connect().execution_options(
+                isolation_level="AUTOCOMMIT"
+            ) as conn:
+                conn.execute(text(f"DROP DATABASE IF EXISTS {db_name}"))
         except Exception as e:
             raise ContentDatabaseTransactionException(
                 f"Could not rollback provisioning the database. Error: {e}"
@@ -97,19 +106,71 @@ class ContentDbClusterService(BaseContentService):
             - The db name and role name must be generated using `ContentDbClusterNamingConventions`
               to avoid SQL injection.
         """
+        self._content_db.rollback()
         try:
-            with self._content_db.begin_nested():
+            with self._engine_for_provisioned_db_as_superuser(db_name).begin() as conn:
                 # Create a new role with the provided name
-                self._content_db.execute(
+                conn.execute(
                     text(f"CREATE ROLE {role_name} LOGIN PASSWORD :role_password"),
                     {"role_password": role_password},
                 )
-                # Grant the role access to the database`
-                self._content_db.execute(
+                # Grant the role access to the database
+                conn.execute(
                     text(f"GRANT CONNECT ON DATABASE {db_name} TO {role_name}")
                 )
+                # Grant priveleges to the public schema of the database to the role
+                schema_permissions = "ALL" if not readonly else "USAGE"
+                conn.execute(
+                    text(f"GRANT {schema_permissions} ON SCHEMA public TO {role_name}")
+                )
+                # Grant priveleges to objects within the public schema to the role
+                object_permissions = "ALL" if not readonly else "SELECT"
+                conn.execute(
+                    text(
+                        f"GRANT {object_permissions} ON ALL TABLES IN SCHEMA public TO {role_name}"
+                    )
+                )
+                conn.execute(
+                    text(
+                        f"GRANT {object_permissions} ON ALL SEQUENCES IN SCHEMA public TO {role_name}"
+                    )
+                )
+                if not readonly:
+                    conn.execute(
+                        text(
+                            f"GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO {role_name}"
+                        )
+                    )
+                # Alter the default privileges for the public schema to ensure that
+                # any future objects created in the public schema will also be accessible
+                # by the role.
+                conn.execute(
+                    text(
+                        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT {object_permissions} ON TABLES TO {role_name}"
+                    )
+                )
+                conn.execute(
+                    text(
+                        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT {object_permissions} ON SEQUENCES TO {role_name}"
+                    )
+                )
+                if not readonly:
+                    conn.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO {role_name}"
+                        )
+                    )
         except Exception as e:
-            self._content_db.rollback()
+            conn.rollback()
             raise ContentDatabaseTransactionException(
                 f"Could not provision role for database. Error: {e}"
             )
+        finally:
+            conn.commit()
+
+    def _engine_for_provisioned_db_as_superuser(self, db_name: str) -> Engine:
+        """Generates the engine for a provisioned database as a superuser."""
+        return create_engine(
+            f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}",
+            echo=not in_production(),
+        )
