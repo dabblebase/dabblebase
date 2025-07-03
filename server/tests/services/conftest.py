@@ -18,7 +18,20 @@ def reset_database(database: str, user: str, database_url_fn: Callable[[str], st
         try:
             conn = connection.execution_options(autocommit=False)
             conn.execute(text("ROLLBACK"))  # Get out of transactional mode...
-            conn.execute(text(f"DROP DATABASE {database}"))
+
+            # Drop all databases in the cluster except the one we are resetting
+            DROP_PROTECTED = {"postgres", "template0", "template1"}
+            result = conn.execute(
+                text("SELECT datname FROM pg_database WHERE datistemplate = false")
+            )
+            databases = [row[0] for row in result]
+            droppable_dbs = [db for db in databases if db not in DROP_PROTECTED]
+            for db in droppable_dbs:
+                try:
+                    conn.execute(text(f'DROP DATABASE "{db}"'))
+                except Exception as e:
+                    print(f"Failed to drop database {db}: {e}")
+
             # Remove all user-defined roles from the database
             roles = (
                 conn.execute(
