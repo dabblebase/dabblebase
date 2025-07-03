@@ -19,8 +19,28 @@ def reset_database(database: str, user: str, database_url_fn: Callable[[str], st
             conn = connection.execution_options(autocommit=False)
             conn.execute(text("ROLLBACK"))  # Get out of transactional mode...
             conn.execute(text(f"DROP DATABASE {database}"))
+            # Remove all user-defined roles from the database
+            roles = (
+                conn.execute(
+                    text(
+                        """
+                SELECT rolname FROM pg_roles
+                WHERE rolname NOT IN (
+                    'postgres', 'pg_read_all_data', 'pg_write_all_data',
+                    'pg_monitor', 'pg_signal_backend'
+                ) AND rolname NOT LIKE 'pg_%'
+            """
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            for role in roles:
+                conn.execute(text(f'DROP ROLE IF EXISTS "{role}"'))
+
         except ProgrammingError:
-            ...
+            print("Programming error when dropping database")
+            exit(1)
         except OperationalError:
             print(
                 "Could not drop database because it's being accessed by others (psql open?)"

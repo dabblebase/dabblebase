@@ -9,4 +9,3 @@ class CreateDraftRequest(BaseModel):
     name: str
     course_id: int
     is_group: bool
-    setup_sql: str

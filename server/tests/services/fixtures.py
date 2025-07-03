@@ -1,7 +1,14 @@
 """Fixtures used for testing core services."""
 
 import pytest
-from ...services import HealthService, ProjectService, ProjectAuthService
+from ...services import (
+    AssignmentService,
+    CourseService,
+    HealthService,
+    ProjectAuthService,
+    ProjectService,
+)
+from ...services.content_database import ContentDatabaseService
 from sqlalchemy.orm import Session
 
 
@@ -18,3 +25,15 @@ def project_svc(admin_db_session: Session) -> ProjectService:
 @pytest.fixture()
 def project_auth_svc(admin_db_session: Session) -> ProjectAuthService:
     return ProjectAuthService(admin_db_session)
+
+
+@pytest.fixture()
+def assignment_svc(
+    admin_db_session: Session,
+    content_db_session: Session,
+) -> AssignmentService:
+    return AssignmentService(
+        admin_db_session,
+        CourseService(admin_db_session),
+        ContentDatabaseService(content_db_session),
+    )

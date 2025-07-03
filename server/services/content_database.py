@@ -18,62 +18,71 @@ class ContentDatabaseService(BaseContentService):
         an owner role which can be granted to user roles for access. This created
         schema serves as a "private database" for a student project - a slice of the
         database that only postgres users granted the owner role can access.
+
+        Critical:
+            - This function must be called within a transaction block. For example:
+                ```
+                with self._content_db.begin():
+                    content_db_svc.create_schema("...")
+                ```
+            - The schema name must be generated using `ContentDatabaseNamingConventions`
+            to avoid SQL injection.
         """
         # Set up a database transaction so that if any SQL commands fail, none
         # ultimately affect the database.
         try:
-            # Create a schema with the schema name
-            self._content_db.execute(
-                text("CREATE SCHEMA :schema_name AUTHORIZATION :user"),
-                {"schema_name": schema_name, "user": env.CONTENT_DB_USER},
-            )
-            # Create an owner role with full permissions to the schema
-            owner_role_name = f"{schema_name}"
-            self._content_db.execute(
-                text("CREATE ROLE :role_name NOLOGIN"),
-                {"role_name": owner_role_name},
-            )
-            self._content_db.execute(
-                text("GRANT USAGE ON SCHEMA :schema_name TO :role_name"),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            # Grant all permissions on current items in the database
-            self._content_db.execute(
-                text("GRANT ALL ON ALL TABLES IN SCHEMA :schema_name TO :role_name"),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            self._content_db.execute(
-                text("GRANT ALL ON ALL SEQUENCES IN SCHEMA :schema_name TO :role_name"),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            self._content_db.execute(
-                text("GRANT ALL ON ALL FUNCTIONS IN SCHEMA :schema_name TO :role_name"),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            # Alter priveleges so the user has access when new items are created in the database
-            self._content_db.execute(
-                text(
-                    "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT ALL ON TABLES TO :role_name"
-                ),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            self._content_db.execute(
-                text(
-                    "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT ALL ON SEQUENCES TO :role_name"
-                ),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            self._content_db.execute(
-                text(
-                    "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT ALL ON FUNCTIONS TO :role_name"
-                ),
-                {"schema_name": schema_name, "role_name": owner_role_name},
-            )
-            # Commit changes
-            self._content_db.commit()
-        except:
+            with self._content_db.begin_nested():
+                # Create a schema with the schema name
+                self._content_db.execute(
+                    text(
+                        f"CREATE SCHEMA {schema_name} AUTHORIZATION {env.CONTENT_DB_USER}"
+                    ),
+                )
+                # Create an owner role with full permissions to the schema
+                # owner_role_name = f"{schema_name}"
+                # self._content_db.execute(
+                #     text(f"CREATE ROLE {owner_role_name} NOLOGIN"),
+                # )
+                # self._content_db.execute(
+                #     text(f"GRANT USAGE ON SCHEMA {schema_name} TO {owner_role_name}"),
+                # )
+                # # Grant all permissions on current items in the database
+                # self._content_db.execute(
+                #     text(
+                #         f"GRANT ALL ON ALL TABLES IN SCHEMA {schema_name} TO {owner_role_name}"
+                #     ),
+                # )
+                # self._content_db.execute(
+                #     text(
+                #         f"GRANT ALL ON ALL SEQUENCES IN SCHEMA {schema_name} TO {owner_role_name}"
+                #     ),
+                # )
+                # self._content_db.execute(
+                #     text(
+                #         f"GRANT ALL ON ALL FUNCTIONS IN SCHEMA {schema_name} TO {owner_role_name}"
+                #     ),
+                # )
+                # # Alter priveleges so the user has access when new items are created in the database
+                # self._content_db.execute(
+                #     text(
+                #         f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON TABLES TO {owner_role_name}"
+                #     ),
+                # )
+                # self._content_db.execute(
+                #     text(
+                #         f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON SEQUENCES TO {owner_role_name}"
+                #     ),
+                # )
+                # self._content_db.execute(
+                #     text(
+                #         f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON FUNCTIONS TO {owner_role_name}"
+                #     ),
+                # )
+        except Exception as e:
             self._content_db.rollback()
-            raise ContentDatabaseTransactionException(f"Could not create schema.")
+            raise ContentDatabaseTransactionException(
+                f"Could not create schema. Error: {e}"
+            )
 
     def delete_schema(self, schema_name: str): ...
 
@@ -88,80 +97,169 @@ class ContentDatabaseService(BaseContentService):
         Creates a new role scoped to a provided schema such that accessing the database
         using the role treats the schema as the role's entire database - allowing for
         simulating a private database environment from within one large database.
+
+        Critical:
+            - This function must be called within a transaction block. For example:
+                ```
+                with self._content_db.begin():
+                    content_db_svc.create_role_scoped_to_schema(...)
+                ```
+            - The schema name and role name must be generated using
+              `ContentDatabaseNamingConventions` to avoid SQL injection.
         """
         # Set up a database transaction so that if any SQL commands fail, none
         # ultimately affect the database.
         try:
-            # Create role with the provided name and password
-            self._content_db.execute(
-                text("CREATE ROLE :role_name LOGIN PASSWORD :role_password"),
-                {"role_name": role_name, "role_password": role_password},
-            )
-
-            if not readonly:
-                # Assign the schema's permission role to the new role, effectively allowing
-                # the user to have full admin access other their schema
+            with self._content_db.begin_nested():
+                # Create role with the provided name and password
                 self._content_db.execute(
-                    text("GRANT :schema_name TO :role_name"),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-            else:
-                # If readonly (used only in creating the view schema role for test schemas),
-                # we want to create the new role and only grant view access.
-                self._content_db.execute(
-                    text("GRANT USAGE ON SCHEMA :schema_name TO :role_name"),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                # Grant read-only access to all current items in the schema
-                self._content_db.execute(
-                    text(
-                        "GRANT SELECT ON ALL TABLES IN SCHEMA :schema_name TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                self._content_db.execute(
-                    text(
-                        "GRANT SELECT ON ALL SEQUENCES IN SCHEMA :schema_name TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                self._content_db.execute(
-                    text(
-                        "GRANT SELECT ON ALL SEQUENCES IN SCHEMA :schema_name TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                # Alter priveleges to grant read-only access to all future item in the schema
-                self._content_db.execute(
-                    text(
-                        "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT SELECT ON TABLES TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                self._content_db.execute(
-                    text(
-                        "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT SELECT ON SEQUENCES TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
-                )
-                self._content_db.execute(
-                    text(
-                        "ALTER DEFAULT PRIVILEGES IN SCHEMA :schema_name GRANT SELECT ON FUNCTIONS TO :role_name"
-                    ),
-                    {"schema_name": schema_name, "role_name": role_name},
+                    text(f"CREATE ROLE {role_name} LOGIN PASSWORD :role_password"),
+                    {"role_password": role_password},
                 )
 
-            # Finally, set the `search_path` for the role so that it limits the ability of the role to see
-            # anything past the schema they are being attached to
-            self._content_db.execute(
-                text("ALTER ROLE :role_name SET search_path = :schema_name"),
-                {"role_name": role_name, "schema_name": schema_name},
-            )
-            # Commit changes
-            self._content_db.commit()
-        except:
+                if not readonly:
+                    # Grant schema-level permissions
+                    self._content_db.execute(
+                        text(
+                            f"GRANT USAGE, CREATE ON SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    # Grant permissions on existing objects, if any
+                    self._content_db.execute(
+                        text(
+                            f"GRANT ALL ON ALL TABLES IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"GRANT ALL ON ALL SEQUENCES IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"GRANT ALL ON ALL FUNCTIONS IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    # Alter privileges to grant permissions on future objects
+                    self._content_db.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON TABLES TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON SEQUENCES TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT ALL ON FUNCTIONS TO {role_name}"
+                        ),
+                    )
+                else:
+                    # If readonly (used only in creating the view schema role for test schemas),
+                    # we want to create the new role and only grant view access.
+                    # TODO: PROB BROKEN
+                    self._content_db.execute(
+                        text(
+                            f"GRANT USAGE, CREATE ON SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    # Grant read-only access to all current items in the schema
+                    self._content_db.execute(
+                        text(
+                            f"GRANT SELECT ON ALL TABLES IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"GRANT SELECT ON ALL SEQUENCES IN SCHEMA {schema_name} TO {role_name}"
+                        ),
+                    )
+                    # Alter privileges to grant read-only access to all future item in the schema
+                    self._content_db.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT SELECT ON TABLES TO {role_name}"
+                        ),
+                    )
+                    self._content_db.execute(
+                        text(
+                            f"ALTER DEFAULT PRIVILEGES IN SCHEMA {schema_name} GRANT SELECT ON SEQUENCES TO {role_name}"
+                        ),
+                    )
+
+                # Set the `search_path` for the role so that it limits the ability of the role to see
+                # anything past the schema they are being attached to
+                self._content_db.execute(
+                    text(f"ALTER ROLE {role_name} SET search_path = {schema_name}"),
+                )
+                # Finally, we wnat to revoke the role's ability to access the public schema in any way,
+                # as well as any information about other roles in the database.
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON SCHEMA public FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_authid FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_roles FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_user FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_database FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON information_schema.schemata FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON information_schema.tables FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON information_schema.columns FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(
+                        f"REVOKE ALL ON information_schema.table_constraints FROM {role_name}"
+                    )
+                )
+                self._content_db.execute(
+                    text(
+                        f"REVOKE ALL ON information_schema.key_column_usage FROM {role_name}"
+                    )
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_catalog.pg_tables FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_catalog.pg_class FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_catalog.pg_namespace FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_catalog.pg_roles FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(f"REVOKE ALL ON pg_catalog.pg_user FROM {role_name}")
+                )
+                self._content_db.execute(
+                    text(
+                        f"REVOKE EXECUTE ON FUNCTION pg_catalog.pg_table_is_visible(oid) FROM PUBLIC"
+                    )
+                )
+
+        except Exception as e:
             self._content_db.rollback()
-            raise ContentDatabaseTransactionException(f"Could not create schema role.")
+            raise ContentDatabaseTransactionException(
+                f"Could not create schema role: {e}"
+            )
 
     def delete_role(self, role_name: str): ...
 

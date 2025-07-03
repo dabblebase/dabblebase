@@ -21,7 +21,7 @@ def auth_unc(project_id: int, continue_to: str = "/"):
     respond with an authorization token and call the `/unc/callback` endpoint for Tinkerbase
     to continue the UNC SSO authentication flow.
     """
-    origin = f"{env.HOST}/api/project/{project_id}/auth/callback"
+    origin = f"{env.HOST}/api/project/{project_id}/auth/unc/callback"
     return RedirectResponse(
         f"https://{UNC_AUTH_SERVER_HOST}/auth?origin={origin}&continue_to={continue_to}"
     )
@@ -49,7 +49,7 @@ def auth_unc_callback(
 
     # Extract the UNC PID from the UNC SSO proxy and use it to create or retrieve a user
     body = response.json()
-    pid = body["pid"]
+    pid = str(body["pid"])
     user = project_auth_svc.get_or_create_user(pid, UserAuthenticationProvider.UNC_SSO)
 
     # Issue a new JWT token on behalf of Tinkerbase for the user to be authenticated with
