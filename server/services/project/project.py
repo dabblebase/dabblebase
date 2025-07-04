@@ -19,7 +19,7 @@ class ProjectService(BaseService):
         # Create a new project
         project = ProjectEntity()
         self._admin_db.add(project)
-        self._admin_db.commit()
+        self._admin_db.flush()
 
         # Handle creating the authentication private key and public key
         private_key, public_key = crypto.generate_serialied_rsa_keypair()

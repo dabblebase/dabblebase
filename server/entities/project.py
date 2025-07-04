@@ -36,15 +36,10 @@ class ProjectEntity(BaseAdminEntity):
     project_user: Mapped[Optional["ProjectUserEntity"]] = relationship(back_populates="individual_project")  # type: ignore
 
     # Name of the schema associated to the project
-    schema_name: Mapped[str] = mapped_column(String, nullable=False)
-
-    # Role generated with the schema that has permissions over the schema
-    # This role can then be granted to project users so that their roles
-    # have access to operations on the schema.
-    schema_role_name: Mapped[str] = mapped_column(String, nullable=False)
+    db_name: Mapped[str] = mapped_column(String, nullable=False)
 
     # Encrypted private key used for project-specific authentication
-    auth_encrypted_private_key: Mapped[str] = mapped_column(String, nullable=True)
+    auth_encrypted_private_key: Mapped[str] = mapped_column(String, nullable=False)
 
     # Public key used for project-specific authentication
-    auth_public_key: Mapped[str] = mapped_column(String, nullable=True)
+    auth_public_key: Mapped[str] = mapped_column(String, nullable=False)

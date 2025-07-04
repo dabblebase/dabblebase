@@ -5,6 +5,7 @@ from sqlalchemy import Integer, String
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+from ..models.auth import Subject
 
 
 class UserAuthenticationProvider(Enum):
@@ -42,3 +43,7 @@ class UserEntity(BaseAdminEntity):
     project_users: Mapped[list["ProjectUserEntity"]] = relationship(  # type: ignore
         back_populates="user", cascade="all,delete"
     )
+
+    def to_subject(self) -> Subject:
+        """Convert the user entity to a Subject object."""
+        return Subject(id=self.id)

@@ -29,13 +29,28 @@ def project_auth_svc(admin_db_session: Session) -> ProjectAuthService:
 
 
 @pytest.fixture()
+def course_svc(
+    admin_db_session: Session,
+    content_db_session: Session,
+    test_content_engine: Engine,
+) -> CourseService:
+    cluster_db_service = ContentDbClusterService(
+        content_db_session, test_content_engine
+    )
+    return CourseService(admin_db_session, cluster_db_service)
+
+
+@pytest.fixture()
 def assignment_svc(
     admin_db_session: Session,
     content_db_session: Session,
     test_content_engine: Engine,
 ) -> AssignmentService:
+    cluster_db_service = ContentDbClusterService(
+        content_db_session, test_content_engine
+    )
     return AssignmentService(
         admin_db_session,
-        CourseService(admin_db_session),
-        ContentDbClusterService(content_db_session, test_content_engine),
+        CourseService(admin_db_session, cluster_db_service),
+        cluster_db_service,
     )

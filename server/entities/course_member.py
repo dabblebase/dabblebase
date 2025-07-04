@@ -10,6 +10,7 @@ from .base import BaseAdminEntity
 class CourseMembershipRole(Enum):
     """Enum identifying the level of permissions for a course member."""
 
+    OWNER = "owner"
     ADMIN = "admin"
     STAFF = "staff"
     STUDENT = "student"

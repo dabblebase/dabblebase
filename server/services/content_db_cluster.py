@@ -49,7 +49,7 @@ class ContentDbClusterService(BaseContentService):
             except Exception as e:
                 # If we fail to revoke connect permissions, we should delete the
                 # database we just created to avoid leaving it in a broken state.
-                self._provision_database_rollback(db_name)
+                self.delete_database(db_name)
                 raise ContentDatabaseTransactionException(
                     f"Could not provision database - error revoking connect permissions. Error: {e}"
                 )
@@ -61,8 +61,8 @@ class ContentDbClusterService(BaseContentService):
             # Ensure that the database is committed to the session
             self._content_db.commit()
 
-    def _provision_database_rollback(self, db_name: str):
-        """Attempts to roll back database creation in case something goes wrong."""
+    def delete_database(self, db_name: str):
+        """Attempts to devprovision a given database."""
         try:
             # Drop all active connections to the database to prevent active connections
             # preventing the database drop.

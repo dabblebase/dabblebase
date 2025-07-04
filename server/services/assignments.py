@@ -96,7 +96,7 @@ class AssignmentService:
         except ContentDatabaseTransactionException as e:
             # If an error occurs, we need to roll back the assignment creation including the
             # database provision, if it succeded.
-            self._content_db_cluster_svc._provision_database_rollback(test_db_name)
+            self._content_db_cluster_svc.delete_database(test_db_name)
             # Remove the draft assignment from the database
             ...
             raise e
