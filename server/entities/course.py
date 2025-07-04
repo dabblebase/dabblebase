@@ -4,6 +4,7 @@ from sqlalchemy import Integer, String, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from datetime import datetime
+from pydantic import BaseModel
 
 
 class CourseEntity(BaseAdminEntity):
@@ -45,3 +46,27 @@ class CourseEntity(BaseAdminEntity):
     assignments: Mapped[list["AssignmentEntity"]] = relationship(  # type: ignore
         back_populates="course", cascade="all,delete"
     )
+
+
+class CourseEntityModel(BaseModel):
+    """Pydantic model for the `CourseEntity`."""
+
+    id: int
+    code: str
+    name: str
+    description: str | None = None
+    start_date: datetime
+    end_date: datetime
+    invite_code: str
+
+    def to_entity(self) -> CourseEntity:
+        """Convert the Pydantic model to a CourseEntity."""
+        return CourseEntity(
+            id=self.id,
+            code=self.code,
+            name=self.name,
+            description=self.description,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            invite_code=self.invite_code,
+        )

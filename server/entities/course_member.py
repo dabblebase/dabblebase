@@ -5,6 +5,7 @@ from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+from pydantic import BaseModel
 
 
 class CourseMembershipRole(Enum):
@@ -36,3 +37,19 @@ class CourseMemberEntity(BaseAdminEntity):
     role: Mapped[CourseMembershipRole] = mapped_column(
         SQLAlchemyEnum(CourseMembershipRole), nullable=False
     )
+
+
+class CourseMemberEntityModel(BaseModel):
+    """Pydantic model for the `CourseMemberEntity`."""
+
+    course_id: int
+    user_id: int
+    role: CourseMembershipRole
+
+    def to_entity(self) -> CourseMemberEntity:
+        """Convert the Pydantic model to a CourseMemberEntity."""
+        return CourseMemberEntity(
+            course_id=self.course_id,
+            user_id=self.user_id,
+            role=self.role,
+        )

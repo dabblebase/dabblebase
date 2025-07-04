@@ -5,6 +5,7 @@ from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+from pydantic import BaseModel
 
 
 class ProjectGroupMemberEntity(BaseAdminEntity):
@@ -29,3 +30,19 @@ class ProjectGroupMemberEntity(BaseAdminEntity):
 
     # Name associated with the schema user that has permissions of the user
     schema_role_name: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class ProjectGroupMemberEntityModel(BaseModel):
+    """Pydantic model for the `ProjectGroupMemberEntity`."""
+
+    group_id: int
+    project_user_id: int
+    schema_role_name: str
+
+    def to_entity(self) -> ProjectGroupMemberEntity:
+        """Convert the Pydantic model to a ProjectGroupMemberEntity."""
+        return ProjectGroupMemberEntity(
+            group_id=self.group_id,
+            project_user_id=self.project_user_id,
+            schema_role_name=self.schema_role_name,
+        )

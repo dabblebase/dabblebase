@@ -4,6 +4,7 @@ from sqlalchemy import Integer, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from typing import Optional
+from pydantic import BaseModel
 
 
 class ProjectGroupEntity(BaseAdminEntity):
@@ -31,3 +32,19 @@ class ProjectGroupEntity(BaseAdminEntity):
 
     # Project the group is for (relationship with `projects` table)
     project: Mapped[Optional["ProjectEntity"]] = relationship(back_populates="group")  # type: ignore
+
+
+class ProjectGroupEntityModel(BaseModel):
+    """Pydantic model for the `ProjectGroupEntity`."""
+
+    id: int
+    name: str
+    assignment_id: int
+
+    def to_entity(self) -> ProjectGroupEntity:
+        """Convert the Pydantic model to a ProjectGroupEntity."""
+        return ProjectGroupEntity(
+            id=self.id,
+            name=self.name,
+            assignment_id=self.assignment_id,
+        )

@@ -5,6 +5,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy import Integer, ForeignKey, Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+from pydantic import BaseModel
 
 
 class AssignmentState(Enum):
@@ -79,3 +80,35 @@ class AssignmentEntity(BaseAdminEntity):
     project_groups: Mapped[list["ProjectGroupEntity"]] = relationship(  # type: ignore
         back_populates="assignment", cascade="all,delete"
     )
+
+
+class AssignmentEntityModel(BaseModel):
+    """Pydantic model for the `AssignmentEntity`"""
+
+    id: int
+    name: str
+    state: AssignmentState
+    course_id: int
+    is_group_assignment: bool
+    project_configuration_sql: str | None = None
+    test_db_name: str | None = None
+    test_db_admin_role_name: str | None = None
+    encrypted_test_db_admin_role_password: str | None = None
+    test_db_view_role_name: str | None = None
+    encrypted_test_db_view_role_password: str | None = None
+
+    def to_entity(self) -> AssignmentEntity:
+        """Convert the Pydantic model to an `AssignmentEntity`."""
+        return AssignmentEntity(
+            id=self.id,
+            name=self.name,
+            state=self.state,
+            course_id=self.course_id,
+            is_group_assignment=self.is_group_assignment,
+            project_configuration_sql=self.project_configuration_sql,
+            test_db_name=self.test_db_name,
+            test_db_admin_role_name=self.test_db_admin_role_name,
+            encrypted_test_db_admin_role_password=self.encrypted_test_db_admin_role_password,
+            test_db_view_role_name=self.test_db_view_role_name,
+            encrypted_test_db_view_role_password=self.encrypted_test_db_view_role_password,
+        )

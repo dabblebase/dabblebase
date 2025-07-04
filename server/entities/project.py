@@ -4,6 +4,7 @@ from sqlalchemy import Integer, String, UUID, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from typing import Optional
+from pydantic import BaseModel
 
 
 class ProjectEntity(BaseAdminEntity):
@@ -43,3 +44,27 @@ class ProjectEntity(BaseAdminEntity):
 
     # Public key used for project-specific authentication
     auth_public_key: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class ProjectEntityModel(BaseModel):
+    """Pydantic model for the `ProjectEntity`."""
+
+    id: int
+    assignment_id: int
+    group_id: Optional[int]
+    project_user_id: Optional[int]
+    db_name: str
+    auth_encrypted_private_key: str
+    auth_public_key: str
+
+    def to_entity(self) -> ProjectEntity:
+        """Convert the Pydantic model to a ProjectEntity."""
+        return ProjectEntity(
+            id=self.id,
+            assignment_id=self.assignment_id,
+            group_id=self.group_id,
+            project_user_id=self.project_user_id,
+            db_name=self.db_name,
+            auth_encrypted_private_key=self.auth_encrypted_private_key,
+            auth_public_key=self.auth_public_key,
+        )

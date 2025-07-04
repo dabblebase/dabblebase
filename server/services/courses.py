@@ -24,6 +24,7 @@ from .exceptions import (
     ResourceNotFoundException,
     UserPermissionException,
     ResourceAlreadyExistsException,
+    InputValidationException,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -50,6 +51,19 @@ class CourseService:
     ) -> CreateCourseResponse:
         """Creates a course based on the required data"""
         # TODO: Validate on permission for course creation
+        ...
+        # Validate that the course code does not have spaces or special characters
+        if not request.code.isalnum():
+            raise InputValidationException(
+                "Course code must be alphanumeric and cannot contain spaces or special characters."
+            )
+
+        # Validate that the inputted date range is valid
+        if request.start_date >= request.end_date:
+            raise InputValidationException(
+                "The start date must be before the end date."
+            )
+
         # Generate a random 6-digit invite code for a course
         invite_code = self._generate_invite_code()
         invite_code_query = select(CourseEntity).where(
@@ -99,6 +113,18 @@ class CourseService:
         self.verify_subject_has_permissions_for_course(
             subject, request.id, CourseMembershipRole.ADMIN
         )
+
+        # Validate that the course code does not have spaces or special characters
+        if not request.code.isalnum():
+            raise InputValidationException(
+                "Course code must be alphanumeric and cannot contain spaces or special characters."
+            )
+
+        # Validate that the inputted date range is valid
+        if request.start_date >= request.end_date:
+            raise InputValidationException(
+                "The start date must be before the end date."
+            )
 
         # Query the course from the database
         query = select(CourseEntity).where(CourseEntity.id == request.id)
@@ -237,7 +263,10 @@ class CourseService:
             )
 
         # Handle change user role restrictions
-        if request.role == CourseMembershipRole.OWNER:
+        if (
+            request.role == CourseMembershipRole.OWNER
+            or member.role == CourseMembershipRole.OWNER
+        ):
             raise UserPermissionException("Cannot change the role of the course owner.")
         if (
             request.role == CourseMembershipRole.ADMIN

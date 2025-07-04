@@ -6,6 +6,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from typing import Optional
+from pydantic import BaseModel
 
 
 class ProjectUserEntity(BaseAdminEntity):
@@ -39,3 +40,21 @@ class ProjectUserEntity(BaseAdminEntity):
     individual_project: Mapped[Optional["ProjectEntity"]] = relationship(  # type: ignore
         back_populates="project_user"
     )
+
+
+class ProjectUserEntityModel(BaseModel):
+    """Pydantic model for the `ProjectUserEntity`."""
+
+    id: int
+    user_id: int
+    schema_role_name: str
+    encrypted_schema_role_password: str
+
+    def to_entity(self) -> ProjectUserEntity:
+        """Convert the Pydantic model to a ProjectUserEntity."""
+        return ProjectUserEntity(
+            id=self.id,
+            user_id=self.user_id,
+            schema_role_name=self.schema_role_name,
+            encrypted_schema_role_password=self.encrypted_schema_role_password,
+        )

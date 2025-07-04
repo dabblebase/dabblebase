@@ -6,6 +6,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from ..models.auth import Subject
+from pydantic import BaseModel
 
 
 class UserAuthenticationProvider(Enum):
@@ -46,4 +47,24 @@ class UserEntity(BaseAdminEntity):
 
     def to_subject(self) -> Subject:
         """Convert the user entity to a Subject object."""
+        return Subject(id=self.id)
+
+
+class UserEntityModel(BaseModel):
+    """Pydantic model for the `UserEntity`."""
+
+    id: int
+    auth_id: str
+    auth_provider: UserAuthenticationProvider
+
+    def to_entity(self) -> UserEntity:
+        """Convert the Pydantic model to a UserEntity."""
+        return UserEntity(
+            id=self.id,
+            auth_id=self.auth_id,
+            auth_provider=self.auth_provider,
+        )
+
+    def to_subject(self) -> Subject:
+        """Convert the user entity model to a Subject object."""
         return Subject(id=self.id)
