@@ -9,7 +9,7 @@ from ..services.content_db_cluster import (
 )
 from ..services.project import auth_crypto as crypto
 from ..models.auth import Subject
-from ..models.assignment import CreateDraftRequest
+from ..models.assignment import CreateDraftRequest, CreateDraftResponse
 from ..database import admin_db_session
 from sqlalchemy.orm import Session
 from .exceptions import ContentDatabaseTransactionException
@@ -29,8 +29,10 @@ class AssignmentService:
         self._courses_svc = courses_svc
         self._content_db_cluster_svc = content_db_cluster_svc
 
-    def create_draft(self, subject: Subject, request: CreateDraftRequest):
-        ...
+    def create_draft(
+        self, subject: Subject, request: CreateDraftRequest
+    ) -> CreateDraftResponse:
+        """Creates a draft assignment for a course."""
         # Check for admin permissions
         self._courses_svc.verify_subject_has_permissions_for_course(
             subject, request.course_id, CourseMembershipRole.ADMIN
@@ -91,7 +93,7 @@ class AssignmentService:
             # Update the assignment in the database
             self._admin_db.commit()
 
-            return assignment
+            return CreateDraftResponse(id=assignment.id)
 
         except ContentDatabaseTransactionException as e:
             # If an error occurs, we need to roll back the assignment creation including the
