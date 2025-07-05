@@ -14,4 +14,11 @@ class CreateDraftRequest(BaseModel):
 class CreateDraftResponse(BaseModel):
     """Model that represents a response to creating a draft."""
 
-    id: int
+    assignment_id: int
+
+
+class RenameRequest(BaseModel):
+    """Model that represents a request to rename an assignment."""
+
+    assignment_id: int
+    name: str

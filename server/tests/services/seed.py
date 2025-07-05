@@ -8,6 +8,9 @@ from ...entities import (
     CourseEntityModel,
     CourseMemberEntityModel,
     CourseMembershipRole,
+    AssignmentEntity,
+    AssignmentEntityModel,
+    AssignmentState,
 )
 from sqlalchemy.orm import Session
 import pytest
@@ -82,6 +85,16 @@ course_members: list[CourseMemberEntityModel] = [
     course_member_student_2,
 ]
 
+# Sample assignments
+draft_indiv_assignment = AssignmentEntityModel(
+    id=1,
+    name="Assignment 1",
+    state=AssignmentState.DRAFT,
+    is_group_assignment=False,
+    course_id=course.id,
+)
+assignments: list[AssignmentEntityModel] = [draft_indiv_assignment]
+
 
 def insert_seed_data(session: Session):
 
@@ -97,6 +110,13 @@ def insert_seed_data(session: Session):
 
     for member in course_members:
         session.add(member.to_entity())
+    session.commit()
+
+    for assignment in assignments:
+        session.add(assignment.to_entity())
+    reset_table_id_seq(
+        session, AssignmentEntity, AssignmentEntity.id, len(assignments) + 1
+    )
     session.commit()
 
 

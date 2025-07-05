@@ -9,10 +9,14 @@ from ..services.content_db_cluster import (
 )
 from ..services.project import auth_crypto as crypto
 from ..models.auth import Subject
-from ..models.assignment import CreateDraftRequest, CreateDraftResponse
+from ..models.assignment import CreateDraftRequest, CreateDraftResponse, RenameRequest
 from ..database import admin_db_session
 from sqlalchemy.orm import Session
-from .exceptions import ContentDatabaseTransactionException
+from .exceptions import (
+    ContentDatabaseTransactionException,
+    ResourceNotFoundException,
+    InputValidationException,
+)
 
 
 class AssignmentService:
@@ -93,7 +97,7 @@ class AssignmentService:
             # Update the assignment in the database
             self._admin_db.commit()
 
-            return CreateDraftResponse(id=assignment.id)
+            return CreateDraftResponse(assignment_id=assignment.id)
 
         except ContentDatabaseTransactionException as e:
             # If an error occurs, we need to roll back the assignment creation including the
@@ -102,3 +106,27 @@ class AssignmentService:
             # Remove the draft assignment from the database
             ...
             raise e
+
+    def rename(self, subject: Subject, request: RenameRequest):
+        """Renames an assignment"""
+        # Check for admin permissions
+        self._courses_svc.verify_subject_has_permissions_for_course(
+            subject, request.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Validate the input name
+        if len(request.name) < 1:
+            raise InputValidationException(
+                "Assignment name must be at least 1 character long."
+            )
+
+        # Fetch the assignment
+        assignment = self._admin_db.query(AssignmentEntity).get(request.assignment_id)
+        if not assignment:
+            raise ResourceNotFoundException(
+                f"Assignment with ID {request.assignment_id} not found."
+            )
+
+        # Update the assignment name
+        assignment.name = request.name
+        self._admin_db.commit()
