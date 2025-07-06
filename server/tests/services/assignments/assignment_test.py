@@ -243,3 +243,91 @@ def test_test_configuration_sql_failure_naughty_request(
     )
     assert draft_assignment.draft_project_configuration_sql_succeeded is False
     assert draft_assignment.draft_project_configuration_sql_error is not None
+
+
+def test_save_configuration_sql(assignment_svc: AssignmentService):
+    """Tests that the configuration SQL can be saved."""
+    # TODO: Remove reliance on setup here
+    # First, create a draft assignment, which spins up the database, and test SQL.
+    response = assignment_svc.create_draft(
+        instructor_user.to_subject(), create_draft_request
+    )
+    draft_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(response.assignment_id)
+    assert draft_assignment is not None
+    test_configuration_sql_request_success = TestConfigurationSQLRequest(
+        assignment_id=draft_assignment.id,
+        sql="""
+        CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
+        INSERT INTO test_table (id, name) VALUES (1, 'Test Name');
+        """,
+    )
+    response = assignment_svc.test_configuration_sql(
+        instructor_user.to_subject(), test_configuration_sql_request_success
+    )
+
+    # Now, test saving the configuration SQL
+    save_configuration_sql_request = SaveConfigurationSQLRequest(
+        assignment_id=draft_assignment.id
+    )
+    assignment_svc.save_configuration_sql(
+        subject=instructor_user.to_subject(), request=save_configuration_sql_request
+    )
+    saved_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_assignment.id)
+    assert saved_assignment is not None
+    assert saved_assignment.project_configuration_sql is not None
+    assert (
+        saved_assignment.project_configuration_sql
+        == test_configuration_sql_request_success.sql
+    )
+    assert saved_assignment.draft_project_configuration_sql is None
+    assert saved_assignment.draft_project_configuration_sql_succeeded is None
+    assert saved_assignment.draft_project_configuration_sql_error is None
+
+
+def test_save_configuration_sql_not_tested(assignment_svc: AssignmentService):
+    """Ensures that saving configuration SQL without testing it raises an exception."""
+    # TODO: Remove reliance on setup here
+    # First, create a draft assignment, which spins up the database, and test SQL.
+    response = assignment_svc.create_draft(
+        instructor_user.to_subject(), create_draft_request
+    )
+    draft_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(response.assignment_id)
+    assert draft_assignment is not None
+    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
+
+    # Now, test that an exception is raised
+    with pytest.raises(InputValidationException):
+        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+
+
+def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentService):
+    """Ensures that saving configuration SQL without testing it raises an exception."""
+    # TODO: Remove reliance on setup here
+    # First, create a draft assignment, which spins up the database, and test SQL.
+    response = assignment_svc.create_draft(
+        instructor_user.to_subject(), create_draft_request
+    )
+    draft_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(response.assignment_id)
+    assert draft_assignment is not None
+    test_configuration_sql_request = TestConfigurationSQLRequest(
+        assignment_id=draft_assignment.id,
+        sql="""
+        CREATE DATABASE naughty_db;
+        """,
+    )
+    assignment_svc.test_configuration_sql(
+        instructor_user.to_subject(), test_configuration_sql_request
+    )
+    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
+
+    # Now, test that an exception is raised
+    with pytest.raises(InputValidationException):
+        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)

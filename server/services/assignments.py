@@ -15,6 +15,7 @@ from ..models.assignment import (
     RenameRequest,
     TestConfigurationSQLRequest,
     TestConfigurationSQLResponse,
+    SaveConfigurationSQLRequest,
 )
 from ..database import admin_db_session
 from sqlalchemy.orm import Session
@@ -218,6 +219,34 @@ class AssignmentService:
             )
         finally:
             self._admin_db.commit()
+
+    def save_configuration_sql(
+        self, subject: Subject, request: SaveConfigurationSQLRequest
+    ):
+        """Save configuration SQL for an assignment. Can only be done after testing the SQL."""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, request.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Saving can only occur if draft SQL is present and it has been tested
+        if not (
+            assignment.draft_project_configuration_sql is not None
+            and assignment.draft_project_configuration_sql_succeeded is True
+            and assignment.draft_project_configuration_sql_error is None
+        ):
+            raise InputValidationException(
+                "Draft SQL must be tested successfully before saving."
+            )
+
+        # Save the configuration SQL
+        assignment.project_configuration_sql = (
+            assignment.draft_project_configuration_sql
+        )
+        assignment.draft_project_configuration_sql = None
+        assignment.draft_project_configuration_sql_succeeded = None
+        assignment.draft_project_configuration_sql_error = None
+        self._admin_db.commit()
 
     def _get_assignment_and_verify_permissions(
         self, subject: Subject, assignment_id: int, min_role: CourseMembershipRole

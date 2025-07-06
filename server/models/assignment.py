@@ -37,3 +37,9 @@ class TestConfigurationSQLResponse(BaseModel):
     success: bool
     error_message: str | None = None
     db_url: str | None = None
+
+
+class SaveConfigurationSQLRequest(BaseModel):
+    """Model that represents a request to save the configuration SQL for an assignment."""
+
+    assignment_id: int
