@@ -2,7 +2,12 @@
 
 import pytest
 from ....env import env
-from ....entities import AssignmentEntity, AssignmentState
+from ....entities import (
+    AssignmentEntity,
+    AssignmentState,
+    ProjectGroupEntity,
+    ProjectGroupMemberEntity,
+)
 from ....models.assignment import *
 from ....services import AssignmentService
 from ..fixtures import assignment_svc
@@ -21,6 +26,16 @@ from .assignment_data import (
     rename_request,
     rename_request_name_empty,
     rename_request_not_found,
+    create_group_request,
+    create_group_request_for_indiv,
+    create_group_request_for_noname,
+    add_group_member_request,
+    add_member_request_not_found,
+    remove_group_member_request,
+    remove_member_request_not_found,
+    remove_member_request_not_found_user,
+    delete_group_request,
+    delete_group_request_not_found,
 )
 from ....services.exceptions import (
     InputValidationException,
@@ -331,3 +346,124 @@ def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentServ
     # Now, test that an exception is raised
     with pytest.raises(InputValidationException):
         assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+
+
+def test_create_group(admin_db_session: Session, assignment_svc: AssignmentService):
+    """Tests that a group can be created for an assignment."""
+    response = assignment_svc.create_group(
+        instructor_user.to_subject(), create_group_request
+    )
+    group = admin_db_session.get(ProjectGroupEntity, response.group_id)
+    assert group is not None
+    assert group.name == create_group_request.group_name
+
+
+def test_create_group_for_indiv(
+    admin_db_session: Session, assignment_svc: AssignmentService
+):
+    """Ensures that a group cannot be created for a group assignment."""
+    with pytest.raises(InputValidationException):
+        assignment_svc.create_group(
+            instructor_user.to_subject(), create_group_request_for_indiv
+        )
+
+
+def test_create_group_for_noname(
+    assignment_svc: AssignmentService,
+):
+    """Ensures that a group cannot be created with an empty name."""
+    with pytest.raises(InputValidationException):
+        assignment_svc.create_group(
+            instructor_user.to_subject(), create_group_request_for_noname
+        )
+
+
+def test_add_group_member(admin_db_session: Session, assignment_svc: AssignmentService):
+    """Tests adding a member to a group."""
+    assignment_svc.add_group_member(
+        instructor_user.to_subject(), add_group_member_request
+    )
+    member = (
+        admin_db_session.query(ProjectGroupMemberEntity)
+        .filter(
+            ProjectGroupMemberEntity.user_id == add_group_member_request.user_id,
+            ProjectGroupMemberEntity.group_id == add_group_member_request.group_id,
+        )
+        .first()
+    )
+    assert member is not None
+
+
+def test_add_group_member_not_found(
+    assignment_svc: AssignmentService,
+):
+    """Ensures that adding a member to a non-existent group raises an exception."""
+    with pytest.raises(ResourceNotFoundException):
+        assignment_svc.add_group_member(
+            instructor_user.to_subject(), add_member_request_not_found
+        )
+
+
+def test_remove_group_member(
+    admin_db_session: Session, assignment_svc: AssignmentService
+):
+    """Tests removing a member from a group."""
+    assignment_svc.remove_group_member(
+        instructor_user.to_subject(), remove_group_member_request
+    )
+    member = (
+        admin_db_session.query(ProjectGroupMemberEntity)
+        .filter(
+            ProjectGroupMemberEntity.user_id == remove_group_member_request.user_id,
+            ProjectGroupMemberEntity.group_id == remove_group_member_request.group_id,
+        )
+        .first()
+    )
+    assert member is None
+
+
+def test_remove_group_member_not_found(
+    assignment_svc: AssignmentService,
+):
+    """Ensures that removing a member from a non-existent group raises an exception."""
+    with pytest.raises(ResourceNotFoundException):
+        assignment_svc.remove_group_member(
+            instructor_user.to_subject(), remove_member_request_not_found
+        )
+
+
+def test_remove_group_member_not_found_user(
+    assignment_svc: AssignmentService,
+):
+    """Ensures that removing a non-existent user from a group raises an exception."""
+    with pytest.raises(ResourceNotFoundException):
+        assignment_svc.remove_group_member(
+            instructor_user.to_subject(), remove_member_request_not_found_user
+        )
+
+
+def test_delete_group(admin_db_session: Session, assignment_svc: AssignmentService):
+    """Tests deleting a group from an assignment."""
+    response = assignment_svc.create_group(
+        instructor_user.to_subject(), create_group_request
+    )
+    delete_group_request.group_id = response.group_id
+    assignment_svc.delete_group(instructor_user.to_subject(), delete_group_request)
+    group = admin_db_session.get(ProjectGroupEntity, delete_group_request.group_id)
+    assert group is None
+    members = (
+        admin_db_session.query(ProjectGroupMemberEntity)
+        .filter(ProjectGroupMemberEntity.group_id == delete_group_request.group_id)
+        .all()
+    )
+    assert len(members) == 0
+
+
+def test_delete_group_not_found(
+    assignment_svc: AssignmentService,
+):
+    """Ensures that deleting a non-existent group raises an exception."""
+    with pytest.raises(ResourceNotFoundException):
+        assignment_svc.delete_group(
+            instructor_user.to_subject(), delete_group_request_not_found
+        )

@@ -31,10 +31,8 @@ class ProjectEntity(BaseAdminEntity):
     group: Mapped[Optional["ProjectGroupEntity"]] = relationship(back_populates="project")  # type: ignore
 
     # User for the project if the assignment is an individual project - otherwise, this is null
-    project_user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("project_users.id"), nullable=True
-    )
-    project_user: Mapped[Optional["ProjectUserEntity"]] = relationship(back_populates="individual_project")  # type: ignore
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    user: Mapped[Optional["UserEntity"]] = relationship(back_populates="individual_projects")  # type: ignore
 
     # Name of the schema associated to the project
     db_name: Mapped[str] = mapped_column(String, nullable=False)

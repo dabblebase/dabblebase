@@ -41,7 +41,12 @@ class UserEntity(BaseAdminEntity):
     )
 
     # Project users the user is tied to (project user relates to the db role that gives them access to a project)
-    project_users: Mapped[list["ProjectUserEntity"]] = relationship(  # type: ignore
+    group_project_memberships: Mapped[list["ProjectGroupMemberEntity"]] = relationship(  # type: ignore
+        back_populates="user", cascade="all,delete"
+    )
+
+    # Individual project the user is tied to (individual project relates to the db role that gives them access to a project)
+    individual_projects: Mapped[list["ProjectEntity"]] = relationship(  # type: ignore
         back_populates="user", cascade="all,delete"
     )
 

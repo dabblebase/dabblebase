@@ -43,3 +43,37 @@ class SaveConfigurationSQLRequest(BaseModel):
     """Model that represents a request to save the configuration SQL for an assignment."""
 
     assignment_id: int
+
+
+class CreateGroupRequest(BaseModel):
+    """Model that represents a request to create a group for an assignment."""
+
+    assignment_id: int
+    group_name: str
+
+
+class CreateGroupResponse(BaseModel):
+    """Model that represents a response to creating a group for an assignment."""
+
+    group_id: int
+    group_name: str
+
+
+class AddGroupMemberRequest(BaseModel):
+    """Model that represents a request to add a member to a group for an assignment."""
+
+    group_id: int
+    user_id: int
+
+
+class RemoveGroupMemberRequest(BaseModel):
+    """Model that represents a request to remove a member from a group for an assignment."""
+
+    group_id: int
+    user_id: int
+
+
+class DeleteGroupRequest(BaseModel):
+    """Model that represents a request to delete a group for an assignment."""
+
+    group_id: int

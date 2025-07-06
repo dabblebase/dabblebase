@@ -14,5 +14,4 @@ from .project_group_member import (
     ProjectGroupMemberEntity,
     ProjectGroupMemberEntityModel,
 )
-from .project_users import ProjectUserEntity, ProjectUserEntityModel
 from .assignment import AssignmentEntity, AssignmentState, AssignmentEntityModel

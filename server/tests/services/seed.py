@@ -11,6 +11,10 @@ from ...entities import (
     AssignmentEntity,
     AssignmentEntityModel,
     AssignmentState,
+    ProjectGroupEntity,
+    ProjectGroupEntityModel,
+    ProjectGroupMemberEntity,
+    ProjectGroupMemberEntityModel,
 )
 from sqlalchemy.orm import Session
 import pytest
@@ -93,7 +97,33 @@ draft_indiv_assignment = AssignmentEntityModel(
     is_group_assignment=False,
     course_id=course.id,
 )
-assignments: list[AssignmentEntityModel] = [draft_indiv_assignment]
+
+draft_group_assignment = AssignmentEntityModel(
+    id=2,
+    name="Group Assignment 2",
+    state=AssignmentState.DRAFT,
+    is_group_assignment=True,
+    course_id=course.id,
+)
+
+assignments: list[AssignmentEntityModel] = [
+    draft_indiv_assignment,
+    draft_group_assignment,
+]
+
+# Sample assignment groups and members
+group_assignment_group_1 = ProjectGroupEntityModel(
+    id=1,
+    name="Group 1",
+    assignment_id=draft_group_assignment.id,
+)
+group_assignment_group_1_member = ProjectGroupMemberEntityModel(
+    user_id=student_1_user.id,
+    group_id=group_assignment_group_1.id,
+)
+
+groups = [group_assignment_group_1]
+group_members = [group_assignment_group_1_member]
 
 
 def insert_seed_data(session: Session):
@@ -117,6 +147,16 @@ def insert_seed_data(session: Session):
     reset_table_id_seq(
         session, AssignmentEntity, AssignmentEntity.id, len(assignments) + 1
     )
+    session.commit()
+
+    for group in groups:
+        session.add(group.to_entity())
+    reset_table_id_seq(
+        session, ProjectGroupEntity, ProjectGroupEntity.id, len(groups) + 1
+    )
+
+    for member in group_members:
+        session.add(member.to_entity())
     session.commit()
 
 

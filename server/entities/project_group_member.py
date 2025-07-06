@@ -23,26 +23,16 @@ class ProjectGroupMemberEntity(BaseAdminEntity):
     group: Mapped["ProjectGroupEntity"] = relationship(back_populates="members")  # type: ignore
 
     # Project user for the membership relation (part of a composite key)
-    project_user_id: Mapped[int] = mapped_column(
-        ForeignKey("project_users.id"), primary_key=True
-    )
-    project_user: Mapped["ProjectUserEntity"] = relationship(back_populates="project_group_membership")  # type: ignore
-
-    # Name associated with the schema user that has permissions of the user
-    schema_role_name: Mapped[str] = mapped_column(String, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    user: Mapped["UserEntity"] = relationship(back_populates="group_project_memberships")  # type: ignore
 
 
 class ProjectGroupMemberEntityModel(BaseModel):
     """Pydantic model for the `ProjectGroupMemberEntity`."""
 
     group_id: int
-    project_user_id: int
-    schema_role_name: str
+    user_id: int
 
     def to_entity(self) -> ProjectGroupMemberEntity:
         """Convert the Pydantic model to a ProjectGroupMemberEntity."""
-        return ProjectGroupMemberEntity(
-            group_id=self.group_id,
-            project_user_id=self.project_user_id,
-            schema_role_name=self.schema_role_name,
-        )
+        return ProjectGroupMemberEntity(group_id=self.group_id, user_id=self.user_id)

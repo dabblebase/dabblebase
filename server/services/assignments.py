@@ -1,7 +1,12 @@
 """Service used to interface with assignments"""
 
 from fastapi import Depends
-from ..entities import CourseMembershipRole, AssignmentEntity
+from ..entities import (
+    CourseMembershipRole,
+    AssignmentEntity,
+    ProjectGroupEntity,
+    ProjectGroupMemberEntity,
+)
 from ..services.courses import CourseService
 from ..services.content_db_cluster import (
     ContentDbClusterService,
@@ -16,6 +21,11 @@ from ..models.assignment import (
     TestConfigurationSQLRequest,
     TestConfigurationSQLResponse,
     SaveConfigurationSQLRequest,
+    CreateGroupRequest,
+    CreateGroupResponse,
+    AddGroupMemberRequest,
+    RemoveGroupMemberRequest,
+    DeleteGroupRequest,
 )
 from ..database import admin_db_session
 from sqlalchemy.orm import Session
@@ -247,6 +257,114 @@ class AssignmentService:
         assignment.draft_project_configuration_sql_succeeded = None
         assignment.draft_project_configuration_sql_error = None
         self._admin_db.commit()
+
+    def create_group(
+        self, subject: Subject, request: CreateGroupRequest
+    ) -> CreateGroupResponse:
+        """Creates a new group for a group assignment."""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, request.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Ensure the assignment is a group assignment
+        if not assignment.is_group_assignment:
+            raise InputValidationException(
+                "Cannot create groups for non-group assignments."
+            )
+
+        # Validate the group name
+        if len(request.group_name) < 1:
+            raise InputValidationException(
+                "Group name must be at least 1 character long."
+            )
+
+        # Create the group
+        group = ProjectGroupEntity(
+            name=request.group_name,
+            assignment_id=assignment.id,
+        )
+        self._admin_db.add(group)
+        self._admin_db.commit()
+
+        return CreateGroupResponse(
+            group_id=group.id,
+            group_name=group.name,
+        )
+
+    def add_group_member(self, subject: Subject, request: AddGroupMemberRequest):
+        """Adds a member to a group in a group assignment."""
+        # Find the group by ID
+        group: ProjectGroupEntity | None = self._admin_db.query(ProjectGroupEntity).get(
+            request.group_id
+        )
+        if not group:
+            raise ResourceNotFoundException(
+                f"Group with ID {request.group_id} not found."
+            )
+
+        # Check for admin permissions
+        self._get_assignment_and_verify_permissions(
+            subject, group.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Add the member to the group
+        member = ProjectGroupMemberEntity(group_id=group.id, user_id=request.user_id)
+        self._admin_db.add(member)
+        self._admin_db.commit()
+
+    def remove_group_member(self, subject: Subject, request: RemoveGroupMemberRequest):
+        """Removes a member from a group in a group assignment."""
+        # Find the group by ID
+        group: ProjectGroupEntity | None = self._admin_db.query(ProjectGroupEntity).get(
+            request.group_id
+        )
+        if not group:
+            raise ResourceNotFoundException(
+                f"Group with ID {request.group_id} not found."
+            )
+
+        # Check for admin permissions
+        self._get_assignment_and_verify_permissions(
+            subject, group.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Remove the member from the group
+        member: ProjectGroupMemberEntity | None = (
+            self._admin_db.query(ProjectGroupMemberEntity)
+            .filter_by(group_id=group.id, user_id=request.user_id)
+            .first()
+        )
+        if not member:
+            raise ResourceNotFoundException(
+                f"Member with user ID {request.user_id} not found in group {group.id}."
+            )
+        self._admin_db.delete(member)
+        self._admin_db.commit()
+
+    def delete_group(self, subject: Subject, request: DeleteGroupRequest):
+        """Deletes a group from a group assignment."""
+        # Find the group by ID
+        group: ProjectGroupEntity | None = self._admin_db.query(ProjectGroupEntity).get(
+            request.group_id
+        )
+        if not group:
+            raise ResourceNotFoundException(
+                f"Group with ID {request.group_id} not found."
+            )
+
+        # Check for admin permissions
+        self._get_assignment_and_verify_permissions(
+            subject, group.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Delete the group and its members
+        self._admin_db.delete(group)
+        self._admin_db.commit()
+
+    def publish(self, subject: Subject): ...
+
+    def delete(self, subject: Subject, assignment_id: int): ...
 
     def _get_assignment_and_verify_permissions(
         self, subject: Subject, assignment_id: int, min_role: CourseMembershipRole
