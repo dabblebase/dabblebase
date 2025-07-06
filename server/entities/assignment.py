@@ -45,6 +45,21 @@ class AssignmentEntity(BaseAdminEntity):
     # Custom configuration SQL to run when creating projects for this assignment
     project_configuration_sql: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Draft configuration SQL used when edting the SQL configuration
+    draft_project_configuration_sql: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+
+    # Whether or not the draft project configuration SQL successfully ran on the DB cluster
+    draft_project_configuration_sql_succeeded: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True
+    )
+
+    # Error message if the draft project configuration SQL did not run successfully
+    draft_project_configuration_sql_error: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+
     # Name of the test db generated with the project
     test_db_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
@@ -91,6 +106,9 @@ class AssignmentEntityModel(BaseModel):
     course_id: int
     is_group_assignment: bool
     project_configuration_sql: str | None = None
+    draft_project_configuration_sql: str | None = None
+    draft_project_configuration_sql_succeeded: bool | None = None
+    draft_project_configuration_sql_error: str | None = None
     test_db_name: str | None = None
     test_db_admin_role_name: str | None = None
     encrypted_test_db_admin_role_password: str | None = None
@@ -106,6 +124,9 @@ class AssignmentEntityModel(BaseModel):
             course_id=self.course_id,
             is_group_assignment=self.is_group_assignment,
             project_configuration_sql=self.project_configuration_sql,
+            draft_project_configuration_sql=self.draft_project_configuration_sql,
+            draft_project_configuration_sql_succeeded=self.draft_project_configuration_sql_succeeded,
+            draft_project_configuration_sql_error=self.draft_project_configuration_sql_error,
             test_db_name=self.test_db_name,
             test_db_admin_role_name=self.test_db_admin_role_name,
             encrypted_test_db_admin_role_password=self.encrypted_test_db_admin_role_password,

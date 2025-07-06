@@ -66,7 +66,6 @@ class ContentDbClusterService(BaseContentService):
         try:
             # Drop all active connections to the database to prevent active connections
             # preventing the database drop.
-            # SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'tenant123' AND pid <> pg_backend_pid();
             self._content_db.execute(
                 text(
                     f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = :db_name AND pid <> pg_backend_pid()",
@@ -84,11 +83,23 @@ class ContentDbClusterService(BaseContentService):
             )
 
     def provision_role_for_database(
-        self, db_name: str, role_name: str, role_password: str, readonly: bool = False
+        self,
+        db_name: str,
+        role_name: str,
+        role_password: str,
+        readonly: bool = False,
+        issuer_role_name: str | None = None,
+        issuer_role_password: str | None = None,
     ):
         """
         Provisions a new role for the database with the provided name. The role will be granted
         full access to the database and its public schema, assuming `readonly` is False.
+
+        Note that if `issuer_role_name` and `issuer_role_password` are provided, then the new role will be
+        provisioned by the issuer role. If not, the role will be provisioned by the superuser. This has
+        interesting implications - new roles can only access items in the database that was created by the
+        issuer. For this purpose, an admin role can be provisioned by the superuser, but then all other roles
+        (especially readonly roles) should be provisioned by the admin role.
 
         Critical
             - The db name and role name must be generated using `ContentDbClusterNamingConventions`
@@ -96,6 +107,8 @@ class ContentDbClusterService(BaseContentService):
         """
         self._content_db.rollback()
         try:
+            # First, the creation of the role is always done by the superuser because
+            # no other role can create other roles.
             with self._engine_for_provisioned_db_as_superuser(db_name).begin() as conn:
                 # Create a new role with the provided name
                 conn.execute(
@@ -106,6 +119,15 @@ class ContentDbClusterService(BaseContentService):
                 conn.execute(
                     text(f"GRANT CONNECT ON DATABASE {db_name} TO {role_name}")
                 )
+            # Then, permissions can be granted by either the superuser or the issuer role.
+            engine = (
+                self._engine_for_provisioned_db_as_user(
+                    db_name, issuer_role_name, issuer_role_password
+                )
+                if issuer_role_name is not None and issuer_role_password is not None
+                else self._engine_for_provisioned_db_as_superuser(db_name)
+            )
+            with engine.begin() as conn:
                 # Grant priveleges to the public schema of the database to the role
                 schema_permissions = "ALL" if not readonly else "USAGE"
                 conn.execute(
@@ -156,10 +178,131 @@ class ContentDbClusterService(BaseContentService):
         finally:
             conn.commit()
 
+    def reset_database(
+        self,
+        db_name: str,
+        role_name: str | None = None,
+        role_password: str | None = None,
+    ):
+        """Resets a database in the content db cluster by dropping all user-defined objects."""
+        # This SQL script contains the logic to drop all user-defined objects in the
+        # database, which includes views, tables, sequences, functions, and types
+        # (such as enums). This effectiely resets the database to a clean slate.
+        drop_objects_sql_script = """
+        DO $$
+        DECLARE
+            obj RECORD;
+        BEGIN
+            -- Drop views
+            FOR obj IN
+                SELECT table_name
+                FROM information_schema.views
+                WHERE table_schema = 'public'
+            LOOP
+                EXECUTE format('DROP VIEW IF EXISTS public.%I CASCADE', obj.table_name);
+            END LOOP;
+
+            -- Drop tables (this also drops RLS policies and constraints)
+            FOR obj IN
+                SELECT tablename
+                FROM pg_tables
+                WHERE schemaname = 'public'
+            LOOP
+                EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', obj.tablename);
+            END LOOP;
+
+            -- Drop sequences
+            FOR obj IN
+                SELECT sequencename
+                FROM pg_sequences
+                WHERE schemaname = 'public'
+            LOOP
+                EXECUTE format('DROP SEQUENCE IF EXISTS public.%I CASCADE', obj.sequencename);
+            END LOOP;
+
+            -- Drop functions (includes overloaded ones)
+            FOR obj IN
+                SELECT p.oid::regprocedure::text AS funcsig
+                FROM pg_proc p
+                JOIN pg_namespace n ON p.pronamespace = n.oid
+                WHERE n.nspname = 'public'
+            LOOP
+                EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', obj.funcsig);
+            END LOOP;
+
+            -- Drop user-defined composite and enum types
+            FOR obj IN
+                SELECT t.typname
+                FROM pg_type t
+                JOIN pg_namespace n ON t.typnamespace = n.oid
+                WHERE n.nspname = 'public'
+                AND t.typtype IN ('e', 'c')  -- e = enum, c = composite
+            LOOP
+                EXECUTE format('DROP TYPE IF EXISTS public.%I CASCADE', obj.typname);
+            END LOOP;
+        END $$;
+        """
+        # Execute the SQL script to drop all user-defined objects in the database
+        try:
+            engine = (
+                self._engine_for_provisioned_db_as_user(
+                    db_name, role_name, role_password
+                )
+                if role_name is not None and role_password is not None
+                else self._engine_for_provisioned_db_as_superuser(db_name)
+            )
+            with engine.begin() as conn:
+                # Ensure we are not in a transaction
+                conn = conn.execution_options(autocommit=False)
+                conn.execute(text("ROLLBACK"))
+                # Execute the SQL script to drop all user-defined objects
+                conn.execute(text(drop_objects_sql_script))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Could not reset database. Error: {e}"
+            )
+
+    def run_sql_on_database(
+        self, db_name: str, role_name: str, role_password: str, sql: str
+    ):
+        """
+        Runs SQL on a target database as a role.
+        """
+        try:
+            engine = self._engine_for_provisioned_db_as_user(
+                db_name, role_name, role_password
+            )
+            with engine.begin() as conn:
+                # Ensure we are not in a transaction
+                conn = conn.execution_options(autocommit=False)
+                conn.execute(text("ROLLBACK"))
+                # Execute the SQL
+                conn.execute(text(sql))
+        except Exception as e:
+            # Directly raise the SQL error up
+            raise ContentDatabaseTransactionException(f"{e}")
+
+    def db_url_for_provisioned_db(
+        self, db_name: str, role_name: str, role_password: str
+    ) -> str:
+        """Generates the database URL for a provisioned database."""
+        return f"postgresql+psycopg2://{role_name}:{role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}"
+
     def _engine_for_provisioned_db_as_superuser(self, db_name: str) -> Engine:
         """Generates the engine for a provisioned database as a superuser."""
         return create_engine(
-            f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}",
+            self.db_url_for_provisioned_db(
+                db_name, env.ADMIN_DB_USER, env.ADMIN_DB_PASSWORD
+            ),
+            echo=not in_production(),
+        )
+
+    def _engine_for_provisioned_db_as_user(
+        self, db_name: str, role_name: str, role_password: str
+    ) -> Engine:
+        """Generates the engine for a provisioned database as a superuser."""
+        return create_engine(
+            self.db_url_for_provisioned_db(db_name, role_name, role_password),
             echo=not in_production(),
         )
 

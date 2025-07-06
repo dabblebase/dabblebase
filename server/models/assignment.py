@@ -22,3 +22,18 @@ class RenameRequest(BaseModel):
 
     assignment_id: int
     name: str
+
+
+class TestConfigurationSQLRequest(BaseModel):
+    """Model that represents a request to test the configuration SQL for an assignment."""
+
+    assignment_id: int
+    sql: str
+
+
+class TestConfigurationSQLResponse(BaseModel):
+    """Model that represents a response to testing the configuration SQL for an assignment."""
+
+    success: bool
+    error_message: str | None = None
+    db_url: str | None = None

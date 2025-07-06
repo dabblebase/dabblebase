@@ -86,7 +86,7 @@ def test_admin_engine() -> Engine:
     return create_engine(_admin_db_url(test_admin_database))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_content_engine() -> Engine:
     test_content_database = f"{env.CONTENT_DB_DATABASE}_test"
     reset_database(test_content_database, env.CONTENT_DB_USER, _content_db_url)

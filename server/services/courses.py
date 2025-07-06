@@ -154,7 +154,7 @@ class CourseService:
             .where(AssignmentEntity.course_id == course_id)
             .options(joinedload(AssignmentEntity.projects))
         )
-        assignments = self._admin_db.scalars(assignments_query).all()
+        assignments = self._admin_db.scalars(assignments_query).unique().all()
 
         # Query and delete the course from the database
         query = select(CourseEntity).where(CourseEntity.id == course_id)

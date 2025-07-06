@@ -9,7 +9,13 @@ from ..services.content_db_cluster import (
 )
 from ..services.project import auth_crypto as crypto
 from ..models.auth import Subject
-from ..models.assignment import CreateDraftRequest, CreateDraftResponse, RenameRequest
+from ..models.assignment import (
+    CreateDraftRequest,
+    CreateDraftResponse,
+    RenameRequest,
+    TestConfigurationSQLRequest,
+    TestConfigurationSQLResponse,
+)
 from ..database import admin_db_session
 from sqlalchemy.orm import Session
 from .exceptions import (
@@ -64,12 +70,19 @@ class AssignmentService:
                 self._content_db_cluster_svc.provision_database(test_db_name)
             )
             # Create a read-only role for the test database
+            # Note: The read-only role should be provisioned by the admin role so that items that
+            # are created by the admin role are viewable by the read-only role.
             view_role_name = ContentDatabaseNamingConventions.name_for_assignment_test_db_readonly_role(
                 assignment.id
             )
             view_role_password = crypto.generate_secure_password()
             self._content_db_cluster_svc.provision_role_for_database(
-                test_db_name, view_role_name, view_role_password, readonly=True
+                test_db_name,
+                view_role_name,
+                view_role_password,
+                readonly=True,
+                issuer_role_name=admin_role_name,
+                issuer_role_password=admin_role_password,
             )
 
             # Encrypt the admin and view role passwords
@@ -110,7 +123,7 @@ class AssignmentService:
     def rename(self, subject: Subject, request: RenameRequest):
         """Renames an assignment"""
         # Check for admin permissions
-        self._courses_svc.verify_subject_has_permissions_for_course(
+        assignment = self._get_assignment_and_verify_permissions(
             subject, request.assignment_id, CourseMembershipRole.ADMIN
         )
 
@@ -120,13 +133,104 @@ class AssignmentService:
                 "Assignment name must be at least 1 character long."
             )
 
-        # Fetch the assignment
-        assignment = self._admin_db.query(AssignmentEntity).get(request.assignment_id)
-        if not assignment:
-            raise ResourceNotFoundException(
-                f"Assignment with ID {request.assignment_id} not found."
-            )
-
         # Update the assignment name
         assignment.name = request.name
         self._admin_db.commit()
+
+    def test_configuration_sql(
+        self, subject: Subject, request: TestConfigurationSQLRequest
+    ) -> TestConfigurationSQLResponse:
+        """Tests the configuration SQL for an assignment."""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, request.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Ensure the assignment has a test database and roles configured
+        if (
+            assignment.test_db_name is None
+            or assignment.test_db_admin_role_name is None
+            or assignment.encrypted_test_db_admin_role_password is None
+            or assignment.test_db_view_role_name is None
+            or assignment.encrypted_test_db_view_role_password is None
+        ):
+            raise ResourceNotFoundException(
+                f"Assignment with ID {request.assignment_id} does not have a valid configuration."
+            )
+
+        # Validate the SQL input
+        if not request.sql.strip():
+            raise InputValidationException("SQL cannot be empty.")
+        ...  # TODO: any other important validation here
+
+        # Get the roles for the assignment
+        assignment_owner_role = assignment.test_db_admin_role_name
+        assignment_owner_password = self._content_db_cluster_svc.decrypt_role_password(
+            assignment.encrypted_test_db_admin_role_password, assignment.id
+        )
+        assignment_view_role = assignment.test_db_view_role_name
+        assignment_view_password = self._content_db_cluster_svc.decrypt_role_password(
+            assignment.encrypted_test_db_view_role_password, assignment.id
+        )
+
+        # Reset the database
+        self._content_db_cluster_svc.reset_database(
+            assignment.test_db_name, assignment_owner_role, assignment_owner_password
+        )
+
+        # Add the new draft SQL running into the database object
+        assignment.draft_project_configuration_sql = request.sql
+        assignment.draft_project_configuration_sql_succeeded = None
+        assignment.draft_project_configuration_sql_error = None
+        self._admin_db.commit()
+
+        # Try to execute the SQL against the test database
+        try:
+            self._content_db_cluster_svc.run_sql_on_database(
+                assignment.test_db_name,
+                assignment_owner_role,
+                assignment_owner_password,
+                request.sql,
+            )
+            # If successful, update the draft SQL success status
+            assignment.draft_project_configuration_sql_succeeded = True
+            assignment.draft_project_configuration_sql_error = None
+
+            # Return result
+            return TestConfigurationSQLResponse(
+                success=True,
+                db_url=self._content_db_cluster_svc.db_url_for_provisioned_db(
+                    assignment.test_db_name,
+                    assignment_view_role,
+                    assignment_view_password,
+                ),
+            )
+        except ContentDatabaseTransactionException as e:
+            # If an error occurs, update the draft SQL error status
+            assignment.draft_project_configuration_sql_succeeded = False
+            assignment.draft_project_configuration_sql_error = str(e)
+
+            # Return the error response
+            return TestConfigurationSQLResponse(
+                success=False,
+                error_message=str(e),
+                db_url=None,
+            )
+        finally:
+            self._admin_db.commit()
+
+    def _get_assignment_and_verify_permissions(
+        self, subject: Subject, assignment_id: int, min_role: CourseMembershipRole
+    ) -> AssignmentEntity:
+        """Fetches an assignment and verifies the user's permissions."""
+        assignment: AssignmentEntity | None = self._admin_db.query(
+            AssignmentEntity
+        ).get(assignment_id)
+        if not assignment:
+            raise ResourceNotFoundException(
+                f"Assignment with ID {assignment_id} not found."
+            )
+        self._courses_svc.verify_subject_has_permissions_for_course(
+            subject, assignment.course_id, min_role
+        )
+        return assignment
