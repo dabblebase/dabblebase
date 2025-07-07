@@ -593,3 +593,188 @@ def test_publish_already_published(
     """Tests that publishing an already published assignment raises an exception."""
     with pytest.raises(InputValidationException):
         assignment_svc.publish(instructor_user.to_subject(), published_assignment.id)
+
+
+def test_delete(assignment_svc: AssignmentService):
+    """Tests that an assignment can be deleted."""
+    # Load all of the data for checking that the deletion worked
+    assignment_svc.publish(instructor_user.to_subject(), draft_group_assignment.id)
+    published_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_group_assignment.id)
+    assert published_assignment is not None
+
+    projects = (
+        assignment_svc._admin_db.query(ProjectEntity)
+        .filter(ProjectEntity.assignment_id == draft_group_assignment.id)
+        .all()
+    )
+    project_db_credentials = [
+        (
+            project.db_name,
+            project.admin_role_name,
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_admin_role_password, published_assignment.id
+            ),
+            project.student_role_name,
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_student_role_password, published_assignment.id
+            ),
+        )
+        for project in projects
+    ]
+
+    # Delete the assignment and check that it was deleted
+    assignment_svc.delete(instructor_user.to_subject(), draft_group_assignment.id)
+
+    deleted_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_group_assignment.id)
+    assert deleted_assignment is None
+
+    for (
+        db_name,
+        admin_role_name,
+        admin_role_password,
+        student_role_name,
+        student_role_password,
+    ) in project_db_credentials:
+        db_url = f"postgresql+psycopg2://{admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}"
+        engine = create_engine(db_url, echo=True)
+        with pytest.raises(Exception):
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+        db_url = f"postgresql+psycopg2://{student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}"
+        engine = create_engine(db_url, echo=True)
+        with pytest.raises(Exception):
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+
+
+def test_unpublish(
+    assignment_svc: AssignmentService,
+):
+    """Tests that an assignment can be unpublished."""
+    # Collect all of the data needed for checking that the unpublish worked
+    assignment_svc.publish(instructor_user.to_subject(), draft_indiv_assignment.id)
+    published_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_indiv_assignment.id)
+    assert published_assignment is not None
+    projects = (
+        assignment_svc._admin_db.query(ProjectEntity)
+        .filter(ProjectEntity.assignment_id == draft_group_assignment.id)
+        .all()
+    )
+    project_db_credentials = [
+        (
+            project.db_name,
+            project.admin_role_name,
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_admin_role_password, published_assignment.id
+            ),
+            project.student_role_name,
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_student_role_password, published_assignment.id
+            ),
+        )
+        for project in projects
+    ]
+
+    # Unpublish the assignment
+    assignment_svc.unpublish(instructor_user.to_subject(), draft_indiv_assignment.id)
+    unpublished_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_indiv_assignment.id)
+    assert unpublished_assignment is not None
+    assert unpublished_assignment.state == AssignmentState.UNPUBLISHED
+
+    for (
+        db_name,
+        admin_role_name,
+        admin_role_password,
+        student_role_name,
+        student_role_password,
+    ) in project_db_credentials:
+        db_url = f"postgresql+psycopg2://{admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}"
+        engine = create_engine(db_url, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+
+        db_url = f"postgresql+psycopg2://{student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db_name}"
+        engine = create_engine(db_url, echo=True)
+        with pytest.raises(Exception):
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT 1"))
+                assert result.scalar() == 1
+
+
+def test_unpublish_not_published(
+    assignment_svc: AssignmentService,
+):
+    """Tests that unpublishing an assignment that is not published raises an exception."""
+    with pytest.raises(InputValidationException):
+        assignment_svc.unpublish(
+            instructor_user.to_subject(), draft_indiv_assignment.id
+        )
+
+
+def test_republish(
+    assignment_svc: AssignmentService,
+):
+    """Tests that an assignment can be republished."""
+    # Get all of the data needed for checking that the republish worked
+    assignment_svc.publish(instructor_user.to_subject(), draft_indiv_assignment.id)
+    published_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_indiv_assignment.id)
+    assert published_assignment is not None
+    assignment_svc.unpublish(instructor_user.to_subject(), published_assignment.id)
+    projects = (
+        assignment_svc._admin_db.query(ProjectEntity)
+        .filter(ProjectEntity.assignment_id == draft_indiv_assignment.id)
+        .all()
+    )
+
+    # Republish the assignment and check that it was republished
+    assignment_svc.republish(instructor_user.to_subject(), published_assignment.id)
+
+    republished_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_indiv_assignment.id)
+    assert republished_assignment is not None
+    assert republished_assignment.state == AssignmentState.PUBLISHED
+
+    for project in projects:
+        admin_role_password = (
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_admin_role_password, project.assignment_id
+            )
+        )
+        db_url = f"postgresql+psycopg2://{project.admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+        engine = create_engine(db_url, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+
+        student_role_password = (
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_student_role_password, project.assignment_id
+            )
+        )
+        db_url = f"postgresql+psycopg2://{project.student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+        engine = create_engine(db_url, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+
+
+def test_republish_not_unpublished(
+    assignment_svc: AssignmentService,
+):
+    """Tests that republishing an assignment that is not unpublished raises an exception."""
+    with pytest.raises(InputValidationException):
+        assignment_svc.republish(
+            instructor_user.to_subject(), draft_indiv_assignment.id
+        )

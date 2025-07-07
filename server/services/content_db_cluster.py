@@ -178,6 +178,45 @@ class ContentDbClusterService(BaseContentService):
         finally:
             conn.commit()
 
+    def delete_role_for_database(self, role_name: str):
+        """Deletes a role from the database."""
+        try:
+            # Drop the role using the engine
+            with self._content_cluster_engine.connect().execution_options(
+                isolation_level="AUTOCOMMIT"
+            ) as conn:
+                conn.execute(text(f"DROP ROLE IF EXISTS {role_name}"))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Could not delete role for database. Error: {e}"
+            )
+
+    def lock_role_for_database(self, role_name: str):
+        """Locks a role in the database by revoking all privileges."""
+        try:
+            # Revoke all privileges from the role using the engine
+            with self._content_cluster_engine.connect().execution_options(
+                isolation_level="AUTOCOMMIT"
+            ) as conn:
+                conn.execute(text(f"ALTER ROLE {role_name} NOLOGIN"))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Could not lock role for database. Error: {e}"
+            )
+
+    def unlock_role_for_database(self, role_name: str):
+        """Unlocks a role in the database by granting all privileges."""
+        try:
+            # Grant all privileges to the role using the engine
+            with self._content_cluster_engine.connect().execution_options(
+                isolation_level="AUTOCOMMIT"
+            ) as conn:
+                conn.execute(text(f"ALTER ROLE {role_name} LOGIN"))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Could not unlock role for database. Error: {e}"
+            )
+
     def reset_database(
         self,
         db_name: str,

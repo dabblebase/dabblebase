@@ -421,7 +421,108 @@ class AssignmentService:
         assignment.state = AssignmentState.PUBLISHED
         self._admin_db.commit()
 
-    def delete(self, subject: Subject, assignment_id: int): ...
+    def delete(self, subject: Subject, assignment_id: int):
+        """
+        Deletes the database and all roles associated with them.
+
+        This could also potentially be a very expensive operation, so like
+        publish, delete will be run as a Celery background task. See the
+        `/tasks` directory for the Celery task definition.
+        """
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+        # Delete all projects associated with the assignment
+        projects = (
+            self._admin_db.query(ProjectEntity)
+            .filter_by(assignment_id=assignment.id)
+            .all()
+        )
+        for project in projects:
+            # Delete the database and roles associated with the project
+            self._content_db_cluster_svc.delete_database(project.db_name)
+            self._content_db_cluster_svc.delete_role_for_database(
+                project.student_role_name
+            )
+            self._content_db_cluster_svc.delete_role_for_database(
+                project.admin_role_name
+            )
+            self._admin_db.delete(project)
+
+        # Delete the assignment's test db
+        if assignment.test_db_name:
+            self._content_db_cluster_svc.delete_database(assignment.test_db_name)
+        if assignment.test_db_admin_role_name and assignment.test_db_view_role_name:
+            self._content_db_cluster_svc.delete_role_for_database(
+                assignment.test_db_admin_role_name
+            )
+            self._content_db_cluster_svc.delete_role_for_database(
+                assignment.test_db_view_role_name
+            )
+        self._admin_db.delete(assignment)
+        self._admin_db.commit()
+
+    def unpublish(self, subject: Subject, assignment_id: int):
+        """
+        Unpublishes an assignment, which means locking the student roles from the database
+        to prevent students from accessing their projects, but the database and admin roles
+        are still preserved (for grading)
+        """
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Ensure that the assignment is published
+        if assignment.state != AssignmentState.PUBLISHED:
+            raise InputValidationException(
+                "Assignment is not published and cannot be unpublished."
+            )
+
+        # Remove student roles from all projects
+        projects = (
+            self._admin_db.query(ProjectEntity)
+            .filter_by(assignment_id=assignment.id)
+            .all()
+        )
+        for project in projects:
+            # Delete the student role for the project
+            self._content_db_cluster_svc.lock_role_for_database(
+                project.student_role_name
+            )
+
+        # Update the assignment state
+        assignment.state = AssignmentState.UNPUBLISHED
+        self._admin_db.commit()
+
+    def republish(self, subject: Subject, assignment_id: int):
+        """Republishes an unpublished assignment"""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Ensure that the assignment is published
+        if assignment.state != AssignmentState.UNPUBLISHED:
+            raise InputValidationException(
+                "Only unpublished assignments can be republished."
+            )
+
+        # Add the student roles back to the database
+        projects = (
+            self._admin_db.query(ProjectEntity)
+            .filter_by(assignment_id=assignment.id)
+            .all()
+        )
+        for project in projects:
+            self._content_db_cluster_svc.unlock_role_for_database(
+                project.student_role_name
+            )
+
+        # Update the assignment state
+        assignment.state = AssignmentState.PUBLISHED
+        self._admin_db.commit()
 
     def _get_assignment_and_verify_permissions(
         self, subject: Subject, assignment_id: int, min_role: CourseMembershipRole

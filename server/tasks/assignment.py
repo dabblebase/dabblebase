@@ -11,3 +11,11 @@ def publish_assignment(
 ):
     """Celery task to publish an assignment."""
     assignment_svc.publish(subject, assignment_id)
+
+
+@celery_app.task(name="assignment.delete")
+def delete_assignment(
+    assignment_svc: AssignmentService, subject: Subject, assignment_id: int
+):
+    """Celery task to delete an assignment."""
+    assignment_svc.delete(subject, assignment_id)
