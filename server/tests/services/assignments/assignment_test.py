@@ -7,6 +7,7 @@ from ....entities import (
     AssignmentState,
     ProjectGroupEntity,
     ProjectGroupMemberEntity,
+    ProjectEntity,
 )
 from ....models.assignment import *
 from ....services import AssignmentService
@@ -19,6 +20,10 @@ from ..seed import (
     student_1_user,
     course,
     nocourse_student_user,
+    draft_indiv_assignment,
+    draft_group_assignment,
+    published_assignment,
+    group_assignment_group_1,
 )
 
 from .assignment_data import (
@@ -46,6 +51,35 @@ from ....services.exceptions import (
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
+
+
+def test__create_project(assignment_svc: AssignmentService):
+    """Tests that a project is created when an assignment is created."""
+    project = assignment_svc._create_project(
+        assignment_id=draft_group_assignment.id, group_id=group_assignment_group_1.id
+    )
+    assert project is not None
+    admin_role_password = assignment_svc._content_db_cluster_svc.decrypt_role_password(
+        project.encrypted_admin_role_password,
+        project.assignment_id,
+    )
+    db_url = f"postgresql+psycopg2://{project.admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+    engine = create_engine(db_url, echo=True)
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.scalar() == 1
+
+    student_role_password = (
+        assignment_svc._content_db_cluster_svc.decrypt_role_password(
+            project.encrypted_student_role_password,
+            project.assignment_id,
+        )
+    )
+    db_url = f"postgresql+psycopg2://{project.student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+    engine = create_engine(db_url, echo=True)
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.scalar() == 1
 
 
 def test_create_draft(admin_db_session: Session, assignment_svc: AssignmentService):
@@ -467,3 +501,95 @@ def test_delete_group_not_found(
         assignment_svc.delete_group(
             instructor_user.to_subject(), delete_group_request_not_found
         )
+
+
+def test_publish_individual(
+    assignment_svc: AssignmentService,
+):
+    """Tests that publishing an assignment works correctly for an indiv assignment."""
+    assignment_svc.publish(instructor_user.to_subject(), draft_indiv_assignment.id)
+    published_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_indiv_assignment.id)
+    assert published_assignment is not None
+    assert published_assignment.state == AssignmentState.PUBLISHED
+
+    projects = (
+        assignment_svc._admin_db.query(ProjectEntity)
+        .filter(ProjectEntity.assignment_id == draft_indiv_assignment.id)
+        .all()
+    )
+    assert len(projects) == 2
+
+    for project in projects:
+        admin_role_password = (
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_admin_role_password, project.assignment_id
+            )
+        )
+        db_url = f"postgresql+psycopg2://{project.admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+        engine = create_engine(db_url, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+
+        student_role_password = (
+            assignment_svc._content_db_cluster_svc.decrypt_role_password(
+                project.encrypted_student_role_password, project.assignment_id
+            )
+        )
+        db_url = f"postgresql+psycopg2://{project.student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+        engine = create_engine(db_url, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+
+
+def test_publish_group(
+    assignment_svc: AssignmentService,
+):
+    """Tests that publishing an assignment works correctly for a group assignment."""
+    assignment_svc.publish(instructor_user.to_subject(), draft_group_assignment.id)
+    published_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
+        AssignmentEntity
+    ).get(draft_group_assignment.id)
+    assert published_assignment is not None
+    assert published_assignment.state == AssignmentState.PUBLISHED
+
+    projects = (
+        assignment_svc._admin_db.query(ProjectEntity)
+        .filter(ProjectEntity.assignment_id == draft_group_assignment.id)
+        .all()
+    )
+    assert len(projects) == 1
+
+    project = projects[0]
+    assert project.group_id is not None
+
+    admin_role_password = assignment_svc._content_db_cluster_svc.decrypt_role_password(
+        project.encrypted_admin_role_password, project.assignment_id
+    )
+    db_url = f"postgresql+psycopg2://{project.admin_role_name}:{admin_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+    engine = create_engine(db_url, echo=True)
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.scalar() == 1
+
+    student_role_password = (
+        assignment_svc._content_db_cluster_svc.decrypt_role_password(
+            project.encrypted_student_role_password, project.assignment_id
+        )
+    )
+    db_url = f"postgresql+psycopg2://{project.student_role_name}:{student_role_password}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{project.db_name}"
+    engine = create_engine(db_url, echo=True)
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        assert result.scalar() == 1
+
+
+def test_publish_already_published(
+    assignment_svc: AssignmentService,
+):
+    """Tests that publishing an already published assignment raises an exception."""
+    with pytest.raises(InputValidationException):
+        assignment_svc.publish(instructor_user.to_subject(), published_assignment.id)

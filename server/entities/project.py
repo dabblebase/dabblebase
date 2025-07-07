@@ -37,6 +37,18 @@ class ProjectEntity(BaseAdminEntity):
     # Name of the schema associated to the project
     db_name: Mapped[str] = mapped_column(String, nullable=False)
 
+    # Admin role name for the project
+    admin_role_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Password for the admin role for the project
+    encrypted_admin_role_password: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Name of the student role for the project
+    student_role_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Password for the student role for the project
+    encrypted_student_role_password: Mapped[str] = mapped_column(String, nullable=False)
+
     # Encrypted private key used for project-specific authentication
     auth_encrypted_private_key: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -52,6 +64,10 @@ class ProjectEntityModel(BaseModel):
     group_id: Optional[int]
     project_user_id: Optional[int]
     db_name: str
+    admin_role_name: str
+    encrypted_admin_role_password: str
+    student_role_name: str
+    encrypted_student_role_password: str
     auth_encrypted_private_key: str
     auth_public_key: str
 
@@ -63,6 +79,10 @@ class ProjectEntityModel(BaseModel):
             group_id=self.group_id,
             project_user_id=self.project_user_id,
             db_name=self.db_name,
+            admin_role_name=self.admin_role_name,
+            encrypted_admin_role_password=self.encrypted_admin_role_password,
+            student_role_name=self.student_role_name,
+            encrypted_student_role_password=self.encrypted_student_role_password,
             auth_encrypted_private_key=self.auth_encrypted_private_key,
             auth_public_key=self.auth_public_key,
         )

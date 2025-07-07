@@ -13,3 +13,4 @@ black >=24.4.2, <24.5.0
 setuptools >=70.0.0, <70.1.0
 bs4 >=0.0.2
 cryptography
+celery >=5.5.3

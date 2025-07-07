@@ -106,9 +106,18 @@ draft_group_assignment = AssignmentEntityModel(
     course_id=course.id,
 )
 
+published_assignment = AssignmentEntityModel(
+    id=3,
+    name="Published Assignment",
+    state=AssignmentState.PUBLISHED,
+    is_group_assignment=False,
+    course_id=course.id,
+)
+
 assignments: list[AssignmentEntityModel] = [
     draft_indiv_assignment,
     draft_group_assignment,
+    published_assignment,
 ]
 
 # Sample assignment groups and members

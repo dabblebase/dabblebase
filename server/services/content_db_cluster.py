@@ -346,7 +346,7 @@ class ContentDatabaseNamingConventions:
         return f"assignment_{assignment_id}_project_{project_id}"
 
     @classmethod
-    def name_for_assignment_db_user_role(
-        cls, assignment_id: int, project_id: int, user_id: int
+    def name_for_assignment_db_student_role(
+        cls, assignment_id: int, project_id: int
     ) -> str:
-        return f"assignment_{assignment_id}_project_{project_id}_user_{user_id}"
+        return f"assignment_{assignment_id}_project_{project_id}_student"

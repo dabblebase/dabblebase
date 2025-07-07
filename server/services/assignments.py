@@ -6,6 +6,9 @@ from ..entities import (
     AssignmentEntity,
     ProjectGroupEntity,
     ProjectGroupMemberEntity,
+    AssignmentState,
+    ProjectEntity,
+    CourseMemberEntity,
 )
 from ..services.courses import CourseService
 from ..services.content_db_cluster import (
@@ -34,6 +37,7 @@ from .exceptions import (
     ResourceNotFoundException,
     InputValidationException,
 )
+from ..env import env
 
 
 class AssignmentService:
@@ -70,13 +74,15 @@ class AssignmentService:
         self._admin_db.add(assignment)
         self._admin_db.commit()
 
+        # Create a test database for the assignment
+        test_db_name = ContentDatabaseNamingConventions.name_for_assignment_test_db(
+            assignment.id
+        )
+
         # Wrap everything in a try / except block so that the creation of the draft
         # assignment can be reverted if operations in the content database fails
         try:
-            # Create a test database for the assignment
-            test_db_name = ContentDatabaseNamingConventions.name_for_assignment_test_db(
-                assignment.id
-            )
+
             admin_role_name, admin_role_password = (
                 self._content_db_cluster_svc.provision_database(test_db_name)
             )
@@ -362,7 +368,58 @@ class AssignmentService:
         self._admin_db.delete(group)
         self._admin_db.commit()
 
-    def publish(self, subject: Subject): ...
+    def publish(self, subject: Subject, assignment_id: int):
+        """
+        Publishes an assignment, creating all projects for students.
+
+        Note: This is a potentially very expensive operation, since publishing an
+        assignment might kick off the creation of hundreds of databases. So,
+        this is a celery background task that can be run asynchronously, and a
+        separate polling endpoint should be used to check the status of the task.
+
+        The Celery task is defined in the `/tasks` directory.
+        """
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Ensure that the assignment is a draft
+        if assignment.state != AssignmentState.DRAFT:
+            raise InputValidationException(
+                "Assignment is already published and cannot be republished."
+            )
+
+        if assignment.is_group_assignment:
+            # If the assignment is a group assignment, create a project for each
+            # group.
+            groups = (
+                self._admin_db.query(ProjectGroupEntity)
+                .filter_by(assignment_id=assignment.id)
+                .all()
+            )
+            for group in groups:
+                # Create a project for each group
+                self._create_project(assignment_id=assignment.id, group_id=group.id)
+        else:
+            # If the assignment is an individual assignment, create a project for each student.
+            students = (
+                self._admin_db.query(CourseMemberEntity)
+                .where(
+                    CourseMemberEntity.course_id == assignment.course_id,
+                    CourseMemberEntity.role == CourseMembershipRole.STUDENT,
+                )
+                .all()
+            )
+            for student in students:
+                # Create a project for each student
+                self._create_project(
+                    assignment_id=assignment.id, user_id=student.user_id
+                )
+
+        # Update the assignment details
+        assignment.state = AssignmentState.PUBLISHED
+        self._admin_db.commit()
 
     def delete(self, subject: Subject, assignment_id: int): ...
 
@@ -381,3 +438,89 @@ class AssignmentService:
             subject, assignment.course_id, min_role
         )
         return assignment
+
+    def _create_project(
+        self,
+        assignment_id: int,
+        group_id: int | None = None,
+        user_id: int | None = None,
+    ) -> ProjectEntity:
+        """Creates a project for an assignment."""
+        # Create a new project
+        project = ProjectEntity(
+            assignment_id=assignment_id,
+            group_id=group_id,
+            user_id=user_id,
+            db_name="",  # Will be set later after database creation
+            admin_role_name="",  # Will be set later after database creation
+            encrypted_admin_role_password="",  # Will be set later after database creation
+            student_role_name="",  # Will be set later after database creation
+            encrypted_student_role_password="",  # Will be set later after database creation
+            auth_encrypted_private_key="",  # Will be set later after key generation
+            auth_public_key="",  # Will be set later after key generation
+        )
+        self._admin_db.add(project)
+        self._admin_db.flush()  # Flush to get the project ID before proceeding
+
+        # Handle creating the authentication private key and public key
+        private_key, public_key = crypto.generate_serialied_rsa_keypair()
+        encryption_key = crypto.hkdf_derive_encryption_key(
+            env.AUTH_MASTER_SECRET, project.id
+        )
+        encrypted_private_key = crypto.encrypt(private_key, encryption_key)
+
+        # Update the project with the encrypted private key and public key
+        project.auth_encrypted_private_key = encrypted_private_key
+        project.auth_public_key = public_key
+
+        # Create the database for the project
+        db_name = ContentDatabaseNamingConventions.name_for_assignment_db(
+            assignment_id=assignment_id, project_id=project.id
+        )
+        project.db_name = db_name
+
+        # Wrap everything in a try / except block so that the creation of the draft
+        # assignment can be reverted if operations in the content database fails
+        try:
+            admin_role_name, admin_role_password = (
+                self._content_db_cluster_svc.provision_database(db_name)
+            )
+            encrypted_admin_role_password = (
+                self._content_db_cluster_svc.encrypt_role_password(
+                    admin_role_password, assignment_id
+                )
+            )
+
+            # Add a student user to the database
+            student_role_name = (
+                ContentDatabaseNamingConventions.name_for_assignment_db_student_role(
+                    assignment_id=assignment_id, project_id=project.id
+                )
+            )
+            student_role_password = crypto.generate_secure_password()
+            encrypted_student_role_password = (
+                self._content_db_cluster_svc.encrypt_role_password(
+                    student_role_password, assignment_id
+                )
+            )
+            self._content_db_cluster_svc.provision_role_for_database(
+                db_name, student_role_name, student_role_password
+            )
+
+            # Set the credentials for the project
+            project.admin_role_name = admin_role_name
+            project.encrypted_admin_role_password = encrypted_admin_role_password
+            project.student_role_name = student_role_name
+            project.encrypted_student_role_password = encrypted_student_role_password
+
+            self._admin_db.commit()
+
+            return project
+
+        except ContentDatabaseTransactionException as e:
+            # If an error occurs, we need to roll back the assignment creation including the
+            # database provision, if it succeded.
+            self._content_db_cluster_svc.delete_database(db_name)
+            # Remove the draft project from the database
+            ...
+            raise e

@@ -3,6 +3,7 @@
 import sqlalchemy
 from sqlalchemy.orm import Session
 from .env import env, in_production
+from celery import Celery
 
 
 def _admin_db_url(database: str = env.ADMIN_DB_DATABASE) -> str:

@@ -23,6 +23,8 @@ class EnvModel(BaseModel):
     CONTENT_DB_DATABASE: str
     JWT_SECRET: str
     AUTH_MASTER_SECRET: str
+    REDIS_HOST: str
+    REDIS_PORT: str
 
 
 # Load envirnment variables from .env file upon module start.
@@ -54,6 +56,8 @@ env = EnvModel(
     CONTENT_DB_DATABASE=get_env("CONTENT_DB_DATABASE"),
     JWT_SECRET=get_env("JWT_SECRET"),
     AUTH_MASTER_SECRET=get_env("AUTH_MASTER_SECRET"),
+    REDIS_HOST=get_env("REDIS_HOST"),
+    REDIS_PORT=get_env("REDIS_PORT"),
 )
 
 
