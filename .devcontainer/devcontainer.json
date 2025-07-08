@@ -21,7 +21,9 @@
                 "dbaeumer.vscode-eslint",
                 "esbenp.prettier-vscode",
                 "ckolkman.vscode-postgres",
-                "ms-azuretools.vscode-docker"
+                "ms-azuretools.vscode-docker",
+                "bradlc.vscode-tailwindcss",
+                "austenc.tailwind-docs"
             ],
             "settings": {
                 "editor.formatOnSave": true,
