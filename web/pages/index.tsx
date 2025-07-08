@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
+import LandingLayout from "@/components/landing/layout/layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -115,3 +116,8 @@ export default function Home() {
     </div>
   );
 }
+
+/** Assign the home page the landing page layout */
+Home.getLayout = function getLayout(page: React.ReactNode) {
+  return <LandingLayout>{page}</LandingLayout>;
+};

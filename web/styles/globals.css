@@ -1,6 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -36,9 +36,9 @@
   --sidebar-accent-foreground: hsl(0 0% 12.5490%);
   --sidebar-border: hsl(0 0% 87.4510%);
   --sidebar-ring: hsl(315 63.6364% 91.3725%);
-  --font-sans: Open Sans, sans-serif;
-  --font-serif: Source Serif 4, serif;
-  --font-mono: IBM Plex Mono, monospace;
+  --font-sans: "Open Sans", sans-serif;
+  --font-serif: "Source Serif 4", serif;
+  --font-mono: "IBM Plex Mono", monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 0px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 0px 0px 0px hsl(0 0% 0% / 0.00);
@@ -85,8 +85,8 @@
   --sidebar-accent-foreground: hsl(0 0% 98.0392%);
   --sidebar-border: hsl(0 0% 16.0784%);
   --sidebar-ring: hsl(315 63.6364% 91.3725%);
-  --font-sans: Outfit, sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: "Outfit", sans-serif;
+  --font-serif: ui-serif, Georgia, "Cambria", "Times New Roman", Times, serif;
   --font-mono: monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 0px 0px 0px hsl(0 0% 0% / 0.00);
@@ -161,4 +161,13 @@
 
 body {
   letter-spacing: var(--tracking-normal);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
