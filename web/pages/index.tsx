@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
-import LandingLayout from "@/components/landing/layout/layout";
+import LandingLayout from "@/components/layouts/landing-layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

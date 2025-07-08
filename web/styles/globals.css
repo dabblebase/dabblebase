@@ -85,9 +85,9 @@
   --sidebar-accent-foreground: hsl(0 0% 98.0392%);
   --sidebar-border: hsl(0 0% 16.0784%);
   --sidebar-ring: hsl(315 63.6364% 91.3725%);
-  --font-sans: "Outfit", sans-serif;
-  --font-serif: ui-serif, Georgia, "Cambria", "Times New Roman", Times, serif;
-  --font-mono: monospace;
+  --font-sans: "Open Sans", sans-serif;
+  --font-serif: "Source Serif 4", serif;
+  --font-mono: "IBM Plex Mono", monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 0px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 0px 0px 0px hsl(0 0% 0% / 0.00);

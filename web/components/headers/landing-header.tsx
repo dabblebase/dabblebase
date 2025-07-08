@@ -9,15 +9,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import LogoHeaderSection from "./logo-header-section";
 
 export function LandingHeader() {
   return (
     <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-4">
-        <div className="flex items-center gap-2 font-bold">
-          {/* <Logo className="size-6" /> */}
-          <span>dabblebase</span>
-        </div>
+        <LogoHeaderSection />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
