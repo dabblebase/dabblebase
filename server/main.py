@@ -1,9 +1,9 @@
 """Exposes the main FastAPI server for the application."""
 
 from fastapi import FastAPI
-from .api import health
+from .api import health, auth
 from .api.project import openapi_tags as project_openapi_tags
-from .api.project import auth
+from .api.project import auth as project_auth
 
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -17,7 +17,7 @@ app = FastAPI(
 # Use GZip middleware for compressing HTML responses over the network
 app.add_middleware(GZipMiddleware)
 
-feature_apis = [health, auth]
+feature_apis = [health, auth, project_auth]
 
 for feature_api in feature_apis:
     app.include_router(feature_api.api)

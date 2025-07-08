@@ -1,36 +1,41 @@
-"""Auth endpoints for projects."""
+"""Auth endpoint for the web application."""
 
 import requests
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response, RedirectResponse
 from fastapi.exceptions import HTTPException
-from ..project import tag
-from ...env import env
-from ...services import ProjectAuthService
-from ...entities import UserAuthenticationProvider
+from ..env import env
+from ..services import ProjectAuthService
+from ..entities import UserAuthenticationProvider
 from datetime import datetime, timedelta, timezone
+from ..services.project import auth_crypto as crypto
 
-api = APIRouter(prefix="/api/project/{project_id}/auth")
+tag = "Authentication"
+openapi_tags = {
+    "name": tag,
+    "description": "Production systems monitor these endpoints upon deployment, and at regular intervals, to ensure the service is running.",
+}
+
+api = APIRouter(prefix="/auth")
 
 UNC_AUTH_SERVER_HOST = "csxl.unc.edu"
 
 
-@api.get("/unc", tags=[tag])
-def auth_unc(project_id: int, continue_to: str = "/"):
+@api.get("/unc", tags=[tag], include_in_schema=False)
+def auth_unc(continue_to: str = "/"):
     """
     This endpoint initiates authentication to the UNC SSO proxy for a project. The proxy will
     respond with an authorization token and call the `/unc/callback` endpoint for Tinkerbase
     to continue the UNC SSO authentication flow.
     """
-    origin = f"{env.HOST}/api/project/{project_id}/auth/unc/callback"
+    origin = f"{env.HOST}/auth/unc/callback"
     return RedirectResponse(
         f"https://{UNC_AUTH_SERVER_HOST}/auth?origin={origin}&continue_to={continue_to}"
     )
 
 
-@api.get("/unc/callback", tags=[tag])
+@api.get("/unc/callback", tags=[tag], include_in_schema=False)
 def auth_unc_callback(
-    project_id: int,
     token: str,
     continue_to: str = "/",
     project_auth_svc: ProjectAuthService = Depends(),
@@ -55,9 +60,7 @@ def auth_unc_callback(
 
     # Issue a new JWT token on behalf of Tinkerbase for the user to be authenticated with
     # the project, signed with the project's private auth key.
-    jwt_token = project_auth_svc.generate_token_for_project_auth_request(
-        project_id, user.id
-    )
+    jwt_token = _generate_token_for_auth_request(user.id)
 
     # Return a response that contains the JWT token and redirects the user while setting
     # the token in cookies.
@@ -78,3 +81,16 @@ def auth_unc_callback(
     )
 
     return response
+
+
+def _generate_token_for_auth_request(user_id: int) -> str:
+    """
+    Generates a token for a user to authenticate with a project. Unlike auth with projects,
+    this token is signed using the auth secret and signed symmetrically.
+    """
+
+    # Retrieve the project's encrypted private authentication key and decrypt it.
+    # Recall the encryption key was derived from the master secret and project ID.
+    payload = {"id": user_id}
+    token = crypto.sign_jwt_with_symmetric_key(payload, env.AUTH_MASTER_SECRET)
+    return token

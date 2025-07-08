@@ -1,22 +1,14 @@
 "use client";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import LogoHeaderSection from "./logo-header-section";
+import Link from "next/link";
 
 export function LandingHeader() {
   return (
     <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
       <div className="flex h-(--header-height) w-full items-center gap-2 px-4">
         <LogoHeaderSection />
-        <Separator orientation="vertical" className="mr-2 h-4" />
+        {/* <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -29,10 +21,14 @@ export function LandingHeader() {
               <BreadcrumbPage>Data Fetching</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb> */}
         <div className="flex flex-row gap-3 w-full sm:ml-auto sm:w-auto">
-          <Button variant="outline">Sign in</Button>
-          <Button variant="default">Get started</Button>
+          <Button asChild variant="outline">
+            <Link href="/login">Sign in</Link>
+          </Button>
+          <Button asChild variant="default">
+            <Link href="/login">Get started</Link>
+          </Button>
         </div>
         {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
       </div>
