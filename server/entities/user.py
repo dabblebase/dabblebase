@@ -3,8 +3,10 @@
 from enum import Enum
 from sqlalchemy import Integer, String
 from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
+from ..models.auth import Subject
+from pydantic import BaseModel
 
 
 class UserAuthenticationProvider(Enum):
@@ -24,9 +26,50 @@ class UserEntity(BaseAdminEntity):
 
     # Unique ID
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
     # Unique identifier for the user according to their chosen authentication provider
     auth_id: Mapped[str] = mapped_column(String, nullable=False)
+
     # Auth provider used for the user
     auth_provider: Mapped[UserAuthenticationProvider] = mapped_column(
         SQLAlchemyEnum(UserAuthenticationProvider), nullable=False
     )
+
+    # Course memberships of the user (relationship with `course_members` table)
+    course_memberships: Mapped[list["CourseMemberEntity"]] = relationship(  # type: ignore
+        back_populates="user", cascade="all,delete"
+    )
+
+    # Project users the user is tied to (project user relates to the db role that gives them access to a project)
+    group_project_memberships: Mapped[list["ProjectGroupMemberEntity"]] = relationship(  # type: ignore
+        back_populates="user", cascade="all,delete"
+    )
+
+    # Individual project the user is tied to (individual project relates to the db role that gives them access to a project)
+    individual_projects: Mapped[list["ProjectEntity"]] = relationship(  # type: ignore
+        back_populates="user", cascade="all,delete"
+    )
+
+    def to_subject(self) -> Subject:
+        """Convert the user entity to a Subject object."""
+        return Subject(id=self.id)
+
+
+class UserEntityModel(BaseModel):
+    """Pydantic model for the `UserEntity`."""
+
+    id: int
+    auth_id: str
+    auth_provider: UserAuthenticationProvider
+
+    def to_entity(self) -> UserEntity:
+        """Convert the Pydantic model to a UserEntity."""
+        return UserEntity(
+            id=self.id,
+            auth_id=self.auth_id,
+            auth_provider=self.auth_provider,
+        )
+
+    def to_subject(self) -> Subject:
+        """Convert the user entity model to a Subject object."""
+        return Subject(id=self.id)
