@@ -6,3 +6,4 @@ from .content_db_cluster import (
     ContentDbClusterService,
     ContentDatabaseNamingConventions,
 )
+from .profile import ProfileService

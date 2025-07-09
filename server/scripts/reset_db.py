@@ -10,10 +10,12 @@ Usage: python3 -m scripts.reset_db
 
 import sys
 import sqlalchemy
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..env import env
 from ..entities import BaseAdminEntity
 from ..database import admin_db_engine
+from ..tests.services.seed import insert_seed_data
 
 # Ensures that the script can only be run in development mode
 if env.MODE != "development":
@@ -35,3 +37,8 @@ with admin_cluster_engine.connect() as connection:
 # Create the tables in the admin database
 BaseAdminEntity.metadata.drop_all(admin_db_engine())
 BaseAdminEntity.metadata.create_all(admin_db_engine())
+
+# Insert seed data
+# TODO: Separate seed data for testing and for demo purposes
+session = Session(admin_db_engine())
+insert_seed_data(session)

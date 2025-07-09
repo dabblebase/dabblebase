@@ -1,5 +1,6 @@
 """Service used to interface with courses"""
 
+from typing import Set
 from .base import BaseService
 from ..entities import (
     CourseMembershipRole,
@@ -7,9 +8,12 @@ from ..entities import (
     ProjectEntity,
     AssignmentEntity,
 )
+from ..entities.course import CourseTermType
 from fastapi import Depends
 from ..models.auth import Subject
 from ..models.course import (
+    GetDashboardResponse_Course,
+    GetDashboardResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -46,6 +50,123 @@ class CourseService:
         self._admin_db = admin_db
         self._content_db_cluster_svc = content_db_cluster_svc
 
+    def get_dashboard(self, subject: Subject) -> GetDashboardResponse:
+        """Returns the dashboard for the user"""
+        # Query for courses where the user is a staff member
+        staff_courses_query = (
+            select(CourseEntity)
+            .join(CourseMemberEntity)
+            .where(
+                CourseMemberEntity.user_id == subject.id,
+                CourseMemberEntity.role.in_(
+                    [
+                        CourseMembershipRole.OWNER,
+                        CourseMembershipRole.ADMIN,
+                        CourseMembershipRole.STAFF,
+                    ]
+                ),
+            )
+            .options(
+                joinedload(CourseEntity.members).load_only(CourseMemberEntity.user_id),
+                joinedload(CourseEntity.assignments).load_only(AssignmentEntity.id),
+            )
+        )
+        staff_courses = self._admin_db.scalars(staff_courses_query).unique().all()
+        staff_courses_response = [
+            GetDashboardResponse_Course(
+                id=course.id,
+                code=course.code,
+                name=course.name,
+                num_students=len(course.members),
+                num_assignments=len(course.assignments),
+            )
+            for course in staff_courses
+        ]
+
+        # Query for courses where the user is a student
+        student_courses_query = (
+            select(CourseEntity)
+            .join(CourseMemberEntity)
+            .where(
+                CourseMemberEntity.user_id == subject.id,
+                CourseMemberEntity.role == CourseMembershipRole.STUDENT,
+            )
+            .options(
+                joinedload(CourseEntity.assignments).load_only(AssignmentEntity.id),
+            )
+        )
+        student_courses = self._admin_db.scalars(student_courses_query).unique().all()
+        student_courses_response = [
+            GetDashboardResponse_Course(
+                id=course.id,
+                code=course.code,
+                name=course.name,
+                num_assignments=len(course.assignments),
+            )
+            for course in student_courses
+        ]
+
+        # Separate by terms and order terms by year and type
+        staff_courses_terms: Set[tuple[int, CourseTermType]] = set()
+        staff_courses_by_term: dict[str, list[GetDashboardResponse_Course]] = {}
+        student_courses_terms: Set[tuple[int, CourseTermType]] = set()
+        student_courses_by_term: dict[str, list[GetDashboardResponse_Course]] = {}
+
+        # Group courses by term and convert to response objects
+        for course in staff_courses:
+            term = f"{course.term_type.value} {course.term_year}"
+            staff_courses_terms.add((course.term_year, course.term_type))
+            staff_courses_by_term[term] = staff_courses_by_term.get(term, []) + [
+                GetDashboardResponse_Course(
+                    id=course.id,
+                    code=course.code,
+                    name=course.name,
+                    num_students=len(course.members),
+                    num_assignments=len(course.assignments),
+                )
+            ]
+        for course in student_courses:
+            term = f"{course.term_type.value} {course.term_year}"
+            student_courses_terms.add((course.term_year, course.term_type))
+            student_courses_by_term[term] = student_courses_by_term.get(term, []) + [
+                GetDashboardResponse_Course(
+                    id=course.id,
+                    code=course.code,
+                    name=course.name,
+                    num_assignments=len(course.assignments),
+                )
+            ]
+
+        # Sort terms by year, then type
+        staff_courses_terms_sorted = sorted(
+            staff_courses_terms, key=lambda x: (x[0], x[1].order()), reverse=True
+        )
+        student_courses_terms_sorted = sorted(
+            student_courses_terms, key=lambda x: (x[0], x[1].order()), reverse=True
+        )
+        staff_courses_terms_list = [
+            f"{term_type.value} {term_year}"
+            for term_year, term_type in staff_courses_terms_sorted
+        ]
+        student_courses_terms_list = [
+            f"{term_type.value} {term_year}"
+            for term_year, term_type in student_courses_terms_sorted
+        ]
+
+        # Return the dashboard response
+        return GetDashboardResponse(
+            most_recent_staff_course_term=(
+                staff_courses_terms_list[0] if staff_courses_terms_list else None
+            ),
+            most_recent_student_course_term=(
+                student_courses_terms_list[0] if student_courses_terms_list else None
+            ),
+            other_staff_course_terms=staff_courses_terms_list[1:],
+            other_student_course_terms=student_courses_terms_list[1:],
+            staff_courses=staff_courses_by_term,
+            student_courses=student_courses_by_term,
+        )
+
     def create_course(
         self, subject: Subject, request: CreateCourseRequest
     ) -> CreateCourseResponse:
@@ -56,12 +177,6 @@ class CourseService:
         if not request.code.isalnum():
             raise InputValidationException(
                 "Course code must be alphanumeric and cannot contain spaces or special characters."
-            )
-
-        # Validate that the inputted date range is valid
-        if request.start_date >= request.end_date:
-            raise InputValidationException(
-                "The start date must be before the end date."
             )
 
         # Generate a random 6-digit invite code for a course
@@ -81,8 +196,8 @@ class CourseService:
             code=request.code,
             name=request.name,
             description=request.description,
-            start_date=request.start_date,
-            end_date=request.end_date,
+            term_type=request.term_type,
+            term_year=request.term_year,
             invite_code=invite_code,
         )
 
@@ -120,12 +235,6 @@ class CourseService:
                 "Course code must be alphanumeric and cannot contain spaces or special characters."
             )
 
-        # Validate that the inputted date range is valid
-        if request.start_date >= request.end_date:
-            raise InputValidationException(
-                "The start date must be before the end date."
-            )
-
         # Query the course from the database
         query = select(CourseEntity).where(CourseEntity.id == request.id)
         course = self._admin_db.scalars(query).one_or_none()
@@ -136,8 +245,8 @@ class CourseService:
         course.code = request.code
         course.name = request.name
         course.description = request.description
-        course.start_date = request.start_date
-        course.end_date = request.end_date
+        course.term_type = request.term_type
+        course.term_year = request.term_year
         self._admin_db.commit()
 
     def delete_course(self, subject: Subject, course_id: int):

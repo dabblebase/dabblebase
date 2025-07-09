@@ -17,10 +17,8 @@ from ..seed import (
 from .course_data import (
     create_course_request,
     create_course_request_invalid_code,
-    create_course_request_invalid_date_range,
     update_course_request,
     update_course_request_invalid_code,
-    update_course_request_invalid_date_range,
     update_course_request_not_found,
     add_user_to_course_request,
     add_user_to_course_request_already_member,
@@ -44,6 +42,20 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 
+def test_get_dashboard(course_svc: CourseService):
+    """Test getting the dashboard."""
+    # Test for a staff member
+    response = course_svc.get_dashboard(instructor_user.to_subject())
+    assert response is not None
+    assert len(response.staff_courses) == 1
+    assert len(response.student_courses) == 0
+    # Test for a student
+    response = course_svc.get_dashboard(student_1_user.to_subject())
+    assert response is not None
+    assert len(response.staff_courses) == 0
+    assert len(response.student_courses) == 1
+
+
 def test_create_course(admin_db_session: Session, course_svc: CourseService):
     """Tests creating a course."""
     response = course_svc.create_course(
@@ -62,14 +74,6 @@ def test_create_course_invalid_code(course_svc: CourseService):
     with pytest.raises(InputValidationException):
         course_svc.create_course(
             instructor_user.to_subject(), create_course_request_invalid_code
-        )
-
-
-def test_create_course_invalid_date_range(course_svc: CourseService):
-    """Ensure that creating a course with an invalid date range raises an error."""
-    with pytest.raises(InputValidationException):
-        course_svc.create_course(
-            instructor_user.to_subject(), create_course_request_invalid_date_range
         )
 
 
@@ -93,14 +97,6 @@ def test_updating_course_invalid_code(course_svc: CourseService):
         course_svc.update_course(
             instructor_user.to_subject(),
             update_course_request_invalid_code,
-        )
-
-
-def test_updating_course_invalid_date_range(course_svc: CourseService):
-    """Ensure that updating a course with an invalid date range raises an error."""
-    with pytest.raises(InputValidationException):
-        course_svc.update_course(
-            instructor_user.to_subject(), update_course_request_invalid_date_range
         )
 
 

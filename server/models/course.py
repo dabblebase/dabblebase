@@ -3,6 +3,28 @@
 from pydantic import BaseModel
 from datetime import datetime
 from ..entities import CourseMembershipRole
+from ..entities.course import CourseTermType
+
+
+class GetDashboardResponse_Course(BaseModel):
+    """Model that represents a course in the dashboard response."""
+
+    id: int
+    code: str
+    name: str
+    num_students: int | None = None
+    num_assignments: int
+
+
+class GetDashboardResponse(BaseModel):
+    """Model that represents a response for the dashboard endpoint."""
+
+    most_recent_staff_course_term: str | None
+    most_recent_student_course_term: str | None
+    other_staff_course_terms: list[str]
+    other_student_course_terms: list[str]
+    staff_courses: dict[str, list[GetDashboardResponse_Course]]
+    student_courses: dict[str, list[GetDashboardResponse_Course]]
 
 
 class CreateCourseRequest(BaseModel):
@@ -11,8 +33,8 @@ class CreateCourseRequest(BaseModel):
     code: str
     name: str
     description: str | None = None
-    start_date: datetime
-    end_date: datetime
+    term_type: CourseTermType
+    term_year: int
 
 
 class CreateCourseResponse(BaseModel):
@@ -31,8 +53,8 @@ class UpdateCourseRequest(BaseModel):
     code: str
     name: str
     description: str | None = None
-    start_date: datetime
-    end_date: datetime
+    term_type: CourseTermType
+    term_year: int
 
 
 class AddUserToCourseRequest(BaseModel):

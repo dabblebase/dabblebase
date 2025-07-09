@@ -4,6 +4,8 @@ import { parse } from "cookie";
 import jwt from "jsonwebtoken";
 import { GetServerSidePropsContext } from "next";
 import { env } from "./env";
+import { api } from "./api";
+import { useRouter } from "next/router";
 
 /**
  * Protects a route by checking for a valid authentication token from within
@@ -17,7 +19,6 @@ import { env } from "./env";
  *   return protectRoute(context, "/login");
  * }
  */
-
 export const protectRoute = (
   context: GetServerSidePropsContext,
   redirect: string
@@ -42,11 +43,57 @@ export const protectRoute = (
 
   // Verify the token
   try {
-    const user = jwt.verify(token, env.AUTH_MASTER_SECRET);
-    return { props: { user } };
+    const user = jwt.verify(token, env.AUTH_MASTER_SECRET) as { id: number };
+    return {
+      props: {
+        auth: {
+          userId: user.id,
+          isAuthenticated: true,
+        },
+      },
+    };
   } catch {
     return redirectResponse;
   }
 };
 
-export type AuthenticatedRouteProps = { user: { id: number } };
+export const getAuthState = (context: GetServerSidePropsContext): AuthState => {
+  const cookies = context.req.headers.cookie;
+  const parsed = cookies ? parse(cookies) : {};
+  const token = parsed["auth-token"];
+
+  if (!token) {
+    return { userId: null, isAuthenticated: false };
+  }
+
+  try {
+    const user = jwt.verify(token, env.AUTH_MASTER_SECRET) as { id: number };
+    return {
+      userId: user.id,
+      isAuthenticated: true,
+    };
+  } catch {
+    return { userId: null, isAuthenticated: false };
+  }
+};
+
+export type AuthState = {
+  userId: number | null;
+  isAuthenticated: boolean;
+};
+
+/** Type including the props for an authenticated route. */
+export type AuthenticatedRouteProps = {
+  auth: AuthState;
+};
+
+export const useLogOut = () => {
+  const router = useRouter();
+  const { mutate } = api.useMutation("post", "/auth/logout", {
+    onSuccess: () => {
+      router.push("/");
+    },
+  });
+  const logOut = () => mutate({});
+  return { logOut };
+};

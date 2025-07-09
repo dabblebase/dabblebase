@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { NextPage } from "next";
 import { ReactElement, ReactNode } from "react";
 import { Open_Sans, IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /** Import fonts used by the theme */
 const openSans = Open_Sans({
@@ -34,21 +35,26 @@ type AppPropsWithLayout = AppProps & {
 };
 
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
+  // Query client for React Query
+  const queryClient = new QueryClient();
+
   // Function to retrieve the component's assigned layout, if any
   const getLayout = Component.getLayout ?? ((page) => page);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <main
-        className={`${openSans.variable} ${ibmPlexMono.variable} ${sourceSerif4.variable}`}
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
       >
-        {getLayout(<Component {...pageProps} />)}
-      </main>
-    </ThemeProvider>
+        <main
+          className={`${openSans.variable} ${ibmPlexMono.variable} ${sourceSerif4.variable}`}
+        >
+          {getLayout(<Component {...pageProps} />)}
+        </main>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

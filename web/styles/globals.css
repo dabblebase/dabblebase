@@ -3,6 +3,11 @@
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
 
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(0 0% 9.0196%);

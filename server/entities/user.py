@@ -35,6 +35,16 @@ class UserEntity(BaseAdminEntity):
         SQLAlchemyEnum(UserAuthenticationProvider), nullable=False
     )
 
+    # Username
+    username: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Name
+    first_name: Mapped[str] = mapped_column(String, nullable=False)
+    last_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Email
+    email: Mapped[str] = mapped_column(String, nullable=False)
+
     # Course memberships of the user (relationship with `course_members` table)
     course_memberships: Mapped[list["CourseMemberEntity"]] = relationship(  # type: ignore
         back_populates="user", cascade="all,delete"
@@ -61,6 +71,10 @@ class UserEntityModel(BaseModel):
     id: int
     auth_id: str
     auth_provider: UserAuthenticationProvider
+    username: str
+    first_name: str
+    last_name: str
+    email: str
 
     def to_entity(self) -> UserEntity:
         """Convert the Pydantic model to a UserEntity."""
@@ -68,6 +82,10 @@ class UserEntityModel(BaseModel):
             id=self.id,
             auth_id=self.auth_id,
             auth_provider=self.auth_provider,
+            username=self.username,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            email=self.email,
         )
 
     def to_subject(self) -> Subject:

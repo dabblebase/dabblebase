@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import LogoHeaderSection from "./logo-header-section";
 import Link from "next/link";
+import UserHeaderSection from "./user-header-section";
 
 export function LandingHeader() {
   return (
@@ -22,15 +23,11 @@ export function LandingHeader() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb> */}
-        <div className="flex flex-row gap-3 w-full sm:ml-auto sm:w-auto">
-          <Button asChild variant="outline">
-            <Link href="/login">Sign in</Link>
-          </Button>
+        <UserHeaderSection>
           <Button asChild variant="default">
-            <Link href="/login">Get started</Link>
+            <Link href="/dashboard">Dashboard</Link>
           </Button>
-        </div>
-        {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
+        </UserHeaderSection>
       </div>
     </header>
   );
