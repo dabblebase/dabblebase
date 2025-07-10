@@ -11,6 +11,8 @@ from ..seed import (
 from ....models.course import *
 from datetime import datetime, timedelta
 
+get_dropdown_request = GetDropdownRequest(search="")
+
 create_course_request = CreateCourseRequest(
     code="TEST123",
     name="Test Course",

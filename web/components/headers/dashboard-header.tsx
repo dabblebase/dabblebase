@@ -4,7 +4,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "../ui/breadcrumb";
 import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
@@ -18,29 +17,17 @@ export function DashboardHeader({ children }: { children: ReactNode }) {
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">
+              <BreadcrumbLink href="/dashboard">
                 <GalleryVerticalEnd className="size-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
               <SlashIcon className="size-4 mx-1" />
             </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbPage>Courses</BreadcrumbPage>
-            </BreadcrumbItem>
             {children}
           </BreadcrumbList>
         </Breadcrumb>
         <UserHeaderSection />
-        {/* <div className="flex flex-row gap-3 w-full sm:ml-auto sm:w-auto">
-          <Button asChild variant="outline">
-            <Link href="/login">Sign in</Link>
-          </Button>
-          <Button asChild variant="default">
-            <Link href="/login">Get started</Link>
-          </Button>
-        </div> */}
-        {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
       </div>
     </header>
   );

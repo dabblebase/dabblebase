@@ -27,6 +27,30 @@ class GetDashboardResponse(BaseModel):
     student_courses: dict[str, list[GetDashboardResponse_Course]]
 
 
+class GetDropdownResponse_Course(BaseModel):
+    """Model that represents a course in the dropdown response."""
+
+    id: int
+    code: str
+    name: str
+    is_staff: bool
+
+
+class GetDropdownRequest(BaseModel):
+    """Model that represents a request for the dropdown endpoint."""
+
+    search: str
+    selected_course_id: int | None = None
+
+
+class GetDropdownResponse(BaseModel):
+    """Model that represents a dropdown response."""
+
+    terms: list[str]
+    selected_course: GetDropdownResponse_Course | None = None
+    courses: dict[str, list[GetDropdownResponse_Course]]
+
+
 class CreateCourseRequest(BaseModel):
     """Model that represents a request to create a course."""
 

@@ -15,6 +15,7 @@ from ..seed import (
     nocourse_student_user,
 )
 from .course_data import (
+    get_dropdown_request,
     create_course_request,
     create_course_request_invalid_code,
     update_course_request,
@@ -54,6 +55,24 @@ def test_get_dashboard(course_svc: CourseService):
     assert response is not None
     assert len(response.staff_courses) == 0
     assert len(response.student_courses) == 1
+
+
+def test_get_dropdown(course_svc: CourseService):
+    """Test getting the dropdown."""
+    response = course_svc.get_dropdown(
+        instructor_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.terms) == 1
+    assert len(response.courses) == 1
+
+    # Test for a student
+    response = course_svc.get_dropdown(
+        student_1_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.terms) == 1
+    assert len(response.courses) == 1
 
 
 def test_create_course(admin_db_session: Session, course_svc: CourseService):

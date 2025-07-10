@@ -14,6 +14,9 @@ from ..models.auth import Subject
 from ..models.course import (
     GetDashboardResponse_Course,
     GetDashboardResponse,
+    GetDropdownRequest,
+    GetDropdownResponse_Course,
+    GetDropdownResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -30,7 +33,7 @@ from .exceptions import (
     ResourceAlreadyExistsException,
     InputValidationException,
 )
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 import string
 import random
@@ -165,6 +168,99 @@ class CourseService:
             other_student_course_terms=student_courses_terms_list[1:],
             staff_courses=staff_courses_by_term,
             student_courses=student_courses_by_term,
+        )
+
+    def get_dropdown(
+        self, subject: Subject, request: GetDropdownRequest
+    ) -> GetDropdownResponse:
+        """Returns a list of courses for dropdowns"""
+        # Selected course
+        selected_course: GetDropdownResponse_Course | None = None
+        if request.selected_course_id:
+            self.verify_subject_has_permissions_for_course(
+                subject, request.selected_course_id, CourseMembershipRole.STUDENT
+            )
+            query = (
+                select(CourseMemberEntity)
+                .join(CourseEntity)
+                .where(
+                    CourseMemberEntity.user_id == subject.id,
+                    CourseMemberEntity.course_id == request.selected_course_id,
+                )
+                .options(joinedload(CourseMemberEntity.course))
+            )
+            membership = self._admin_db.scalars(query).one_or_none()
+            if membership:
+                course: CourseEntity = membership.course
+                selected_course = GetDropdownResponse_Course(
+                    id=course.id,
+                    code=course.code,
+                    name=course.name,
+                    is_staff=(
+                        membership.role
+                        in [
+                            CourseMembershipRole.OWNER,
+                            CourseMembershipRole.ADMIN,
+                            CourseMembershipRole.STAFF,
+                        ]
+                    ),
+                )
+
+        # Query for courses where the user is a staff member
+        query = (
+            select(CourseMemberEntity)
+            .join(CourseEntity)
+            .options(joinedload(CourseMemberEntity.course))
+            .where(CourseMemberEntity.user_id == subject.id)
+        )
+        if len(request.search) > 0:
+            query = query.where(
+                or_(
+                    CourseEntity.code.ilike(f"%{request.search}%"),
+                    CourseEntity.name.ilike(f"%{request.search}%"),
+                ),
+            )
+        memberships = self._admin_db.scalars(query).unique().all()
+
+        # Get the terms and create course model response
+        terms: Set[tuple[int, CourseTermType]] = set()
+        dropdown_response_courses: dict[str, list[GetDropdownResponse_Course]] = {}
+
+        for membership in memberships:
+            course: CourseEntity = membership.course
+            term = f"{course.term_type.value} {course.term_year}"
+            terms.add((course.term_year, course.term_type))
+            course_response = GetDropdownResponse_Course(
+                id=course.id,
+                code=course.code,
+                name=course.name,
+                is_staff=(
+                    membership.role
+                    in [
+                        CourseMembershipRole.OWNER,
+                        CourseMembershipRole.ADMIN,
+                        CourseMembershipRole.STAFF,
+                    ]
+                ),
+            )
+            dropdown_response_courses[term] = dropdown_response_courses.get(
+                term, []
+            ) + [course_response]
+
+        # Sort terms by year, then type
+        terms_sorted = sorted(terms, key=lambda x: (x[0], x[1].order()), reverse=True)
+        terms_list = [
+            f"{term_type.value} {term_year}" for term_year, term_type in terms_sorted
+        ]
+
+        # Sort courses within each term by role, where instructor and student roles are first, then by name.
+        for term, courses in dropdown_response_courses.items():
+            courses.sort(key=lambda c: (not c.is_staff, c.code.lower()))
+
+        return GetDropdownResponse(
+            terms=terms_list,
+            selected_course=selected_course,
+            courses=dropdown_response_courses,
         )
 
     def create_course(

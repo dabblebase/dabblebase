@@ -101,6 +101,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/dropdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dropdown */
+        get: operations["get_dropdown_api_course_dropdown_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/summary": {
         parameters: {
             query?: never;
@@ -159,6 +176,33 @@ export interface components {
             num_students?: number | null;
             /** Num Assignments */
             num_assignments: number;
+        };
+        /**
+         * GetDropdownResponse
+         * @description Model that represents a dropdown response.
+         */
+        GetDropdownResponse: {
+            /** Terms */
+            terms: string[];
+            selected_course?: components["schemas"]["GetDropdownResponse_Course"] | null;
+            /** Courses */
+            courses: {
+                [key: string]: components["schemas"]["GetDropdownResponse_Course"][];
+            };
+        };
+        /**
+         * GetDropdownResponse_Course
+         * @description Model that represents a course in the dropdown response.
+         */
+        GetDropdownResponse_Course: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Is Staff */
+            is_staff: boolean;
         };
         /**
          * GetProfileSummaryResponse
@@ -320,6 +364,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDashboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dropdown_api_course_dropdown_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                selected_course_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDropdownResponse"];
                 };
             };
             /** @description Validation Error */
