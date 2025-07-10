@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-from ..entities import CourseMembershipRole
+from ..entities import CourseMembershipRole, AssignmentState
 from ..entities.course import CourseTermType
 
 
@@ -41,6 +41,22 @@ class GetDropdownRequest(BaseModel):
 
     search: str
     selected_course_id: int | None = None
+
+
+class GetAssignmentsResponse_Assignment(BaseModel):
+    """Model that represents an assignment in the assignments response."""
+
+    id: int
+    name: str
+    is_group: bool
+    state: AssignmentState
+
+
+class GetAssignmentsResponse(BaseModel):
+    """Model that represents a response for the assignments endpoint."""
+
+    is_staff: bool
+    assignments: list[GetAssignmentsResponse_Assignment]
 
 
 class GetDropdownResponse(BaseModel):

@@ -16,6 +16,11 @@ class CourseMembershipRole(Enum):
     STAFF = "staff"
     STUDENT = "student"
 
+    @classmethod
+    def staff(cls):
+        """Return a set of roles that are considered staff."""
+        return {cls.OWNER, cls.ADMIN, cls.STAFF}
+
 
 class CourseMemberEntity(BaseAdminEntity):
     """Database model for the `course_members` table."""

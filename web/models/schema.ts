@@ -118,6 +118,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/{course_id}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assignments
+         * @description Get assignments for a specific course.
+         */
+        get: operations["get_assignments_api_course__course_id__assignments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/summary": {
         parameters: {
             query?: never;
@@ -139,6 +159,35 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AssignmentState
+         * @description Enum identifying the various states an assignment can be in.
+         * @enum {string}
+         */
+        AssignmentState: "draft" | "unpublished" | "published";
+        /**
+         * GetAssignmentsResponse
+         * @description Model that represents a response for the assignments endpoint.
+         */
+        GetAssignmentsResponse: {
+            /** Is Staff */
+            is_staff: boolean;
+            /** Assignments */
+            assignments: components["schemas"]["GetAssignmentsResponse_Assignment"][];
+        };
+        /**
+         * GetAssignmentsResponse_Assignment
+         * @description Model that represents an assignment in the assignments response.
+         */
+        GetAssignmentsResponse_Assignment: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Is Group */
+            is_group: boolean;
+            state: components["schemas"]["AssignmentState"];
+        };
         /**
          * GetDashboardResponse
          * @description Model that represents a response for the dashboard endpoint.
@@ -396,6 +445,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDropdownResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assignments_api_course__course_id__assignments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAssignmentsResponse"];
                 };
             };
             /** @description Validation Error */

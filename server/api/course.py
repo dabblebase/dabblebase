@@ -15,6 +15,7 @@ from ..models.course import (
     GetDashboardResponse,
     GetDropdownRequest,
     GetDropdownResponse,
+    GetAssignmentsResponse,
 )
 
 tag = "Courses"
@@ -44,3 +45,15 @@ def get_dropdown(
         subject,
         GetDropdownRequest(search=search, selected_course_id=selected_course_id),
     )
+
+
+@api.get("/{course_id}/assignments", tags=[tag])
+def get_assignments(
+    course_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> GetAssignmentsResponse:
+    """
+    Get assignments for a specific course.
+    """
+    return course_svc.get_assignments(subject, course_id)

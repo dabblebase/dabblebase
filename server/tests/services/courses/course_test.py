@@ -13,6 +13,7 @@ from ..seed import (
     student_1_user,
     course,
     nocourse_student_user,
+    assignments,
 )
 from .course_data import (
     get_dropdown_request,
@@ -73,6 +74,15 @@ def test_get_dropdown(course_svc: CourseService):
     assert response is not None
     assert len(response.terms) == 1
     assert len(response.courses) == 1
+
+
+def test_get_assignments(course_svc: CourseService):
+    """Test getting assignments for a course."""
+    response = course_svc.get_assignments(instructor_user.to_subject(), course.id)
+    assert response is not None
+    assert len(response.assignments) == len(
+        [assignment for assignment in assignments if assignment.course_id == course.id]
+    )
 
 
 def test_create_course(admin_db_session: Session, course_svc: CourseService):

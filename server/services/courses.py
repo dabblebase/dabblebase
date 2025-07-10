@@ -7,6 +7,7 @@ from ..entities import (
     CourseEntity,
     ProjectEntity,
     AssignmentEntity,
+    AssignmentState,
 )
 from ..entities.course import CourseTermType
 from fastapi import Depends
@@ -17,6 +18,8 @@ from ..models.course import (
     GetDropdownRequest,
     GetDropdownResponse_Course,
     GetDropdownResponse,
+    GetAssignmentsResponse_Assignment,
+    GetAssignmentsResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -61,13 +64,7 @@ class CourseService:
             .join(CourseMemberEntity)
             .where(
                 CourseMemberEntity.user_id == subject.id,
-                CourseMemberEntity.role.in_(
-                    [
-                        CourseMembershipRole.OWNER,
-                        CourseMembershipRole.ADMIN,
-                        CourseMembershipRole.STAFF,
-                    ]
-                ),
+                CourseMemberEntity.role.in_(CourseMembershipRole.staff()),
             )
             .options(
                 joinedload(CourseEntity.members).load_only(CourseMemberEntity.user_id),
@@ -262,6 +259,36 @@ class CourseService:
             selected_course=selected_course,
             courses=dropdown_response_courses,
         )
+
+    def get_assignments(
+        self, subject: Subject, course_id: int
+    ) -> GetAssignmentsResponse:
+        """Returns a list of assignments for a course"""
+        # Check permissions
+        user_role = self.verify_subject_has_permissions_for_course(
+            subject, course_id, CourseMembershipRole.STUDENT
+        )
+        is_staff = user_role in CourseMembershipRole.staff()
+
+        # Query the assignments for the course
+        query = select(AssignmentEntity).where(AssignmentEntity.course_id == course_id)
+        # If the user is just a student, filter only for published assignments
+        if user_role == CourseMembershipRole.STUDENT:
+            query = query.where(AssignmentEntity.state == AssignmentState.PUBLISHED)
+        assignments = self._admin_db.scalars(query).all()
+
+        # Build response model and return
+        assignment_models = [
+            GetAssignmentsResponse_Assignment(
+                id=assignment.id,
+                name=assignment.name,
+                is_group=assignment.is_group_assignment,
+                state=assignment.state,
+            )
+            for assignment in assignments
+        ]
+
+        return GetAssignmentsResponse(assignments=assignment_models, is_staff=is_staff)
 
     def create_course(
         self, subject: Subject, request: CreateCourseRequest
