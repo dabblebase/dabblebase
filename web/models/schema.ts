@@ -226,6 +226,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/{assignment_id}/configuration-sql": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Configuration Sql
+         * @description Get the configuration SQL for an assignment.
+         */
+        get: operations["get_configuration_sql_api_assignment__assignment_id__configuration_sql_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assignment/draft": {
         parameters: {
             query?: never;
@@ -256,6 +276,86 @@ export interface paths {
          * @description Rename an existing assignment.
          */
         put: operations["rename_api_assignment__assignment_id__rename_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/configuration-sql/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Test Configuration Sql
+         * @description Test the configuration SQL for an assignment.
+         */
+        put: operations["test_configuration_sql_api_assignment__assignment_id__configuration_sql_test_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/configuration-sql/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Configuration Sql
+         * @description Save the configuration SQL for an assignment.
+         */
+        put: operations["save_configuration_sql_api_assignment__assignment_id__configuration_sql_save_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/configuration-sql/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Remove Configuration Sql
+         * @description Reset the configuration SQL for an assignment.
+         */
+        put: operations["remove_configuration_sql_api_assignment__assignment_id__configuration_sql_remove_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/configuration-sql/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reset Configuration Sql
+         * @description Reset the configuration SQL for an assignment.
+         */
+        put: operations["reset_configuration_sql_api_assignment__assignment_id__configuration_sql_reset_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -321,6 +421,22 @@ export interface components {
             /** Is Group */
             is_group: boolean;
             state: components["schemas"]["AssignmentState"];
+        };
+        /**
+         * GetConfigurationSQLResponse
+         * @description Model that represents a response for getting the configuration SQL of an assignment.
+         */
+        GetConfigurationSQLResponse: {
+            /** Sql */
+            sql?: string | null;
+            /** Sql Draft */
+            sql_draft?: string | null;
+            /** Sql Draft Success */
+            sql_draft_success?: boolean | null;
+            /** Sql Draft Error */
+            sql_draft_error?: string | null;
+            /** Db Url */
+            db_url?: string | null;
         };
         /**
          * GetDashboardResponse
@@ -445,6 +561,26 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * TestConfigurationSQLRequest
+         * @description Model that represents a request to test the configuration SQL for an assignment.
+         */
+        TestConfigurationSQLRequest: {
+            /** Sql */
+            sql: string;
+        };
+        /**
+         * TestConfigurationSQLResponse
+         * @description Model that represents a response to testing the configuration SQL for an assignment.
+         */
+        TestConfigurationSQLResponse: {
+            /** Success */
+            success: boolean;
+            /** Error Message */
+            error_message?: string | null;
+            /** Db Url */
+            db_url?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -840,6 +976,37 @@ export interface operations {
             };
         };
     };
+    get_configuration_sql_api_assignment__assignment_id__configuration_sql_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetConfigurationSQLResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_draft_api_assignment_draft_post: {
         parameters: {
             query?: never;
@@ -878,6 +1045,134 @@ export interface operations {
             query: {
                 name: string;
             };
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_configuration_sql_api_assignment__assignment_id__configuration_sql_test_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestConfigurationSQLRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestConfigurationSQLResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_configuration_sql_api_assignment__assignment_id__configuration_sql_save_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_configuration_sql_api_assignment__assignment_id__configuration_sql_remove_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_configuration_sql_api_assignment__assignment_id__configuration_sql_reset_put: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 assignment_id: number;

@@ -43,6 +43,16 @@ class GetDraftResponse(BaseModel):
     is_group: bool
 
 
+class GetConfigurationSQLResponse(BaseModel):
+    """Model that represents a response for getting the configuration SQL of an assignment."""
+
+    sql: str | None = None
+    sql_draft: str | None = None
+    sql_draft_success: bool | None = None
+    sql_draft_error: str | None = None
+    db_url: str | None = None
+
+
 class CreateDraftRequest(BaseModel):
     """Model that represents a request to create a draft."""
 
@@ -67,7 +77,6 @@ class RenameRequest(BaseModel):
 class TestConfigurationSQLRequest(BaseModel):
     """Model that represents a request to test the configuration SQL for an assignment."""
 
-    assignment_id: int
     sql: str
 
 
@@ -77,12 +86,6 @@ class TestConfigurationSQLResponse(BaseModel):
     success: bool
     error_message: str | None = None
     db_url: str | None = None
-
-
-class SaveConfigurationSQLRequest(BaseModel):
-    """Model that represents a request to save the configuration SQL for an assignment."""
-
-    assignment_id: int
 
 
 class CreateGroupRequest(BaseModel):

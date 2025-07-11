@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { useFocusOnCondition } from "@/hooks/use-focus-on-condition";
 import { api } from "@/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, CircleSlash, Pencil, X } from "lucide-react";
+import { Check, CircleCheck, CircleSlash, Pencil, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import AssignmentSetupSQLDialog from "@/components/assignment/pages/draft/assignment-setup-sql-dialog/assignment-setup-sql-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AssignmentDraftPage({
   assignmentId,
@@ -28,6 +30,18 @@ export default function AssignmentDraftPage({
       },
     },
   });
+
+  const { data: sqlData, isLoading: sqlDataLoading } = api.useQuery(
+    "get",
+    "/api/assignment/{assignment_id}/configuration-sql",
+    {
+      params: {
+        path: {
+          assignment_id: assignmentId,
+        },
+      },
+    }
+  );
 
   // Hooks and mutations for renaming the  assignment
   const [renamingAssignment, setRenamingAssignment] = useState(false);
@@ -113,6 +127,7 @@ export default function AssignmentDraftPage({
                       variant="default"
                       size="icon"
                       onClick={renameAssignmentHandler}
+                      disabled={renameText.length === 0}
                     >
                       <Check />
                     </Button>
@@ -134,24 +149,41 @@ export default function AssignmentDraftPage({
           </div>
           <div className="flex flex-col gap-3">
             <p className="text-lg font-bold">Configuration</p>
-            <Card>
-              <CardContent className="px-4">
-                <div className="flex flex-row gap-5 items-center">
-                  <CircleSlash className="size-6 flex-shrink-0 text-accent-foreground/60" />
-                  <div className="flex flex-col flex-grow gap-1">
-                    <p className="font-semibold">
-                      Run SQL on database creation
-                    </p>
-                    <p className="text-accent-foreground/80">
-                      Set a SQL script to run on each student&apos;s project
-                      database when created. This is useful for pre-populating
-                      student databases with tables, data, and more.
-                    </p>
+            {sqlDataLoading && (
+              <Skeleton className="w-full h-[150px] rounded-xl" />
+            )}
+            {!!sqlData && (
+              <Card>
+                <CardContent className="px-4">
+                  <div className="flex flex-row gap-5 items-center">
+                    {!!sqlData.sql ? (
+                      <CircleCheck className="size-6 flex-shrink-0 text-accent-foreground/60" />
+                    ) : (
+                      <CircleSlash className="size-6 flex-shrink-0 text-accent-foreground/60" />
+                    )}
+                    <div className="flex flex-col flex-grow gap-1">
+                      <p className="font-semibold">
+                        Run SQL on database creation
+                      </p>
+                      <p className="text-accent-foreground/80">
+                        Set a SQL script to run on each student&apos;s project
+                        database when created. This is useful for pre-populating
+                        student databases with tables, data, and more.
+                      </p>
+                    </div>
+                    <AssignmentSetupSQLDialog assignmentId={assignmentId}>
+                      <Button className="flex-shrink-0">
+                        {!!sqlData.sql ? "Edit" : "Set up"}
+                      </Button>
+                    </AssignmentSetupSQLDialog>
                   </div>
-                  <Button className="flex-shrink-0">Set up</Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+            <em>
+              Once the assignment is published, this configuration cannot be
+              changed.
+            </em>
           </div>
         </>
       )}

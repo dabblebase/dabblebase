@@ -120,7 +120,7 @@ export default function CreateAssignmentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-semibold">
-                    Assignment Type
+                    Assignment type
                   </FormLabel>
                   <Card className="border-input">
                     <CardContent className="px-3">

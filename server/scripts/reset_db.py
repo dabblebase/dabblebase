@@ -16,6 +16,7 @@ from ..env import env
 from ..entities import BaseAdminEntity
 from ..database import admin_db_engine
 from ..tests.services.seed import insert_seed_data
+from ..tests.services.conftest import reset_database
 
 # Ensures that the script can only be run in development mode
 if env.MODE != "development":
@@ -30,9 +31,17 @@ admin_cluster_engine = sqlalchemy.create_engine(url=admin_cluster_url, echo=True
 with admin_cluster_engine.connect() as connection:
     connection.execute(sqlalchemy.text("COMMIT"))  # Get out of transaction mode
     connection.execute(text(f"DROP DATABASE IF EXISTS {env.ADMIN_DB_DATABASE}"))
+
 with admin_cluster_engine.connect() as connection:
     connection.execute(sqlalchemy.text("COMMIT"))  # Get out of transaction mode
     connection.execute(text(f"CREATE DATABASE {env.ADMIN_DB_DATABASE}"))
+
+# Run the reset script on the content database
+reset_database(
+    database=None,
+    user=env.CONTENT_DB_USER,
+    database_url_fn=lambda _: f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}",
+)
 
 # Create the tables in the admin database
 BaseAdminEntity.metadata.drop_all(admin_db_engine())

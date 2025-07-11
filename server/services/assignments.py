@@ -24,12 +24,12 @@ from ..models.assignment import (
     GetDropdownResponse,
     GetViewResponse,
     GetDraftResponse,
+    GetConfigurationSQLResponse,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
     TestConfigurationSQLRequest,
     TestConfigurationSQLResponse,
-    SaveConfigurationSQLRequest,
     CreateGroupRequest,
     CreateGroupResponse,
     AddGroupMemberRequest,
@@ -190,6 +190,52 @@ class AssignmentService:
             is_group=assignment.is_group_assignment,
         )
 
+    def get_configuration_sql(
+        self, subject: Subject, assignment_id: int
+    ) -> GetConfigurationSQLResponse:
+        """Gets the configuration SQL for an assignment draft."""
+        # Get the assignment
+        assignment: AssignmentEntity | None = (
+            self._admin_db.query(AssignmentEntity)
+            .where(
+                AssignmentEntity.id == assignment_id,
+                AssignmentEntity.state == AssignmentState.DRAFT,
+            )
+            .one_or_none()
+        )
+
+        if not assignment:
+            raise ResourceNotFoundException(
+                f"Draft assignment with ID {assignment_id} not found."
+            )
+
+        # Check for permission
+        self._courses_svc.verify_subject_has_permissions_for_course(
+            subject, assignment.course_id, CourseMembershipRole.ADMIN
+        )
+
+        # Return the configuration SQL and database URL if available
+        db_url = (
+            self._content_db_cluster_svc.db_url_for_provisioned_db(
+                assignment.test_db_name,
+                assignment.test_db_view_role_name,
+                self._content_db_cluster_svc.decrypt_role_password(
+                    assignment.encrypted_test_db_view_role_password, assignment.id
+                ),
+            )
+            if assignment.test_db_name is not None
+            and assignment.test_db_view_role_name is not None
+            and assignment.encrypted_test_db_view_role_password is not None
+            else None
+        )
+        return GetConfigurationSQLResponse(
+            sql=assignment.project_configuration_sql,
+            sql_draft=assignment.draft_project_configuration_sql,
+            sql_draft_success=assignment.draft_project_configuration_sql_succeeded,
+            sql_draft_error=assignment.draft_project_configuration_sql_error,
+            db_url=db_url,
+        )
+
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest
     ) -> CreateDraftResponse:
@@ -291,12 +337,12 @@ class AssignmentService:
         self._admin_db.commit()
 
     def test_configuration_sql(
-        self, subject: Subject, request: TestConfigurationSQLRequest
+        self, subject: Subject, assignment_id: int, request: TestConfigurationSQLRequest
     ) -> TestConfigurationSQLResponse:
         """Tests the configuration SQL for an assignment."""
         # Check for admin permissions
         assignment = self._get_assignment_and_verify_permissions(
-            subject, request.assignment_id, CourseMembershipRole.ADMIN
+            subject, assignment_id, CourseMembershipRole.ADMIN
         )
 
         # Ensure the assignment has a test database and roles configured
@@ -308,7 +354,7 @@ class AssignmentService:
             or assignment.encrypted_test_db_view_role_password is None
         ):
             raise ResourceNotFoundException(
-                f"Assignment with ID {request.assignment_id} does not have a valid configuration."
+                f"Assignment with ID {assignment_id} does not have a valid configuration."
             )
 
         # Validate the SQL input
@@ -363,6 +409,20 @@ class AssignmentService:
             assignment.draft_project_configuration_sql_succeeded = False
             assignment.draft_project_configuration_sql_error = str(e)
 
+            # Reset the database back to the working SQL if any
+            if assignment.project_configuration_sql is not None:
+                self._content_db_cluster_svc.reset_database(
+                    assignment.test_db_name,
+                    assignment_owner_role,
+                    assignment_owner_password,
+                )
+                self._content_db_cluster_svc.run_sql_on_database(
+                    assignment.test_db_name,
+                    assignment_owner_role,
+                    assignment_owner_password,
+                    assignment.project_configuration_sql,
+                )
+
             # Return the error response
             return TestConfigurationSQLResponse(
                 success=False,
@@ -372,13 +432,11 @@ class AssignmentService:
         finally:
             self._admin_db.commit()
 
-    def save_configuration_sql(
-        self, subject: Subject, request: SaveConfigurationSQLRequest
-    ):
+    def save_configuration_sql(self, subject: Subject, assignment_id: int):
         """Save configuration SQL for an assignment. Can only be done after testing the SQL."""
         # Check for admin permissions
         assignment = self._get_assignment_and_verify_permissions(
-            subject, request.assignment_id, CourseMembershipRole.ADMIN
+            subject, assignment_id, CourseMembershipRole.ADMIN
         )
 
         # Saving can only occur if draft SQL is present and it has been tested
@@ -395,6 +453,81 @@ class AssignmentService:
         assignment.project_configuration_sql = (
             assignment.draft_project_configuration_sql
         )
+        assignment.draft_project_configuration_sql = None
+        assignment.draft_project_configuration_sql_succeeded = None
+        assignment.draft_project_configuration_sql_error = None
+        self._admin_db.commit()
+
+    def remove_configuration_sql(self, subject: Subject, assignment_id: int):
+        """Removes the configuration SQL for an assignment."""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        if (
+            not assignment.test_db_name
+            or not assignment.test_db_admin_role_name
+            or not assignment.encrypted_test_db_admin_role_password
+        ):
+            raise ResourceNotFoundException(
+                f"Assignment with ID {assignment_id} does not have a valid configuration."
+            )
+
+        # Remove the configuration SQL
+        assignment_owner_password = self._content_db_cluster_svc.decrypt_role_password(
+            assignment.encrypted_test_db_admin_role_password, assignment.id
+        )
+        self._content_db_cluster_svc.reset_database(
+            assignment.test_db_name,
+            assignment.test_db_admin_role_name,
+            assignment_owner_password,
+        )
+
+        assignment.project_configuration_sql = None
+        assignment.draft_project_configuration_sql = None
+        assignment.draft_project_configuration_sql_succeeded = None
+        assignment.draft_project_configuration_sql_error = None
+        self._admin_db.commit()
+
+    def reset_configuration_sql(self, subject: Subject, assignment_id: int):
+        """Resets the configuration SQL to the previous saved and tested SQL."""
+        # Check for admin permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        if (
+            not assignment.test_db_name
+            or not assignment.test_db_admin_role_name
+            or not assignment.encrypted_test_db_admin_role_password
+        ):
+            raise ResourceNotFoundException(
+                f"Assignment with ID {assignment_id} does not have a valid configuration."
+            )
+
+        if not assignment.project_configuration_sql:
+            raise InputValidationException("No previous configuration SQL to reset to.")
+
+        # Reset the database
+        assignment_owner_password = self._content_db_cluster_svc.decrypt_role_password(
+            assignment.encrypted_test_db_admin_role_password, assignment.id
+        )
+        self._content_db_cluster_svc.reset_database(
+            assignment.test_db_name,
+            assignment.test_db_admin_role_name,
+            assignment_owner_password,
+        )
+
+        # Run the saved configuration SQL on the database
+        self._content_db_cluster_svc.run_sql_on_database(
+            assignment.test_db_name,
+            assignment.test_db_admin_role_name,
+            assignment_owner_password,
+            assignment.project_configuration_sql,
+        )
+
+        # Remove the draft SQL and its related fields
         assignment.draft_project_configuration_sql = None
         assignment.draft_project_configuration_sql_succeeded = None
         assignment.draft_project_configuration_sql_error = None

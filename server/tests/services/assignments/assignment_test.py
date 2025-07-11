@@ -197,14 +197,15 @@ def test_test_configuration_sql_success(assignment_svc: AssignmentService):
 
     # Now, test the configuration SQL
     test_configuration_sql_request_success = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         INSERT INTO test_table (id, name) VALUES (1, 'Test Name');
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_success
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_success,
     )
 
     assert response.success is True
@@ -239,13 +240,14 @@ def test_test_configuration_sql_failure_syntax_error(assignment_svc: AssignmentS
 
     # Now, test the configuration SQL with a syntax error
     test_configuration_sql_request_syntax_error = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATEEE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_syntax_error
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_syntax_error,
     )
 
     assert response.success is False
@@ -277,10 +279,12 @@ def test_test_configuration_sql_failure_naughty_request(
 
     # Now, test the configuration SQL with a create database request
     test_configuration_sql_request_create_db = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id, sql="CREATE DATABASE naughty_db;"
+        sql="CREATE DATABASE naughty_db;"
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_create_db
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_create_db,
     )
 
     assert response.success is False
@@ -298,11 +302,12 @@ def test_test_configuration_sql_failure_naughty_request(
 
     # Now, test the configuration SQL with a create role request
     test_configuration_sql_request_create_role = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="CREATE ROLE naughty_role LOGIN PASSWORD '1234'",
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_create_role
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_create_role,
     )
 
     assert response.success is False
@@ -331,22 +336,20 @@ def test_save_configuration_sql(assignment_svc: AssignmentService):
     ).get(response.assignment_id)
     assert draft_assignment is not None
     test_configuration_sql_request_success = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         INSERT INTO test_table (id, name) VALUES (1, 'Test Name');
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_success
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_success,
     )
 
     # Now, test saving the configuration SQL
-    save_configuration_sql_request = SaveConfigurationSQLRequest(
-        assignment_id=draft_assignment.id
-    )
     assignment_svc.save_configuration_sql(
-        subject=instructor_user.to_subject(), request=save_configuration_sql_request
+        subject=instructor_user.to_subject(), assignment_id=draft_assignment.id
     )
     saved_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
         AssignmentEntity
@@ -373,11 +376,12 @@ def test_save_configuration_sql_not_tested(assignment_svc: AssignmentService):
         AssignmentEntity
     ).get(response.assignment_id)
     assert draft_assignment is not None
-    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
 
     # Now, test that an exception is raised
     with pytest.raises(InputValidationException):
-        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+        assignment_svc.save_configuration_sql(
+            instructor_user.to_subject(), draft_assignment.id
+        )
 
 
 def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentService):
@@ -392,19 +396,20 @@ def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentServ
     ).get(response.assignment_id)
     assert draft_assignment is not None
     test_configuration_sql_request = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE DATABASE naughty_db;
         """,
     )
     assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request,
     )
-    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
-
     # Now, test that an exception is raised
     with pytest.raises(InputValidationException):
-        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+        assignment_svc.save_configuration_sql(
+            instructor_user.to_subject(), draft_assignment.id
+        )
 
 
 def test_create_group(admin_db_session: Session, assignment_svc: AssignmentService):
