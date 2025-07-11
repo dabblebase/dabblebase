@@ -5,12 +5,19 @@ from ..seed import (
     instructor_user,
     draft_indiv_assignment,
     draft_group_assignment,
+    published_assignment,
     group_assignment_group_1,
     group_assignment_group_1_member,
     student_1_user,
     student_2_user,
 )
 from ....models.assignment import *
+
+get_dropdown_request = GetDropdownRequest(
+    search="",
+    course_id=course.id,
+    selected_assignment_id=published_assignment.id,
+)
 
 create_draft_request = CreateDraftRequest(
     name="Sample Assignment",

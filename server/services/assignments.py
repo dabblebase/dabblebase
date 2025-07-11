@@ -1,6 +1,7 @@
 """Service used to interface with assignments"""
 
 from fastapi import Depends
+from sqlalchemy import select
 from ..entities import (
     CourseMembershipRole,
     AssignmentEntity,
@@ -18,6 +19,11 @@ from ..services.content_db_cluster import (
 from ..services.project import auth_crypto as crypto
 from ..models.auth import Subject
 from ..models.assignment import (
+    GetDropdownRequest,
+    GetDropdownResponse_Assignment,
+    GetDropdownResponse,
+    GetViewResponse,
+    GetDraftResponse,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -53,6 +59,136 @@ class AssignmentService:
         self._admin_db = admin_db
         self._courses_svc = courses_svc
         self._content_db_cluster_svc = content_db_cluster_svc
+
+    def get_dropdown(self, subject: Subject, request: GetDropdownRequest):
+        ...
+        """Gets the content for the assignments dropdown for a course."""
+        # Check for permissions
+        role = self._courses_svc.verify_subject_has_permissions_for_course(
+            subject,
+            request.course_id,
+            CourseMembershipRole.STUDENT,
+        )
+
+        # Get the selected assignment, if provided
+        selected_assignment_query = select(AssignmentEntity).where(
+            AssignmentEntity.id == request.selected_assignment_id,
+        )
+        if role == CourseMembershipRole.STUDENT:
+            selected_assignment_query = selected_assignment_query.where(
+                AssignmentEntity.state == AssignmentState.PUBLISHED
+            )
+        selected_assignment: AssignmentEntity | None = self._admin_db.scalars(
+            selected_assignment_query
+        ).one_or_none()
+
+        self._admin_db.get(AssignmentEntity, request.selected_assignment_id)
+        selected_assignment_model = (
+            GetDropdownResponse_Assignment(
+                id=selected_assignment.id,
+                name=selected_assignment.name,
+                state=selected_assignment.state,
+            )
+            if selected_assignment
+            else None
+        )
+
+        # Get all of the assignments for the course - only published if student
+        assignments_query = select(AssignmentEntity).where(
+            AssignmentEntity.course_id == request.course_id
+        )
+        if len(request.search) > 0:
+            assignments_query = assignments_query.where(
+                AssignmentEntity.name.ilike(f"%{request.search}%")
+            )
+        if role == CourseMembershipRole.STUDENT:
+            assignments_query = assignments_query.where(
+                AssignmentEntity.state == AssignmentState.PUBLISHED
+            )
+        assignments = self._admin_db.scalars(assignments_query).all()
+
+        # Convert the assignments to the response model
+        assignments_model = [
+            GetDropdownResponse_Assignment(
+                id=assignment.id,
+                name=assignment.name,
+                state=assignment.state,
+            )
+            for assignment in assignments
+        ]
+
+        # Return the response model
+        return GetDropdownResponse(
+            assignments=assignments_model,
+            selected_assignment=selected_assignment_model,
+        )
+
+    def get_view(self, subject: Subject, assignment_id: int):
+        """Facts to decide which view to show to the user."""
+        # Get the assignment
+        assignment: AssignmentEntity | None = (
+            self._admin_db.query(AssignmentEntity)
+            .where(AssignmentEntity.id == assignment_id)
+            .one_or_none()
+        )
+
+        if not assignment:
+            raise ResourceNotFoundException(
+                f"Assignment with ID {assignment_id} not found."
+            )
+
+        # Check for permission
+        role = self._courses_svc.verify_subject_has_permissions_for_course(
+            subject, assignment.course_id, CourseMembershipRole.STUDENT
+        )
+
+        # Conditions where the user should be redirected to the course page
+        should_redirect = (
+            role == CourseMembershipRole.STUDENT
+            and assignment.state
+            in {
+                AssignmentState.DRAFT,
+                AssignmentState.UNPUBLISHED,
+            }
+        ) or (
+            role == CourseMembershipRole.STAFF
+            and assignment.state == AssignmentState.DRAFT
+        )
+
+        return GetViewResponse(
+            role=role,
+            assignment_state=assignment.state,
+            should_redirect=should_redirect,
+        )
+
+    def get_draft(self, subject: Subject, assignment_id: int) -> GetDraftResponse:
+        """Retrieves the details for an assignment draft."""
+        # Get the assignment
+        assignment: AssignmentEntity | None = (
+            self._admin_db.query(AssignmentEntity)
+            .where(
+                AssignmentEntity.id == assignment_id,
+                AssignmentEntity.state == AssignmentState.DRAFT,
+            )
+            .one_or_none()
+        )
+
+        if not assignment:
+            raise ResourceNotFoundException(
+                f"Draft assignment with ID {assignment_id} not found."
+            )
+
+        # Check for permission
+        self._courses_svc.verify_subject_has_permissions_for_course(
+            subject, assignment.course_id, CourseMembershipRole.ADMIN
+        )
+
+        # Return the assignment details
+        return GetDraftResponse(
+            assignment_id=assignment.id,
+            name=assignment.name,
+            is_group=assignment.is_group_assignment,
+        )
 
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest

@@ -138,6 +138,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/{course_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Course Role
+         * @description Get the role of the user in the specified course.
+         */
+        get: operations["get_course_role_api_course__course_id__role_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/summary": {
         parameters: {
             query?: never;
@@ -155,6 +175,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/dropdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dropdown */
+        get: operations["get_dropdown_api_assignment_dropdown_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get View */
+        get: operations["get_view_api_assignment__assignment_id__view_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["get_draft_api_assignment__assignment_id__draft_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Draft */
+        post: operations["create_draft_api_assignment_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rename
+         * @description Rename an existing assignment.
+         */
+        put: operations["rename_api_assignment__assignment_id__rename_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -165,6 +273,32 @@ export interface components {
          * @enum {string}
          */
         AssignmentState: "draft" | "unpublished" | "published";
+        /**
+         * CourseMembershipRole
+         * @description Enum identifying the level of permissions for a course member.
+         * @enum {string}
+         */
+        CourseMembershipRole: "owner" | "admin" | "staff" | "student";
+        /**
+         * CreateDraftRequest
+         * @description Model that represents a request to create a draft.
+         */
+        CreateDraftRequest: {
+            /** Name */
+            name: string;
+            /** Course Id */
+            course_id: number;
+            /** Is Group */
+            is_group: boolean;
+        };
+        /**
+         * CreateDraftResponse
+         * @description Model that represents a response to creating a draft.
+         */
+        CreateDraftResponse: {
+            /** Assignment Id */
+            assignment_id: number;
+        };
         /**
          * GetAssignmentsResponse
          * @description Model that represents a response for the assignments endpoint.
@@ -227,17 +361,27 @@ export interface components {
             num_assignments: number;
         };
         /**
-         * GetDropdownResponse
-         * @description Model that represents a dropdown response.
+         * GetDraftResponse
+         * @description Model that represents a response for getting a draft assignment.
          */
-        GetDropdownResponse: {
-            /** Terms */
-            terms: string[];
-            selected_course?: components["schemas"]["GetDropdownResponse_Course"] | null;
-            /** Courses */
-            courses: {
-                [key: string]: components["schemas"]["GetDropdownResponse_Course"][];
-            };
+        GetDraftResponse: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Name */
+            name: string;
+            /** Is Group */
+            is_group: boolean;
+        };
+        /**
+         * GetDropdownResponse_Assignment
+         * @description Model that represents an assignment in the dropdown response.
+         */
+        GetDropdownResponse_Assignment: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            state: components["schemas"]["AssignmentState"];
         };
         /**
          * GetDropdownResponse_Course
@@ -267,6 +411,36 @@ export interface components {
             /** Initials */
             initials: string;
         };
+        /**
+         * GetRoleForCourseResponse
+         * @description Model that represents the role of a user in a course.
+         */
+        GetRoleForCourseResponse: {
+            role?: components["schemas"]["CourseMembershipRole"] | null;
+            /**
+             * Is Staff
+             * @default false
+             */
+            is_staff: boolean;
+            /**
+             * Can Modify Assignments
+             * @default false
+             */
+            can_modify_assignments: boolean;
+        };
+        /**
+         * GetViewResponse
+         * @description Model that represents a response for viewing an assignment.
+         */
+        GetViewResponse: {
+            role: components["schemas"]["CourseMembershipRole"];
+            assignment_state: components["schemas"]["AssignmentState"];
+            /**
+             * Should Redirect
+             * @default false
+             */
+            should_redirect: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -280,6 +454,28 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * GetDropdownResponse
+         * @description Model that represents a response for the dropdown endpoint.
+         */
+        server__models__assignment__GetDropdownResponse: {
+            selected_assignment?: components["schemas"]["GetDropdownResponse_Assignment"] | null;
+            /** Assignments */
+            assignments: components["schemas"]["GetDropdownResponse_Assignment"][];
+        };
+        /**
+         * GetDropdownResponse
+         * @description Model that represents a dropdown response.
+         */
+        server__models__course__GetDropdownResponse: {
+            /** Terms */
+            terms: string[];
+            selected_course?: components["schemas"]["GetDropdownResponse_Course"] | null;
+            /** Courses */
+            courses: {
+                [key: string]: components["schemas"]["GetDropdownResponse_Course"][];
+            };
         };
     };
     responses: never;
@@ -444,7 +640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDropdownResponse"];
+                    "application/json": components["schemas"]["server__models__course__GetDropdownResponse"];
                 };
             };
             /** @description Validation Error */
@@ -489,6 +685,37 @@ export interface operations {
             };
         };
     };
+    get_course_role_api_course__course_id__role_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRoleForCourseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_summary_api_profile_summary_get: {
         parameters: {
             query?: never;
@@ -505,6 +732,167 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetProfileSummaryResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dropdown_api_assignment_dropdown_get: {
+        parameters: {
+            query: {
+                course_id: number;
+                search?: string;
+                selected_assignment_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["server__models__assignment__GetDropdownResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_view_api_assignment__assignment_id__view_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_draft_api_assignment__assignment_id__draft_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDraftResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_api_assignment_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_api_assignment__assignment_id__rename_put: {
+        parameters: {
+            query: {
+                name: string;
+            };
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

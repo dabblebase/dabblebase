@@ -1,19 +1,27 @@
 import type { components } from "@/models/schema";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
+import { useRouter } from "next/router";
 
 type Assignment = components["schemas"]["GetAssignmentsResponse_Assignment"];
 
 export default function AssignmentCard({
+  courseId,
   isStaff,
   assignment,
 }: {
+  courseId: number;
   isStaff: boolean;
   assignment: Assignment;
 }) {
+  const router = useRouter();
+
   return (
     <Card
       key={assignment.id}
+      onClick={() =>
+        router.push(`/course/${courseId}/assignment/${assignment.id}`)
+      }
       className="w-72 h-36 hover:bg-accent hover:cursor-pointer"
     >
       <CardContent className="flex flex-col gap-0.5">

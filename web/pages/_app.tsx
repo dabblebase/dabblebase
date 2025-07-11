@@ -5,6 +5,7 @@ import { NextPage } from "next";
 import { ReactElement, ReactNode } from "react";
 import { Open_Sans, IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 
 /** Import fonts used by the theme */
 const openSans = Open_Sans({
@@ -34,10 +35,10 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
 };
 
-export default function App({ Component, pageProps }: AppPropsWithLayout) {
-  // Query client for React Query
-  const queryClient = new QueryClient();
+// Query client for React Query
+const queryClient = new QueryClient();
 
+export default function App({ Component, pageProps }: AppPropsWithLayout) {
   // Function to retrieve the component's assigned layout, if any
   const getLayout = Component.getLayout ?? ((page) => page);
 
@@ -54,6 +55,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         >
           {getLayout(<Component {...pageProps} />)}
         </main>
+        <Toaster richColors />
       </ThemeProvider>
     </QueryClientProvider>
   );

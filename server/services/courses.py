@@ -20,6 +20,7 @@ from ..models.course import (
     GetDropdownResponse,
     GetAssignmentsResponse_Assignment,
     GetAssignmentsResponse,
+    GetRoleForCourseResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -193,14 +194,7 @@ class CourseService:
                     id=course.id,
                     code=course.code,
                     name=course.name,
-                    is_staff=(
-                        membership.role
-                        in [
-                            CourseMembershipRole.OWNER,
-                            CourseMembershipRole.ADMIN,
-                            CourseMembershipRole.STAFF,
-                        ]
-                    ),
+                    is_staff=(membership.role in CourseMembershipRole.staff()),
                 )
 
         # Query for courses where the user is a staff member
@@ -289,6 +283,26 @@ class CourseService:
         ]
 
         return GetAssignmentsResponse(assignments=assignment_models, is_staff=is_staff)
+
+    def get_role_for_course(
+        self, subject: Subject, course_id: int
+    ) -> GetRoleForCourseResponse:
+        """Returns the role of the subject in the course"""
+        # Query the course member from the database
+        query = select(CourseMemberEntity).where(
+            CourseMemberEntity.user_id == subject.id,
+            CourseMemberEntity.course_id == course_id,
+        )
+        member = self._admin_db.scalars(query).one_or_none()
+        return GetRoleForCourseResponse(
+            role=member.role if member else None,
+            is_staff=member.role in CourseMembershipRole.staff() if member else False,
+            can_modify_assignments=(
+                member.role in {CourseMembershipRole.OWNER, CourseMembershipRole.ADMIN}
+                if member
+                else False
+            ),
+        )
 
     def create_course(
         self, subject: Subject, request: CreateCourseRequest

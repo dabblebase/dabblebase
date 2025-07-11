@@ -85,6 +85,13 @@ def test_get_assignments(course_svc: CourseService):
     )
 
 
+def test_get_role_for_course(course_svc: CourseService):
+    """Test getting roles for a course."""
+    response = course_svc.get_role_for_course(instructor_user.to_subject(), course.id)
+    assert response is not None
+    assert response.role == CourseMembershipRole.OWNER
+
+
 def test_create_course(admin_db_session: Session, course_svc: CourseService):
     """Tests creating a course."""
     response = course_svc.create_course(

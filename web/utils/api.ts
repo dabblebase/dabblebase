@@ -7,7 +7,7 @@ import { env } from "./env";
 
 const protocol = env.MODE === "development" ? "http" : "https";
 
-const fetchClient = createFetchClient<paths>({
+export const fetchClient = createFetchClient<paths>({
   baseUrl: `${protocol}://${env.HOST}`,
   credentials: "include",
 });

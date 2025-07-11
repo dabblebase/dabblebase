@@ -1,14 +1,20 @@
 import { ReactNode } from "react";
 import { DashboardHeader } from "../headers/dashboard-header";
-import { BreadcrumbItem } from "../ui/breadcrumb";
+import { BreadcrumbItem, BreadcrumbSeparator } from "../ui/breadcrumb";
 import { SidebarInset, SidebarProvider } from "../ui/sidebar";
-import CourseSidebar from "./course-sidebar";
-import CourseSelector from "./course-selector";
 import { useRouter } from "next/router";
+import CourseSelector from "../course/course-selector";
+import CourseSidebar from "../course/course-sidebar";
+import { SlashIcon } from "lucide-react";
+import AssignmentSelector from "./assignment-selector";
 
-export default function CourseLayout({ children }: { children: ReactNode }) {
+export default function AssignmentLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const router = useRouter();
-  const { courseId } = router.query;
+  const { courseId, assignmentId } = router.query;
 
   return (
     <div className="[--header-height:calc(--spacing(16))]">
@@ -20,6 +26,15 @@ export default function CourseLayout({ children }: { children: ReactNode }) {
               initialCourseId={courseId ? Number(courseId) : undefined}
             />
           </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <SlashIcon className="size-4 mx-1" />
+          </BreadcrumbSeparator>
+          <AssignmentSelector
+            courseId={Number(courseId)}
+            initialAssignmentId={
+              assignmentId ? Number(assignmentId) : undefined
+            }
+          />
         </DashboardHeader>
         {/* Inset */}
         <div className="flex flex-1">

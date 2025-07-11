@@ -1,6 +1,46 @@
 """Models related to assignments"""
 
 from pydantic import BaseModel
+from ..entities import AssignmentState, CourseMembershipRole
+
+
+class GetDropdownRequest(BaseModel):
+    """Model that represents a request for the dropdown endpoint."""
+
+    search: str
+    course_id: int
+    selected_assignment_id: int | None = None
+
+
+class GetDropdownResponse_Assignment(BaseModel):
+    """Model that represents an assignment in the dropdown response."""
+
+    id: int
+    name: str
+    state: AssignmentState
+
+
+class GetDropdownResponse(BaseModel):
+    """Model that represents a response for the dropdown endpoint."""
+
+    selected_assignment: GetDropdownResponse_Assignment | None = None
+    assignments: list[GetDropdownResponse_Assignment]
+
+
+class GetViewResponse(BaseModel):
+    """Model that represents a response for viewing an assignment."""
+
+    role: CourseMembershipRole
+    assignment_state: AssignmentState
+    should_redirect: bool = False
+
+
+class GetDraftResponse(BaseModel):
+    """Model that represents a response for getting a draft assignment."""
+
+    assignment_id: int
+    name: str
+    is_group: bool
 
 
 class CreateDraftRequest(BaseModel):

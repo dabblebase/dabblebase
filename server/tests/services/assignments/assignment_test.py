@@ -27,6 +27,7 @@ from ..seed import (
 )
 
 from .assignment_data import (
+    get_dropdown_request,
     create_draft_request,
     rename_request,
     rename_request_name_empty,
@@ -80,6 +81,30 @@ def test__create_project(assignment_svc: AssignmentService):
     with engine.connect() as conn:
         result = conn.execute(text("SELECT 1"))
         assert result.scalar() == 1
+
+
+def test_get_dropdown(assignment_svc: AssignmentService):
+    """Tests that the dropdown for assignments works correctly."""
+    # Test the dropdown for a course with assignments
+    response = assignment_svc.get_dropdown(
+        instructor_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.assignments) > 0
+
+
+def test_get_view(
+    assignment_svc: AssignmentService,
+):
+    """Tests that the view for assignments works correctly."""
+    # Test the view for a course with assignments
+    response = assignment_svc.get_view(
+        instructor_user.to_subject(),
+        assignment_id=draft_indiv_assignment.id,
+    )
+    assert response is not None
+    assert response.role == CourseMembershipRole.OWNER
+    assert response.assignment_state == AssignmentState.DRAFT
 
 
 def test_create_draft(admin_db_session: Session, assignment_svc: AssignmentService):

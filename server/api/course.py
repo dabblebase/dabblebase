@@ -6,7 +6,7 @@ from fastapi.responses import Response, RedirectResponse
 from fastapi.exceptions import HTTPException
 from ..env import env
 from ..services import CourseService
-from ..entities import UserAuthenticationProvider
+from ..entities import CourseMembershipRole
 from datetime import datetime, timedelta, timezone
 from ..services.project import auth_crypto as crypto
 from ..api.auth import registered_user
@@ -16,6 +16,7 @@ from ..models.course import (
     GetDropdownRequest,
     GetDropdownResponse,
     GetAssignmentsResponse,
+    GetRoleForCourseResponse,
 )
 
 tag = "Courses"
@@ -57,3 +58,15 @@ def get_assignments(
     Get assignments for a specific course.
     """
     return course_svc.get_assignments(subject, course_id)
+
+
+@api.get("/{course_id}/role", tags=[tag])
+def get_course_role(
+    course_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> GetRoleForCourseResponse:
+    """
+    Get the role of the user in the specified course.
+    """
+    return course_svc.get_role_for_course(subject, course_id)
