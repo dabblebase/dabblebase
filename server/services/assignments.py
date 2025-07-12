@@ -10,6 +10,7 @@ from ..entities import (
     AssignmentState,
     ProjectEntity,
     CourseMemberEntity,
+    UserEntity,
 )
 from ..services.courses import CourseService
 from ..services.content_db_cluster import (
@@ -30,14 +31,18 @@ from ..models.assignment import (
     RenameRequest,
     TestConfigurationSQLRequest,
     TestConfigurationSQLResponse,
+    GetGroupsResponse_User,
+    GetGroupsResponse_Group,
+    GetGroupsResponse,
     CreateGroupRequest,
     CreateGroupResponse,
+    RenameGroupRequest,
     AddGroupMemberRequest,
     RemoveGroupMemberRequest,
     DeleteGroupRequest,
 )
 from ..database import admin_db_session
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from .exceptions import (
     ContentDatabaseTransactionException,
     ResourceNotFoundException,
@@ -533,13 +538,83 @@ class AssignmentService:
         assignment.draft_project_configuration_sql_error = None
         self._admin_db.commit()
 
+    def get_groups(self, subject: Subject, assignment_id: int) -> GetGroupsResponse:
+        """Gets the groups for an assignment."""
+        # Check for staff permissions"""
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        if not assignment.is_group_assignment:
+            raise InputValidationException(
+                "Cannot get groups for non-group assignments."
+            )
+
+        # Get all of the groups and students in each group
+        groups_query = (
+            select(ProjectGroupEntity)
+            .outerjoin(
+                ProjectGroupMemberEntity
+            )  # Outer join to include groups with no members
+            .where(ProjectGroupEntity.assignment_id == assignment_id)
+            .order_by(ProjectGroupEntity.name)
+            .options(
+                joinedload(ProjectGroupEntity.members).joinedload(
+                    ProjectGroupMemberEntity.user
+                )
+            )
+        )
+        groups = self._admin_db.scalars(groups_query).unique().all()
+
+        # Convert the groups to the response model
+        groups_models = [
+            GetGroupsResponse_Group(
+                group_id=group.id,
+                group_name=group.name,
+                members=[
+                    GetGroupsResponse_User(
+                        user_id=member.user.id,
+                        user_name=member.user.first_name + " " + member.user.last_name,
+                    )
+                    for member in group.members
+                ],
+            )
+            for group in groups
+        ]
+
+        # Get all of the students in the class that are not in a group
+        students_in_groups_ids = set(
+            [member.user_id for group in groups for member in group.members]
+        )
+        students_query = (
+            select(UserEntity)
+            .join(CourseMemberEntity)
+            .where(
+                CourseMemberEntity.course_id == assignment.course_id,
+                CourseMemberEntity.role == CourseMembershipRole.STUDENT,
+                CourseMemberEntity.user_id.not_in(students_in_groups_ids),
+            )
+        )
+        students = self._admin_db.scalars(students_query).all()
+        student_models = [
+            GetGroupsResponse_User(
+                user_id=student.id,
+                user_name=student.first_name + " " + student.last_name,
+            )
+            for student in students
+        ]
+
+        return GetGroupsResponse(
+            groups=groups_models, unassigned_students=student_models
+        )
+
     def create_group(
-        self, subject: Subject, request: CreateGroupRequest
+        self, subject: Subject, assignment_id: int, request: CreateGroupRequest
     ) -> CreateGroupResponse:
         """Creates a new group for a group assignment."""
         # Check for admin permissions
         assignment = self._get_assignment_and_verify_permissions(
-            subject, request.assignment_id, CourseMembershipRole.ADMIN
+            subject, assignment_id, CourseMembershipRole.ADMIN
         )
 
         # Ensure the assignment is a group assignment
@@ -566,6 +641,32 @@ class AssignmentService:
             group_id=group.id,
             group_name=group.name,
         )
+
+    def rename_group(self, subject: Subject, request: RenameGroupRequest):
+        """Renames a group in a group assignment."""
+        # Find the group by ID
+        group: ProjectGroupEntity | None = self._admin_db.query(ProjectGroupEntity).get(
+            request.group_id
+        )
+        if not group:
+            raise ResourceNotFoundException(
+                f"Group with ID {request.group_id} not found."
+            )
+
+        # Check for admin permissions
+        self._get_assignment_and_verify_permissions(
+            subject, group.assignment_id, CourseMembershipRole.ADMIN
+        )
+
+        # Validate the input name
+        if len(request.name) < 1:
+            raise InputValidationException(
+                "Group name must be at least 1 character long."
+            )
+
+        # Update the group name
+        group.name = request.name
+        self._admin_db.commit()
 
     def add_group_member(self, subject: Subject, request: AddGroupMemberRequest):
         """Adds a member to a group in a group assignment."""

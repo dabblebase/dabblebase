@@ -75,6 +75,19 @@ class GetRoleForCourseResponse(BaseModel):
     can_modify_assignments: bool = False
 
 
+class GetStudentsForCourseResponse_Student(BaseModel):
+    """Model that represents a student in the course students response."""
+
+    user_id: int
+    user_name: str
+
+
+class GetStudentsForCourseResponse(BaseModel):
+    """Model that represents a response for getting students in a course."""
+
+    students: list[GetStudentsForCourseResponse_Student]
+
+
 class CreateCourseRequest(BaseModel):
     """Model that represents a request to create a course."""
 

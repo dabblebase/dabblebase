@@ -17,6 +17,7 @@ from ..models.course import (
     GetDropdownResponse,
     GetAssignmentsResponse,
     GetRoleForCourseResponse,
+    GetStudentsForCourseResponse,
 )
 
 tag = "Courses"
@@ -70,3 +71,16 @@ def get_course_role(
     Get the role of the user in the specified course.
     """
     return course_svc.get_role_for_course(subject, course_id)
+
+
+@api.get("/{course_id}/students", tags=[tag])
+def get_students(
+    course_id: int,
+    search: str = "",
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> GetStudentsForCourseResponse:
+    """
+    Get the list of students in a specific course.
+    """
+    return course_svc.get_students_for_course(subject, course_id, search)

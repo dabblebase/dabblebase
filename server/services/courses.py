@@ -5,7 +5,7 @@ from .base import BaseService
 from ..entities import (
     CourseMembershipRole,
     CourseEntity,
-    ProjectEntity,
+    UserEntity,
     AssignmentEntity,
     AssignmentState,
 )
@@ -21,6 +21,8 @@ from ..models.course import (
     GetAssignmentsResponse_Assignment,
     GetAssignmentsResponse,
     GetRoleForCourseResponse,
+    GetStudentsForCourseResponse_Student,
+    GetStudentsForCourseResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -37,7 +39,7 @@ from .exceptions import (
     ResourceAlreadyExistsException,
     InputValidationException,
 )
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, func
 from sqlalchemy.orm import Session, joinedload
 import string
 import random
@@ -303,6 +305,47 @@ class CourseService:
                 else False
             ),
         )
+
+    def get_students_for_course(
+        self, subject: Subject, course_id: int, search: str
+    ) -> GetStudentsForCourseResponse:
+        """Returns a list of students for a course"""
+        # Check permissions
+        self.verify_subject_has_permissions_for_course(
+            subject, course_id, CourseMembershipRole.STAFF
+        )
+
+        # Query the course members where the role is STUDENT
+        query = (
+            select(UserEntity)
+            .join(CourseMemberEntity)
+            .where(
+                CourseMemberEntity.course_id == course_id,
+                CourseMemberEntity.role == CourseMembershipRole.STUDENT,
+            )
+        )
+        # If search is provided, filter by name
+        if search:
+            query = query.where(
+                or_(
+                    UserEntity.first_name.ilike(f"%{search}%"),
+                    UserEntity.last_name.ilike(f"%{search}%"),
+                    func.concat(UserEntity.first_name, " ", UserEntity.last_name).ilike(
+                        f"%{search}%"
+                    ),
+                )
+            )
+
+        users = self._admin_db.scalars(query).all()
+
+        # Convert to models and return
+        students = [
+            GetStudentsForCourseResponse_Student(
+                user_id=user.id, user_name=f"{user.first_name} {user.last_name}"
+            )
+            for user in users
+        ]
+        return GetStudentsForCourseResponse(students=students)
 
     def create_course(
         self, subject: Subject, request: CreateCourseRequest

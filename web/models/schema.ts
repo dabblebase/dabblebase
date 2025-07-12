@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/task/{task_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Task Status */
+        get: operations["get_task_status_api_task__task_id__status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/logout": {
         parameters: {
             query?: never;
@@ -150,6 +167,26 @@ export interface paths {
          * @description Get the role of the user in the specified course.
          */
         get: operations["get_course_role_api_course__course_id__role_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/{course_id}/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Students
+         * @description Get the list of students in a specific course.
+         */
+        get: operations["get_students_api_course__course_id__students_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -363,10 +400,184 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/{assignment_id}/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Groups
+         * @description Get the groups of an assignment.
+         */
+        get: operations["get_groups_api_assignment__assignment_id__groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group/{group_id}/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rename Group
+         * @description Rename a group in an assignment.
+         */
+        put: operations["rename_group_api_assignment__assignment_id__group__group_id__rename_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Group
+         * @description Create a new group in an assignment.
+         */
+        post: operations["create_group_api_assignment__assignment_id__group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Group
+         * @description Delete a group in an assignment.
+         */
+        delete: operations["delete_group_api_assignment__assignment_id__group__group_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group/{group_id}/member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Group Member
+         * @description Add a member to a group in an assignment.
+         */
+        post: operations["add_group_member_api_assignment__assignment_id__group__group_id__member_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group/{group_id}/member/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Group Member
+         * @description Remove a member from a group in an assignment.
+         */
+        delete: operations["remove_group_member_api_assignment__assignment_id__group__group_id__member__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Publish Assignment
+         * @description Publish an assignment.
+         *
+         *     Note: This kicks off an asynchronous task using Celery and returns
+         *     the task ID. The client can poll the task status endpoint to ensure
+         *     the task has completed.
+         */
+        put: operations["publish_assignment_api_assignment__assignment_id__publish_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Assignment
+         * @description Delete an assignment.
+         */
+        delete: operations["delete_assignment_api_assignment__assignment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AddGroupMemberRequest
+         * @description Model that represents a request to add a member to a group for an assignment.
+         */
+        AddGroupMemberRequest: {
+            /** Group Id */
+            group_id: number;
+            /** User Id */
+            user_id: number;
+        };
         /**
          * AssignmentState
          * @description Enum identifying the various states an assignment can be in.
@@ -398,6 +609,24 @@ export interface components {
         CreateDraftResponse: {
             /** Assignment Id */
             assignment_id: number;
+        };
+        /**
+         * CreateGroupRequest
+         * @description Model that represents a request to create a group for an assignment.
+         */
+        CreateGroupRequest: {
+            /** Group Name */
+            group_name: string;
+        };
+        /**
+         * CreateGroupResponse
+         * @description Model that represents a response to creating a group for an assignment.
+         */
+        CreateGroupResponse: {
+            /** Group Id */
+            group_id: number;
+            /** Group Name */
+            group_name: string;
         };
         /**
          * GetAssignmentsResponse
@@ -514,6 +743,38 @@ export interface components {
             is_staff: boolean;
         };
         /**
+         * GetGroupsResponse
+         * @description Model that represents a response for getting groups of an assignment.
+         */
+        GetGroupsResponse: {
+            /** Groups */
+            groups: components["schemas"]["GetGroupsResponse_Group"][];
+            /** Unassigned Students */
+            unassigned_students: components["schemas"]["GetGroupsResponse_User"][];
+        };
+        /**
+         * GetGroupsResponse_Group
+         * @description Model that represents a group in the response for getting groups of an assignment.
+         */
+        GetGroupsResponse_Group: {
+            /** Group Id */
+            group_id: number;
+            /** Group Name */
+            group_name: string;
+            /** Members */
+            members: components["schemas"]["GetGroupsResponse_User"][];
+        };
+        /**
+         * GetGroupsResponse_User
+         * @description Model that represents a member of a group in the response for getting groups of an assignment.
+         */
+        GetGroupsResponse_User: {
+            /** User Id */
+            user_id: number;
+            /** User Name */
+            user_name: string;
+        };
+        /**
          * GetProfileSummaryResponse
          * @description Model that represents a response for the profile endpoint.
          */
@@ -545,6 +806,24 @@ export interface components {
             can_modify_assignments: boolean;
         };
         /**
+         * GetStudentsForCourseResponse
+         * @description Model that represents a response for getting students in a course.
+         */
+        GetStudentsForCourseResponse: {
+            /** Students */
+            students: components["schemas"]["GetStudentsForCourseResponse_Student"][];
+        };
+        /**
+         * GetStudentsForCourseResponse_Student
+         * @description Model that represents a student in the course students response.
+         */
+        GetStudentsForCourseResponse_Student: {
+            /** User Id */
+            user_id: number;
+            /** User Name */
+            user_name: string;
+        };
+        /**
          * GetViewResponse
          * @description Model that represents a response for viewing an assignment.
          */
@@ -561,6 +840,32 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * Task
+         * @description Represents a Celery asychronous task.
+         */
+        Task: {
+            /** Task Id */
+            task_id: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "PENDING" | "RECEIVED" | "STARTED" | "SUCCESS" | "FAILURE" | "RETRY" | "REVOKED" | "IGNORED";
+        /**
+         * TaskStatusResponse
+         * @description Represents the status of a Celery task.
+         */
+        TaskStatusResponse: {
+            /** Task Id */
+            task_id: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Result */
+            result?: string | null;
+            /** Error */
+            error?: string | null;
         };
         /**
          * TestConfigurationSQLRequest
@@ -638,6 +943,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    get_task_status_api_task__task_id__status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -839,6 +1175,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRoleForCourseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_students_api_course__course_id__students_get: {
+        parameters: {
+            query?: {
+                search?: string;
+            };
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentsForCourseResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1188,6 +1557,268 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_groups_api_assignment__assignment_id__groups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_group_api_assignment__assignment_id__group__group_id__rename_put: {
+        parameters: {
+            query: {
+                name: string;
+            };
+            header?: never;
+            path: {
+                assignment_id: number;
+                group_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_group_api_assignment__assignment_id__group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateGroupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_group_api_assignment__assignment_id__group__group_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+                group_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_group_member_api_assignment__assignment_id__group__group_id__member_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddGroupMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_group_member_api_assignment__assignment_id__group__group_id__member__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+                group_id: number;
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_assignment_api_assignment__assignment_id__publish_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_assignment_api_assignment__assignment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
                 };
             };
             /** @description Validation Error */

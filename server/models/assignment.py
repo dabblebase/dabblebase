@@ -88,10 +88,31 @@ class TestConfigurationSQLResponse(BaseModel):
     db_url: str | None = None
 
 
+class GetGroupsResponse_User(BaseModel):
+    """Model that represents a member of a group in the response for getting groups of an assignment."""
+
+    user_id: int
+    user_name: str
+
+
+class GetGroupsResponse_Group(BaseModel):
+    """Model that represents a group in the response for getting groups of an assignment."""
+
+    group_id: int
+    group_name: str
+    members: list[GetGroupsResponse_User]
+
+
+class GetGroupsResponse(BaseModel):
+    """Model that represents a response for getting groups of an assignment."""
+
+    groups: list[GetGroupsResponse_Group]
+    unassigned_students: list[GetGroupsResponse_User]
+
+
 class CreateGroupRequest(BaseModel):
     """Model that represents a request to create a group for an assignment."""
 
-    assignment_id: int
     group_name: str
 
 
@@ -100,6 +121,13 @@ class CreateGroupResponse(BaseModel):
 
     group_id: int
     group_name: str
+
+
+class RenameGroupRequest(BaseModel):
+    """Model that represents a request to rename a group."""
+
+    group_id: int
+    name: str
 
 
 class AddGroupMemberRequest(BaseModel):

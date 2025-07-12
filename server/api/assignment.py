@@ -17,7 +17,17 @@ from ..models.assignment import (
     RenameRequest,
     TestConfigurationSQLRequest,
     TestConfigurationSQLResponse,
+    GetGroupsResponse,
+    RenameGroupRequest,
+    CreateGroupRequest,
+    CreateGroupResponse,
+    DeleteGroupRequest,
+    AddGroupMemberRequest,
+    RemoveGroupMemberRequest,
 )
+from ..models.task import Task
+from ..tasks.assignment import publish_assignment as publish_assignment_task
+from ..tasks.assignment import delete_assignment as delete_assignment_task
 
 tag = "Assignments"
 openapi_tags = {
@@ -132,3 +142,97 @@ def reset_configuration_sql(
 ) -> None:
     """Reset the configuration SQL for an assignment."""
     return assignment_svc.reset_configuration_sql(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/groups", tags=[tag])
+def get_groups(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetGroupsResponse:
+    """Get the groups of an assignment."""
+    return assignment_svc.get_groups(subject, assignment_id)
+
+
+@api.put("/{assignment_id}/group/{group_id}/rename", tags=[tag])
+def rename_group(
+    assignment_id: int,
+    group_id: int,
+    name: str,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """Rename a group in an assignment."""
+    request = RenameGroupRequest(group_id=group_id, name=name)
+    return assignment_svc.rename_group(subject, request)
+
+
+@api.post("/{assignment_id}/group", tags=[tag])
+def create_group(
+    assignment_id: int,
+    request: CreateGroupRequest,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> CreateGroupResponse:
+    """Create a new group in an assignment."""
+    return assignment_svc.create_group(subject, assignment_id, request)
+
+
+@api.delete("/{assignment_id}/group/{group_id}", tags=[tag])
+def delete_group(
+    assignment_id: int,
+    group_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """Delete a group in an assignment."""
+    return assignment_svc.delete_group(subject, DeleteGroupRequest(group_id=group_id))
+
+
+@api.post("/{assignment_id}/group/{group_id}/member", tags=[tag])
+def add_group_member(
+    assignment_id: int,
+    request: AddGroupMemberRequest,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """Add a member to a group in an assignment."""
+    return assignment_svc.add_group_member(subject, request)
+
+
+@api.delete("/{assignment_id}/group/{group_id}/member/{user_id}", tags=[tag])
+def remove_group_member(
+    assignment_id: int,
+    group_id: int,
+    user_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """Remove a member from a group in an assignment."""
+    request = RemoveGroupMemberRequest(group_id=group_id, user_id=user_id)
+    return assignment_svc.remove_group_member(subject, request)
+
+
+@api.put("/{assignment_id}/publish", tags=[tag])
+def publish_assignment(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+) -> Task:
+    """
+    Publish an assignment.
+
+    Note: This kicks off an asynchronous task using Celery and returns
+    the task ID. The client can poll the task status endpoint to ensure
+    the task has completed.
+    """
+    task = publish_assignment_task.delay(assignment_id, subject.id)
+    return Task(task_id=task.id)
+
+
+@api.delete("/{assignment_id}", tags=[tag])
+def delete_assignment(
+    assignment_id: int, subject: Subject = Depends(registered_user)
+) -> Task:
+    """Delete an assignment."""
+    task = delete_assignment_task.delay(assignment_id, subject.id)
+    return Task(task_id=task.id)

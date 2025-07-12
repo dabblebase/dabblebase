@@ -8,7 +8,7 @@ export default function CoursePage() {
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     redirect: {
-      destination: `/course/${context.params?.id}/assignments`,
+      destination: `/course/${context.params?.courseId}/assignments`,
       permanent: false,
     },
   };

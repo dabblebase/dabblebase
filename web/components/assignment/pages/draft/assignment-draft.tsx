@@ -1,19 +1,23 @@
 import ErrorMessage from "@/components/errors/error-message";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useFocusOnCondition } from "@/hooks/use-focus-on-condition";
 import { api } from "@/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, CircleCheck, CircleSlash, Pencil, X } from "lucide-react";
+import { CircleCheck, CircleSlash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import AssignmentSetupSQLDialog from "@/components/assignment/pages/draft/assignment-setup-sql-dialog/assignment-setup-sql-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import AssignmentGroupManager from "./assignment-group-manager/assignment-group-manager";
+import RenameComponent from "@/components/ui/rename";
+import { Separator } from "@/components/ui/separator";
+import AssignmentPublishDialog from "./assignment-publish-dialog";
 
 export default function AssignmentDraftPage({
+  courseId,
   assignmentId,
 }: {
+  courseId: number;
   assignmentId: number;
 }) {
   const queryClient = useQueryClient();
@@ -43,11 +47,8 @@ export default function AssignmentDraftPage({
     }
   );
 
-  // Hooks and mutations for renaming the  assignment
-  const [renamingAssignment, setRenamingAssignment] = useState(false);
+  // Hooks and mutations for renaming the assignment
   const [renameText, setRenameText] = useState("");
-  const nameInputRef =
-    useFocusOnCondition<HTMLInputElement>(renamingAssignment);
 
   useEffect(() => {
     if (draftData) {
@@ -60,7 +61,9 @@ export default function AssignmentDraftPage({
     "/api/assignment/{assignment_id}/rename"
   );
 
-  const renameAssignmentHandler = () => {
+  const renameAssignmentHandler = (
+    setRenaming: (renaming: boolean) => void
+  ) => {
     renameAssignment(
       {
         params: {
@@ -74,7 +77,7 @@ export default function AssignmentDraftPage({
       },
       {
         onSuccess: () => {
-          setRenamingAssignment(false);
+          setRenaming(false);
           refetchDraftData();
           // Refetch the dropdown data so that the new name is reflected in the header
           queryClient.refetchQueries({
@@ -101,51 +104,13 @@ export default function AssignmentDraftPage({
           </h1>
           <div className="flex flex-col gap-2">
             <p className="text-lg font-bold">Assignment name</p>
-            <div className="flex flex-row items-center gap-4">
-              {renamingAssignment ? (
-                <>
-                  <Input
-                    ref={nameInputRef}
-                    className="w-[300px]"
-                    type="text"
-                    placeholder="ex) a04: Wordle"
-                    value={renameText}
-                    onChange={(e) => setRenameText(e.target.value)}
-                  />
-                  <div className="flex flex-row gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setRenamingAssignment(false);
-                        setRenameText(draftData.name);
-                      }}
-                    >
-                      <X />
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="icon"
-                      onClick={renameAssignmentHandler}
-                      disabled={renameText.length === 0}
-                    >
-                      <Check />
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>{draftData?.name}</p>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setRenamingAssignment(true)}
-                  >
-                    <Pencil />
-                  </Button>
-                </>
-              )}
-            </div>
+            <RenameComponent
+              initialValue={draftData.name}
+              value={renameText}
+              setValue={setRenameText}
+              placeholder="ex) a04: Wordle"
+              onRename={renameAssignmentHandler}
+            />
           </div>
           <div className="flex flex-col gap-3">
             <p className="text-lg font-bold">Configuration</p>
@@ -184,6 +149,21 @@ export default function AssignmentDraftPage({
               Once the assignment is published, this configuration cannot be
               changed.
             </em>
+          </div>
+          {draftData.is_group && (
+            <AssignmentGroupManager
+              courseId={courseId}
+              assignmentId={assignmentId}
+            />
+          )}
+          <div className="flex flex-col gap-4">
+            <Separator className="my-auto w-full bg-border/50" />
+            <AssignmentPublishDialog
+              courseId={courseId}
+              assignmentId={assignmentId}
+            >
+              <Button className="ml-auto">Publish</Button>
+            </AssignmentPublishDialog>
           </div>
         </>
       )}

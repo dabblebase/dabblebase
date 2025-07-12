@@ -41,17 +41,14 @@ rename_request_not_found = RenameRequest(
 )
 
 create_group_request = CreateGroupRequest(
-    assignment_id=draft_group_assignment.id,
     group_name="Sample Group",
 )
 
 create_group_request_for_indiv = CreateGroupRequest(
-    assignment_id=draft_indiv_assignment.id,
     group_name="Sample Group",
 )
 
 create_group_request_for_noname = CreateGroupRequest(
-    assignment_id=draft_group_assignment.id,
     group_name="",
 )
 

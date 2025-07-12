@@ -10,4 +10,8 @@ celery_app = Celery(
 )
 
 # Import /tasks to ensure they are registered with Celery
-celery_app.autodiscover_tasks(["server.tasks"])
+celery_app.autodiscover_tasks(["server.tasks.assignment"])
+
+# Set up the celery worker
+if __name__ == "__main__":
+    celery_app.worker_main()

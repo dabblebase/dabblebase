@@ -18,36 +18,23 @@ export default function AssignmentLayout({
 
   return (
     <div className="[--header-height:calc(--spacing(16))]">
-      <SidebarProvider className="flex flex-col">
-        {/* Header */}
-        <DashboardHeader>
-          <BreadcrumbItem>
-            <CourseSelector
-              initialCourseId={courseId ? Number(courseId) : undefined}
-            />
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <SlashIcon className="size-4 mx-1" />
-          </BreadcrumbSeparator>
-          <AssignmentSelector
-            courseId={Number(courseId)}
-            initialAssignmentId={
-              assignmentId ? Number(assignmentId) : undefined
-            }
+      {/* Header */}
+      <DashboardHeader>
+        <BreadcrumbItem>
+          <CourseSelector
+            initialCourseId={courseId ? Number(courseId) : undefined}
+            disableSelect={true}
           />
-        </DashboardHeader>
-        {/* Inset */}
-        <div className="flex flex-1">
-          {/* Sidebar */}
-          <CourseSidebar />
-          {/* Content */}
-          <SidebarInset>
-            <div className="flex flex-1 flex-col">
-              <div>{children}</div>
-            </div>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator>
+          <SlashIcon className="size-4 mx-1" />
+        </BreadcrumbSeparator>
+        <AssignmentSelector
+          courseId={Number(courseId)}
+          initialAssignmentId={assignmentId ? Number(assignmentId) : undefined}
+        />
+      </DashboardHeader>
+      <div>{children}</div>
     </div>
   );
 }

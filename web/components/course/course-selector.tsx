@@ -19,8 +19,10 @@ import { useRouter } from "next/router";
 
 export default function CourseSelector({
   initialCourseId,
+  disableSelect = false,
 }: {
   initialCourseId?: number;
+  disableSelect?: boolean;
 }) {
   const router = useRouter();
 
@@ -50,6 +52,27 @@ export default function CourseSelector({
     initialCourseId === dropdownData?.selected_course.id
       ? dropdownData?.selected_course
       : courses.find((course) => `${course.id}` === selectedCourseId);
+
+  if (disableSelect) {
+    return (
+      <>
+        {!!selectedCourse && (
+          <Button
+            variant="ghost"
+            className="justify-between"
+            onClick={() =>
+              router.push(`/course/${selectedCourse.id}/assignments`)
+            }
+          >
+            <div className="flex flex-row items-center">
+              {selectedCourse.code}
+              {selectedCourse.is_staff && <Badge className="ml-2">Staff</Badge>}
+            </div>
+          </Button>
+        )}
+      </>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

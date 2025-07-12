@@ -415,7 +415,7 @@ def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentServ
 def test_create_group(admin_db_session: Session, assignment_svc: AssignmentService):
     """Tests that a group can be created for an assignment."""
     response = assignment_svc.create_group(
-        instructor_user.to_subject(), create_group_request
+        instructor_user.to_subject(), draft_group_assignment.id, create_group_request
     )
     group = admin_db_session.get(ProjectGroupEntity, response.group_id)
     assert group is not None
@@ -428,7 +428,9 @@ def test_create_group_for_indiv(
     """Ensures that a group cannot be created for a group assignment."""
     with pytest.raises(InputValidationException):
         assignment_svc.create_group(
-            instructor_user.to_subject(), create_group_request_for_indiv
+            instructor_user.to_subject(),
+            draft_indiv_assignment.id,
+            create_group_request_for_indiv,
         )
 
 
@@ -438,7 +440,9 @@ def test_create_group_for_noname(
     """Ensures that a group cannot be created with an empty name."""
     with pytest.raises(InputValidationException):
         assignment_svc.create_group(
-            instructor_user.to_subject(), create_group_request_for_noname
+            instructor_user.to_subject(),
+            draft_group_assignment.id,
+            create_group_request_for_noname,
         )
 
 
@@ -509,7 +513,7 @@ def test_remove_group_member_not_found_user(
 def test_delete_group(admin_db_session: Session, assignment_svc: AssignmentService):
     """Tests deleting a group from an assignment."""
     response = assignment_svc.create_group(
-        instructor_user.to_subject(), create_group_request
+        instructor_user.to_subject(), draft_group_assignment.id, create_group_request
     )
     delete_group_request.group_id = response.group_id
     assignment_svc.delete_group(instructor_user.to_subject(), delete_group_request)

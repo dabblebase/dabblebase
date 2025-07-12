@@ -170,7 +170,7 @@ export default function AssignmentSetupSQLDialog({
       {!!sqlData && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>{children}</DialogTrigger>
-          <DialogContent className="sm:max-w-[425px">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Configure Startup SQL</DialogTitle>
               <DialogDescription>

@@ -20,14 +20,17 @@ export default function AssignmentPage({
   viewData: AssignmentViewData;
 }) {
   const router = useRouter();
-  const { assignmentId } = router.query;
+  const { courseId, assignmentId } = router.query;
 
   return (
     <>
       {viewData.role === "student" ? (
         <p>student view</p>
       ) : viewData.assignment_state === "draft" ? (
-        <AssignmentDraftPage assignmentId={assignmentId as unknown as number} />
+        <AssignmentDraftPage
+          courseId={courseId as unknown as number}
+          assignmentId={assignmentId as unknown as number}
+        />
       ) : (
         <></>
       )}

@@ -28,6 +28,7 @@ import { api } from "@/utils/api";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/router";
 
 const CreateAssignmentFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,6 +47,8 @@ export default function CreateAssignmentDialog({
   courseId: number;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
   const createAssignmentForm = useForm<CreateAssignmentFormSchemaType>({
     resolver: zodResolver(CreateAssignmentFormSchema),
     defaultValues: {
@@ -73,8 +76,8 @@ export default function CreateAssignmentDialog({
       },
       {
         onSuccess: (data) => {
-          // Do something with the returned assignment id
-          console.log(data.assignment_id);
+          // Redirect to the assignment page
+          router.push(`/course/${courseId}/assignment/${data.assignment_id}`);
         },
         onError: () => {
           toast.error("Error creating new assignment", {
