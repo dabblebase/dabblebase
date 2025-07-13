@@ -17,17 +17,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, fetchClient } from "@/utils/api";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, CircleSlash, FileDown, Loader2Icon } from "lucide-react";
+import {
+  CircleCheck,
+  CircleSlash,
+  Eye,
+  EyeOff,
+  FileDown,
+  Loader2Icon,
+  Trash,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   groupProjectsColumns,
   individualProjectsColumns,
 } from "./projects-table/columns";
+import { Separator } from "@/components/ui/separator";
+import DeleteAssignmentDialog from "../../delete-assignment-dialog";
+import UnpublishAssignmentDialog from "../../unpublish-assignment-dialog";
+import RepublishAssignmentDialog from "../../republish-assignment-dialog";
 
 export default function AssignmentStaffPage({
+  courseId,
   assignmentId,
 }: {
+  courseId: number;
   assignmentId: number;
 }) {
   const queryClient = useQueryClient();
@@ -358,6 +372,79 @@ export default function AssignmentStaffPage({
                       <>Export</>
                     )}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col gap-3">
+            <p className="text-lg font-bold">Danger zone</p>
+            <Card>
+              <CardContent className="px-4">
+                {staffViewData.state === "published" && (
+                  <div className="flex flex-row gap-5 items-center">
+                    <EyeOff className="size-6 flex-shrink-0 text-accent-foreground/60" />
+                    <div className="flex flex-col flex-grow gap-1">
+                      <p className="font-semibold">Unpublish assignment</p>
+                      <p className="text-accent-foreground/80">
+                        The assignment will no longer be visible to students and
+                        students will lose access to their projects. Staff can
+                        still access the assignment and projects. Great for
+                        grading after the assignment deadline has passed.{" "}
+                        <em>
+                          Student access can be restored by re-publishing the
+                          assignment.
+                        </em>
+                      </p>
+                    </div>
+                    <UnpublishAssignmentDialog assignmentId={assignmentId}>
+                      <Button variant="outline" className="flex-shrink-0">
+                        Unpublish
+                      </Button>
+                    </UnpublishAssignmentDialog>
+                  </div>
+                )}
+                {staffViewData.state === "unpublished" && (
+                  <div className="flex flex-row gap-5 items-center">
+                    <Eye className="size-6 flex-shrink-0 text-accent-foreground/60" />
+                    <div className="flex flex-col flex-grow gap-1">
+                      <p className="font-semibold">Republish assignment</p>
+                      <p className="text-accent-foreground/80">
+                        The assignment will no longer be visible to students and
+                        students will lose access to their projects. Staff can
+                        still access the assignment and projects. Great for
+                        grading after the assignment deadline has passed.{" "}
+                        <em>
+                          Student access can be restored by re-publishing the
+                          assignment.
+                        </em>
+                      </p>
+                    </div>
+                    <RepublishAssignmentDialog assignmentId={assignmentId}>
+                      <Button variant="outline" className="flex-shrink-0">
+                        Republish
+                      </Button>
+                    </RepublishAssignmentDialog>
+                  </div>
+                )}
+                <Separator className="my-6" />
+                <div className="flex flex-row gap-5 items-center">
+                  <Trash className="size-6 flex-shrink-0 text-destructive" />
+                  <div className="flex flex-col flex-grow gap-1">
+                    <p className="font-semibold">Delete assignment</p>
+                    <p className="text-accent-foreground/80">
+                      All student projects will be deleted and data will not be
+                      recoverable.
+                    </p>
+                  </div>
+                  <DeleteAssignmentDialog
+                    courseId={courseId}
+                    assignmentId={assignmentId}
+                    assignmentName={staffViewData.name}
+                  >
+                    <Button variant="destructive" className="flex-shrink-0">
+                      Delete
+                    </Button>
+                  </DeleteAssignmentDialog>
                 </div>
               </CardContent>
             </Card>

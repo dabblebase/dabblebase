@@ -279,6 +279,36 @@ def delete_assignment(
     return Task(task_id=task.id)
 
 
+@api.put("/{assignment_id}/unpublish", tags=[tag])
+def unpublish_assignment(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """
+    Unpublish an assignment.
+
+    This endpoint allows staff to unpublish an assignment, making it
+    unavailable to students.
+    """
+    return assignment_svc.unpublish(subject, assignment_id)
+
+
+@api.put("/{assignment_id}/republish", tags=[tag])
+def republish_assignment(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> None:
+    """
+    Republish an assignment.
+
+    This endpoint allows staff to republish an assignment, making it
+    available to students again.
+    """
+    return assignment_svc.republish(subject, assignment_id)
+
+
 @api.put("/{assignment_id}/export", tags=[tag])
 def export(assignment_id: int, subject: Subject = Depends(registered_user)) -> Task:
     """

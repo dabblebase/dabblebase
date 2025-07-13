@@ -33,7 +33,10 @@ export default function AssignmentPage({
           assignmentId={assignmentId as unknown as number}
         />
       ) : (
-        <AssignmentStaffPage assignmentId={assignmentId as unknown as number} />
+        <AssignmentStaffPage
+          courseId={courseId as unknown as number}
+          assignmentId={assignmentId as unknown as number}
+        />
       )}
     </>
   );

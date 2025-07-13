@@ -12,6 +12,7 @@ import AssignmentGroupManager from "./assignment-group-manager/assignment-group-
 import RenameComponent from "@/components/ui/rename";
 import { Separator } from "@/components/ui/separator";
 import AssignmentPublishDialog from "./assignment-publish-dialog";
+import DeleteAssignmentDialog from "../../delete-assignment-dialog";
 
 export default function AssignmentDraftPage({
   courseId,
@@ -158,12 +159,21 @@ export default function AssignmentDraftPage({
           )}
           <div className="flex flex-col gap-4">
             <Separator className="my-auto w-full bg-border/50" />
-            <AssignmentPublishDialog
-              courseId={courseId}
-              assignmentId={assignmentId}
-            >
-              <Button className="ml-auto">Publish</Button>
-            </AssignmentPublishDialog>
+            <div className="flex flex-row w-full justify-between">
+              <DeleteAssignmentDialog
+                courseId={courseId}
+                assignmentId={assignmentId}
+                assignmentName={draftData.name}
+              >
+                <Button variant="destructive">Delete</Button>
+              </DeleteAssignmentDialog>
+              <AssignmentPublishDialog
+                courseId={courseId}
+                assignmentId={assignmentId}
+              >
+                <Button className="ml-auto">Publish</Button>
+              </AssignmentPublishDialog>
+            </div>
           </div>
         </>
       )}
