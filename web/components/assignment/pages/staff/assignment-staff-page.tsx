@@ -61,30 +61,23 @@ export default function AssignmentStaffPage({
     },
   });
 
-  const {
-    data: individualProjectData,
-    isLoading: individualProjectLoading,
-    isError: individualProjectError,
-  } = api.useQuery(
-    "get",
-    "/api/assignment/{assignment_id}/student-projects",
-    {
-      params: {
-        path: {
-          assignment_id: assignmentId,
+  const { data: individualProjectData, isError: individualProjectError } =
+    api.useQuery(
+      "get",
+      "/api/assignment/{assignment_id}/student-projects",
+      {
+        params: {
+          path: {
+            assignment_id: assignmentId,
+          },
         },
       },
-    },
-    {
-      enabled: !!staffViewData && staffViewData.is_group === false,
-    }
-  );
+      {
+        enabled: !!staffViewData && staffViewData.is_group === false,
+      }
+    );
 
-  const {
-    data: groupProjectData,
-    isLoading: groupProjectLoading,
-    isError: groupProjectError,
-  } = api.useQuery(
+  const { data: groupProjectData, isError: groupProjectError } = api.useQuery(
     "get",
     "/api/assignment/{assignment_id}/group-projects",
     {
@@ -375,12 +368,16 @@ export default function AssignmentStaffPage({
                 data={individualProjectData.projects}
               />
             )}
+            {!!individualProjectError && (
+              <ErrorMessage resource="student projects" />
+            )}
             {!!groupProjectData && (
               <DataTable
                 columns={groupProjectsColumns}
                 data={groupProjectData.projects}
               />
             )}
+            {!!groupProjectError && <ErrorMessage resource="group projects" />}
             <Card className="mt-3">
               <CardContent className="px-4">
                 <div className="flex flex-row gap-5 items-center">
