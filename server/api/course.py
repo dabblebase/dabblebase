@@ -76,6 +76,7 @@ def get_course_role(
 @api.get("/{course_id}/students", tags=[tag])
 def get_students(
     course_id: int,
+    assignment_id: int | None = None,
     search: str = "",
     subject: Subject = Depends(registered_user),
     course_svc: CourseService = Depends(),
@@ -83,4 +84,4 @@ def get_students(
     """
     Get the list of students in a specific course.
     """
-    return course_svc.get_students_for_course(subject, course_id, search)
+    return course_svc.get_students_for_course(subject, course_id, assignment_id, search)

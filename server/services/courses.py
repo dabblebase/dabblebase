@@ -7,6 +7,8 @@ from ..entities import (
     CourseEntity,
     UserEntity,
     AssignmentEntity,
+    ProjectGroupMemberEntity,
+    ProjectGroupEntity,
     AssignmentState,
 )
 from ..entities.course import CourseTermType
@@ -39,7 +41,7 @@ from .exceptions import (
     ResourceAlreadyExistsException,
     InputValidationException,
 )
-from sqlalchemy import or_, select, func
+from sqlalchemy import or_, select, func, not_, exists
 from sqlalchemy.orm import Session, joinedload
 import string
 import random
@@ -307,9 +309,14 @@ class CourseService:
         )
 
     def get_students_for_course(
-        self, subject: Subject, course_id: int, search: str
+        self, subject: Subject, course_id: int, assignment_id: int | None, search: str
     ) -> GetStudentsForCourseResponse:
-        """Returns a list of students for a course"""
+        """
+        Returns a list of students for a course
+
+        Note: If an assignment ID is provided, it will only return students that are not
+        already in a group for that assignment.
+        """
         # Check permissions
         self.verify_subject_has_permissions_for_course(
             subject, course_id, CourseMembershipRole.STAFF
@@ -335,8 +342,22 @@ class CourseService:
                     ),
                 )
             )
+        # If an assignment ID is provided, filter out students that are already in a group
+        if assignment_id:
+            query = query.where(
+                not_(
+                    exists(
+                        select(ProjectGroupMemberEntity.user_id)
+                        .join(ProjectGroupEntity)
+                        .where(
+                            ProjectGroupMemberEntity.user_id == UserEntity.id,
+                            ProjectGroupEntity.assignment_id == assignment_id,
+                        )
+                    )
+                )
+            )
 
-        users = self._admin_db.scalars(query).all()
+        users = self._admin_db.scalars(query).unique().all()
 
         # Convert to models and return
         students = [

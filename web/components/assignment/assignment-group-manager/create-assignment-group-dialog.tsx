@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { api } from "@/utils/api";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -34,9 +33,11 @@ type CreateGroupFormSchemaType = z.infer<typeof CreateGroupFormSchema>;
 export default function CreateAssignmentGroupDialog({
   assignmentId,
   children,
+  refetch,
 }: {
   assignmentId: number;
   children?: React.ReactNode;
+  refetch: () => void;
 }) {
   const createGroupForm = useForm<CreateGroupFormSchemaType>({
     resolver: zodResolver(CreateGroupFormSchema),
@@ -45,7 +46,6 @@ export default function CreateAssignmentGroupDialog({
     },
   });
 
-  const queryClient = useQueryClient();
   // Hooks related to creating a new group
   const { mutate: createGroup } = api.useMutation(
     "post",
@@ -69,9 +69,7 @@ export default function CreateAssignmentGroupDialog({
       {
         onSuccess: () => {
           // Refetch the group data to reflect the changes
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
-          });
+          refetch();
           createGroupForm.reset();
           setOpen(false);
         },

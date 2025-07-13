@@ -1,24 +1,23 @@
 import { Plus } from "lucide-react";
-import { Button } from "../../../../ui/button";
-import { Card, CardContent } from "../../../../ui/card";
-import { Separator } from "../../../../ui/separator";
-import AssignmentGroupManagerRow from "./assignment-group-manager-row";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { api } from "@/utils/api";
-import ErrorMessage from "../../../../errors/error-message";
+import ErrorMessage from "@/components/errors/error-message";
 import { Fragment } from "react";
 import CreateAssignmentGroupDialog from "./create-assignment-group-dialog";
 import AssignmentGroupUnassignedStudentSelector from "./assignment-group-unassigned-student-selector";
-import { useQueryClient } from "@tanstack/react-query";
+import AssignmentGroupManagerRow from "./assignment-group-manager-row";
 
 export default function AssignmentGroupManager({
   courseId,
   assignmentId,
+  refetch,
 }: {
   courseId: number;
   assignmentId: number;
+  refetch: () => void;
 }) {
-  const queryClient = useQueryClient();
-
   const { data: groupData, isError: groupDataError } = api.useQuery(
     "get",
     "/api/assignment/{assignment_id}/groups",
@@ -53,9 +52,7 @@ export default function AssignmentGroupManager({
         {
           onSuccess: () => {
             // Refetch the group data to reflect the changes
-            queryClient.refetchQueries({
-              queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
-            });
+            refetch();
             setOpen(false);
           },
         }
@@ -81,6 +78,7 @@ export default function AssignmentGroupManager({
                     courseId={courseId}
                     assignmentId={assignmentId}
                     group={group}
+                    refetch={refetch}
                   />
                   {index < groupData.groups.length - 1 && (
                     <Separator className="my-2" />
@@ -90,7 +88,10 @@ export default function AssignmentGroupManager({
             </CardContent>
           </Card>
           <div>
-            <CreateAssignmentGroupDialog assignmentId={assignmentId}>
+            <CreateAssignmentGroupDialog
+              assignmentId={assignmentId}
+              refetch={refetch}
+            >
               <Button>
                 <Plus />
                 Add group

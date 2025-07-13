@@ -3,30 +3,32 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "../../../../ui/popover";
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
   CommandInput,
   CommandItem,
   CommandList,
-} from "../../../../ui/command";
+} from "@/components/ui/command";
 import { useDebounce } from "use-debounce";
 import { api } from "@/utils/api";
 import { CommandGroup } from "cmdk";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AssignmentGroupStudentSelector({
   courseId,
   assignmentId,
   groupId,
+  refetch,
 }: {
   courseId: number;
   assignmentId: number;
   groupId: number;
+  refetch: () => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -42,6 +44,7 @@ export default function AssignmentGroupStudentSelector({
         path: { course_id: courseId },
         query: {
           search: debouncedSearch,
+          assignment_id: assignmentId,
         },
       },
     },
@@ -67,8 +70,10 @@ export default function AssignmentGroupStudentSelector({
       {
         onSuccess: () => {
           // Refetch the group data to reflect the changes
+          refetch();
+          // Refetch the search to ensure that the student is no longer listed
           queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
+            queryKey: ["get", "/api/course/{course_id}/students"],
           });
           setOpen(false);
         },

@@ -783,6 +783,24 @@ class AssignmentService:
         self._admin_db.add(group)
         self._admin_db.commit()
 
+        # If the assignment has been published, we need to manage the creation of the project
+        # database for the group.
+        if assignment.state == AssignmentState.PUBLISHED:
+            # Create a project for the group
+            try:
+                self._create_project(
+                    assignment_id=assignment.id,
+                    group_id=group.id,
+                    configuration_sql=assignment.project_configuration_sql,
+                )
+            except ContentDatabaseTransactionException as e:
+                # If the project creation fails, we need to delete the group
+                self._admin_db.delete(group)
+                self._admin_db.commit()
+                raise ContentDatabaseTransactionException(
+                    f"Failed to create project for group {group.id}: {str(e)}"
+                )
+
         return CreateGroupResponse(
             group_id=group.id,
             group_name=group.name,
@@ -829,6 +847,22 @@ class AssignmentService:
         self._get_assignment_and_verify_permissions(
             subject, group.assignment_id, CourseMembershipRole.ADMIN
         )
+
+        # Make sure that the user is not already a member of a group for the assignment
+        existing_member_query = (
+            select(ProjectGroupMemberEntity)
+            .join(ProjectGroupEntity)
+            .where(ProjectGroupMemberEntity.user_id == request.user_id)
+            .where(ProjectGroupEntity.assignment_id == group.assignment_id)
+        )
+        existing_member: ProjectGroupMemberEntity | None = self._admin_db.scalars(
+            existing_member_query
+        ).one_or_none()
+
+        if existing_member:
+            raise InputValidationException(
+                f"User with ID {request.user_id} is already a member of a group for this assignment."
+            )
 
         # Add the member to the group
         member = ProjectGroupMemberEntity(group_id=group.id, user_id=request.user_id)

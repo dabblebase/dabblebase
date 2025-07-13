@@ -24,6 +24,7 @@ import {
   EyeOff,
   FileDown,
   Loader2Icon,
+  Pencil,
   Trash,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -36,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import DeleteAssignmentDialog from "../../delete-assignment-dialog";
 import UnpublishAssignmentDialog from "../../unpublish-assignment-dialog";
 import RepublishAssignmentDialog from "../../republish-assignment-dialog";
+import AssignmentGroupManager from "../../assignment-group-manager/assignment-group-manager";
 
 export default function AssignmentStaffPage({
   courseId,
@@ -329,9 +331,44 @@ export default function AssignmentStaffPage({
             </Card>
           </div>
           <div className="flex flex-col gap-3">
-            <p className="text-lg font-bold">
-              {staffViewData.is_group ? "Group" : "Student"} projects
-            </p>
+            <div className="flex flex-row w-full items-center justify-between">
+              <p className="text-lg font-bold">
+                {staffViewData.is_group ? "Group" : "Student"} projects
+              </p>
+              {staffViewData.is_group && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Pencil /> Edit groups
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[800px]">
+                    <DialogTitle className="hidden">
+                      Manage groups for this assignment
+                    </DialogTitle>
+                    <AssignmentGroupManager
+                      courseId={courseId}
+                      assignmentId={assignmentId}
+                      refetch={() => {
+                        queryClient.refetchQueries({
+                          queryKey: [
+                            "get",
+                            "/api/assignment/{assignment_id}/group-projects",
+                          ],
+                        });
+                        queryClient.refetchQueries({
+                          queryKey: [
+                            "get",
+                            "/api/assignment/{assignment_id}/groups",
+                          ],
+                        });
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+
             {!!individualProjectData && (
               <DataTable
                 columns={individualProjectsColumns}

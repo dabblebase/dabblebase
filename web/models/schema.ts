@@ -1412,6 +1412,7 @@ export interface operations {
     get_students_api_course__course_id__students_get: {
         parameters: {
             query?: {
+                assignment_id?: number | null;
                 search?: string;
             };
             header?: never;

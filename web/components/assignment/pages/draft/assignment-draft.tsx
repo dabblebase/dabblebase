@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import AssignmentSetupSQLDialog from "@/components/assignment/pages/draft/assignment-setup-sql-dialog/assignment-setup-sql-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import AssignmentGroupManager from "./assignment-group-manager/assignment-group-manager";
+import AssignmentGroupManager from "@/components/assignment/assignment-group-manager/assignment-group-manager";
 import RenameComponent from "@/components/ui/rename";
 import { Separator } from "@/components/ui/separator";
 import AssignmentPublishDialog from "./assignment-publish-dialog";
@@ -155,6 +155,11 @@ export default function AssignmentDraftPage({
             <AssignmentGroupManager
               courseId={courseId}
               assignmentId={assignmentId}
+              refetch={() => {
+                queryClient.refetchQueries({
+                  queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
+                });
+              }}
             />
           )}
           <div className="flex flex-col gap-4">

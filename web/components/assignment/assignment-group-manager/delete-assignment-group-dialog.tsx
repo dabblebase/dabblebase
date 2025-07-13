@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { api } from "@/utils/api";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,13 +18,13 @@ export default function DeleteAssignmentGroupDialog({
   assignmentId,
   groupId,
   children,
+  refetch,
 }: {
   assignmentId: number;
   groupId: number;
   children?: React.ReactNode;
+  refetch: () => void;
 }) {
-  const queryClient = useQueryClient();
-
   const [open, setOpen] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
@@ -48,9 +47,7 @@ export default function DeleteAssignmentGroupDialog({
       {
         onSuccess: () => {
           // Refetch the group data to reflect the changes
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
-          });
+          refetch();
           setOpen(false);
         },
         onError: () => {

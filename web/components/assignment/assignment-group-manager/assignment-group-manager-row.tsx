@@ -1,14 +1,14 @@
 import { Trash, X } from "lucide-react";
-import { Button } from "../../../../ui/button";
-import { Separator } from "../../../../ui/separator";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import RenameComponent from "../../../../ui/rename";
+import RenameComponent from "@/components/ui/rename";
 import type { components } from "@/models/schema";
 import { api } from "@/utils/api";
-import { useQueryClient } from "@tanstack/react-query";
 import DeleteAssignmentGroupDialog from "./delete-assignment-group-dialog";
 import AssignmentGroupStudentSelector from "./assignment-group-student-selector";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AssignmentGroup = components["schemas"]["GetGroupsResponse_Group"];
 
@@ -16,10 +16,12 @@ export default function AssignmentGroupManagerRow({
   courseId,
   assignmentId,
   group,
+  refetch,
 }: {
   courseId: number;
   assignmentId: number;
   group: AssignmentGroup;
+  refetch: () => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -46,9 +48,7 @@ export default function AssignmentGroupManagerRow({
         onSuccess: () => {
           setRenaming(false);
           // Refetch the group data to reflect the changes
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
-          });
+          refetch();
         },
       }
     );
@@ -73,8 +73,10 @@ export default function AssignmentGroupManagerRow({
       {
         onSuccess: () => {
           // Refetch the group data to reflect the changes
+          refetch();
+          // Refetch the search to ensure that the student is no longer listed
           queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/groups"],
+            queryKey: ["get", "/api/course/{course_id}/students"],
           });
         },
         onError: () => {
@@ -124,6 +126,7 @@ export default function AssignmentGroupManagerRow({
             courseId={courseId}
             assignmentId={assignmentId}
             groupId={group.group_id}
+            refetch={refetch}
           />
         </div>
         <Separator
@@ -133,6 +136,7 @@ export default function AssignmentGroupManagerRow({
         <DeleteAssignmentGroupDialog
           assignmentId={assignmentId}
           groupId={group.group_id}
+          refetch={refetch}
         >
           <Button variant="destructive" size="icon">
             <Trash />
