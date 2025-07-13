@@ -617,8 +617,58 @@ export interface paths {
         /**
          * Delete Assignment
          * @description Delete an assignment.
+         *
+         *     Note: This kicks off an asynchronous task using Celery and returns
+         *     the task ID. The client can poll the task status endpoint to ensure
+         *     the task has completed.
          */
         delete: operations["delete_assignment_api_assignment__assignment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Export
+         * @description Export an assignment by dumping all student databases
+         *
+         *     Note: This kicks off an asynchronous task using Celery and returns
+         *     the task ID. The client can poll the task status endpoint to ensure
+         *     the task has completed.
+         */
+        put: operations["export_api_assignment__assignment_id__export_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/export-result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Export Result
+         * @description Get the result of an export task.
+         *
+         *     This endpoint retrieves the result of the export task for the given assignment.
+         */
+        get: operations["get_export_result_api_assignment__assignment_id__export_result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2037,6 +2087,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_api_assignment__assignment_id__export_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_export_result_api_assignment__assignment_id__export_result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

@@ -21,3 +21,11 @@ def delete_assignment(assignment_id: int, user_id: int):
     subject = Subject(id=user_id)
     assignment_svc = get_assignment_service()
     assignment_svc.delete(subject, assignment_id)
+
+
+@celery_app.task(name="assignment.dump_databases")
+def dump_databases(assignment_id: int, user_id: int):
+    """Celery task to dump the database for an assignment."""
+    subject = Subject(id=user_id)
+    assignment_svc = get_assignment_service()
+    assignment_svc.dump_databases(subject, assignment_id)

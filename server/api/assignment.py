@@ -1,6 +1,7 @@
 """API endpoint for assignments"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi.responses import FileResponse
 from ..env import env
 from ..services import AssignmentService
 from ..services.project import auth_crypto as crypto
@@ -31,6 +32,7 @@ from ..models.assignment import (
 from ..models.task import Task
 from ..tasks.assignment import publish_assignment as publish_assignment_task
 from ..tasks.assignment import delete_assignment as delete_assignment_task
+from ..tasks.assignment import dump_databases as dump_databases_task
 
 tag = "Assignments"
 openapi_tags = {
@@ -266,6 +268,42 @@ def publish_assignment(
 def delete_assignment(
     assignment_id: int, subject: Subject = Depends(registered_user)
 ) -> Task:
-    """Delete an assignment."""
+    """
+    Delete an assignment.
+
+    Note: This kicks off an asynchronous task using Celery and returns
+    the task ID. The client can poll the task status endpoint to ensure
+    the task has completed.
+    """
     task = delete_assignment_task.delay(assignment_id, subject.id)
     return Task(task_id=task.id)
+
+
+@api.put("/{assignment_id}/export", tags=[tag])
+def export(assignment_id: int, subject: Subject = Depends(registered_user)) -> Task:
+    """
+    Export an assignment by dumping all student databases
+
+    Note: This kicks off an asynchronous task using Celery and returns
+    the task ID. The client can poll the task status endpoint to ensure
+    the task has completed.
+    """
+    task = dump_databases_task.delay(assignment_id, subject.id)
+    return Task(task_id=task.id)
+
+
+@api.get("/{assignment_id}/export-result", tags=[tag])
+def get_export_result(
+    assignment_id: int,
+    background_tasks: BackgroundTasks,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> FileResponse:
+    """
+    Get the result of an export task.
+
+    This endpoint retrieves the result of the export task for the given assignment.
+    """
+    return assignment_svc.retrieve_dumped_databases(
+        subject, assignment_id, background_tasks
+    )

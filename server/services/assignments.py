@@ -54,6 +54,11 @@ from .exceptions import (
     InputValidationException,
 )
 from ..env import env
+import os
+import subprocess
+import zipfile
+from fastapi import BackgroundTasks
+from fastapi.responses import FileResponse
 
 
 class AssignmentService:
@@ -911,7 +916,11 @@ class AssignmentService:
             )
             for group in groups:
                 # Create a project for each group
-                self._create_project(assignment_id=assignment.id, group_id=group.id)
+                self._create_project(
+                    assignment_id=assignment.id,
+                    group_id=group.id,
+                    configuration_sql=assignment.project_configuration_sql,
+                )
         else:
             # If the assignment is an individual assignment, create a project for each student.
             students = (
@@ -925,7 +934,9 @@ class AssignmentService:
             for student in students:
                 # Create a project for each student
                 self._create_project(
-                    assignment_id=assignment.id, user_id=student.user_id
+                    assignment_id=assignment.id,
+                    user_id=student.user_id,
+                    configuration_sql=assignment.project_configuration_sql,
                 )
 
         # Update the assignment details
@@ -1035,6 +1046,172 @@ class AssignmentService:
         assignment.state = AssignmentState.PUBLISHED
         self._admin_db.commit()
 
+    def dump_databases(self, subject: Subject, assignment_id: int) -> str:
+        """
+        Runs `pg_dump` on all databases associated with an assignment, creating a zip
+        file of SQL scripts that contains the setup for every database within an
+        assignment.
+
+        This is a potentially expensive operation, so like publish and delete,
+        this will be run as a Celery background task. See the `/tasks` directory for
+        the Celery task definition.
+
+        Note that this function runs from the context of a Celery worker, which will use
+        `pg_dump` as a subprocess.
+
+        All of the files will be dumped into a temporary directory (/tmp) and
+        then zipped into a single file, which will be returned as a response. The API call
+        to retrieve the result of the async task will clean up these files using the
+        `retrieve_dumped_databases` service function below.
+
+        TODO: Will explore using a separate file store instead of the `/tmp` directory
+        for scalability purposes.
+
+        TODO: Consider moving this to the content database cluster service or some other
+        service.
+
+        Returns:
+            Path of the zip file containing all dumps.
+        """
+        # First, check for staff permissions for the assignment
+        self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        # Load all of the projects for the assignment
+        projects_query = (
+            select(ProjectEntity)
+            .outerjoin(UserEntity)
+            .outerjoin(ProjectGroupEntity)
+            .where(ProjectEntity.assignment_id == assignment_id)
+        ).options(joinedload(ProjectEntity.user), joinedload(ProjectEntity.group))
+
+        projects = self._admin_db.scalars(projects_query).all()
+
+        # Find the project ID and database details for each project
+        # Note: tuple in format (project id, name, db_name, db_admin_role_name, db_admin_role_password)
+        db_info: list[tuple[int, str, str, str, str]] = [
+            (
+                project.id,
+                (
+                    f"{project.user.first_name} {project.user.last_name}"
+                    if project.user
+                    else (
+                        project.group.name
+                        if project.group
+                        else "Project with ID {project.id}"
+                    )
+                ),
+                project.db_name,
+                project.admin_role_name,
+                self._content_db_cluster_svc.decrypt_role_password(
+                    project.encrypted_admin_role_password, assignment_id
+                ),
+            )
+            for project in projects
+        ]
+
+        # Create the dump directory if it doesn't exist
+        DUMP_DIRECTORY = f"/tmp/db_dumps/assignment_{assignment_id}"
+        os.makedirs(DUMP_DIRECTORY, exist_ok=True)
+
+        # Create an array to store the path of the output dump files
+        out_files = []
+
+        # Loop through each database URL and run pg_dump
+        for (
+            project_id,
+            project_name,
+            db_name,
+            db_admin_role,
+            db_admin_role_password,
+        ) in db_info:
+            # Create the output path for the dump file.
+            dump_path = os.path.join(
+                DUMP_DIRECTORY,
+                f"{project_name}'s database (project id - {project_id}).sql",
+            )
+            # Try to run `pg_dump` on the database
+            try:
+                subprocess.run(
+                    [
+                        "pg_dump",
+                        "-h",
+                        env.CONTENT_DB_HOST,
+                        "-p",
+                        env.CONTENT_DB_PORT,
+                        "-U",
+                        db_admin_role,
+                        "-d",
+                        db_name,
+                        "-f",
+                        dump_path,
+                    ],
+                    check=True,
+                    env={"PGPASSWORD": db_admin_role_password},
+                )
+
+                out_files.append(dump_path)
+            except subprocess.CalledProcessError as e:
+                # If there is an error running `pg_dump`, we will skip over it.
+                # TODO: Improve error handling here
+                raise e
+                continue
+
+        # Now, create the zip file containing all of the dump files with timestamp
+        zip_path = os.path.join(
+            DUMP_DIRECTORY, f"assignment_{assignment_id}_export.zip"
+        )
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+            for sql_path in out_files:
+                zipf.write(sql_path, arcname=os.path.basename(sql_path))
+
+        # Remove all of the individual dump files
+        for sql_path in out_files:
+            os.remove(sql_path)
+
+        # Return the path to the zip file
+        return zip_path
+
+    def retrieve_dumped_databases(
+        self,
+        subject: Subject,
+        assignment_id: int,
+        fastapi_background_tasks: BackgroundTasks,
+    ) -> FileResponse:
+        """
+        Retrieves the dumped databases for an assignment and cleans up the temporary files.
+
+        This function is intended to be called after the `dump_databases` function has been
+        executed, and it will return the zip file containing the dumped databases.
+        """
+        # Check for staff permissions for the assignment
+        self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        # Generate the expected zip file path
+        DUMP_DIRECTORY = f"/tmp/db_dumps/assignment_{assignment_id}"
+        zip_path = os.path.join(
+            DUMP_DIRECTORY, f"assignment_{assignment_id}_export.zip"
+        )
+
+        # Access the zip file
+        if not os.path.exists(zip_path):
+            raise ResourceNotFoundException(
+                f"No dumped databases found for assignment ID {assignment_id}."
+            )
+
+        # Schedule cleanup of the zip file after the response is sent using FastAPI
+        fastapi_background_tasks.add_task(os.remove, zip_path)
+
+        # Return the zip file as a FileResponse
+        return FileResponse(
+            zip_path,
+            filename=f"assignment_{assignment_id}_export.zip",
+            media_type="application/zip",
+        )
+
     def _get_assignment_and_verify_permissions(
         self, subject: Subject, assignment_id: int, min_role: CourseMembershipRole
     ) -> AssignmentEntity:
@@ -1054,6 +1231,7 @@ class AssignmentService:
     def _create_project(
         self,
         assignment_id: int,
+        configuration_sql: str | None = None,
         group_id: int | None = None,
         user_id: int | None = None,
     ) -> ProjectEntity:
@@ -1118,6 +1296,12 @@ class AssignmentService:
             self._content_db_cluster_svc.provision_role_for_database(
                 db_name, student_role_name, student_role_password
             )
+
+            # Run the configuration SQL on the database
+            if configuration_sql is not None:
+                self._content_db_cluster_svc.run_sql_on_database(
+                    db_name, admin_role_name, admin_role_password, configuration_sql
+                )
 
             # Set the credentials for the project
             project.admin_role_name = admin_role_name

@@ -14,17 +14,16 @@ import {
 } from "@/components/ui/dialog";
 import RenameComponent from "@/components/ui/rename";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/utils/api";
+import { api, fetchClient } from "@/utils/api";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, CircleSlash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CircleCheck, CircleSlash, FileDown, Loader2Icon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   groupProjectsColumns,
   individualProjectsColumns,
 } from "./projects-table/columns";
-import { DataTablePagination } from "@/components/ui/data-table-pagination";
 
 export default function AssignmentStaffPage({
   assignmentId,
@@ -97,6 +96,109 @@ export default function AssignmentStaffPage({
     "put",
     "/api/assignment/{assignment_id}/rename"
   );
+
+  // Hooks and mutations for exporting student data
+  // TODO: This is probably best separated into a custom hook - or, generalize it to tasks.
+  const { mutate: startDatabaseExport } = api.useMutation(
+    "put",
+    "/api/assignment/{assignment_id}/export"
+  );
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportingTaskId, setExportingTaskId] = useState<string | null>(null);
+
+  // Polling for the status of the exporting task.
+  const { data: exportingStatus } = api.useQuery(
+    "get",
+    "/api/task/{task_id}/status",
+    {
+      params: {
+        path: {
+          task_id: exportingTaskId!,
+        },
+      },
+    },
+    {
+      enabled: !!exportingTaskId, // Only run this query if we have a task ID to poll.
+      refetchInterval: 1000,
+    }
+  );
+
+  const onExportButtonPressed = () => {
+    setIsExporting(true);
+    startDatabaseExport(
+      {
+        params: {
+          path: {
+            assignment_id: assignmentId,
+          },
+        },
+      },
+      {
+        onSuccess: (response) => {
+          // Set the exporting ID, which kicks off the polling for the task to finish.
+          setExportingTaskId(response.task_id);
+        },
+        onError: () => {
+          setIsExporting(false);
+          setExportingTaskId(null);
+          toast.error(`Failed to start publishing assignment`, {
+            description: "Please try again later.",
+          });
+        },
+      }
+    );
+  };
+
+  // Create handler to download the export result.
+  const downloadExportedData = useCallback(async () => {
+    const { data } = await fetchClient.GET(
+      "/api/assignment/{assignment_id}/export-result",
+      {
+        params: {
+          path: {
+            assignment_id: assignmentId,
+          },
+        },
+        parseAs: "blob", // Ensure we parse the response as a blob for file download
+      }
+    );
+    if (!data) {
+      toast.error("Failed to download export file.", {
+        description: "Please try again later.",
+      });
+      return;
+    }
+
+    const url = window.URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `assignment-export.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [assignmentId]);
+
+  // Respond to changes in the publishing status
+  useEffect(() => {
+    if (exportingStatus && exportingStatus.status === "SUCCESS") {
+      setIsExporting(false);
+      setExportingTaskId(null);
+      // Now, download the zip by hitting the download endpoint.
+      downloadExportedData();
+    }
+    if (
+      exportingStatus &&
+      (exportingStatus.status === "FAILURE" ||
+        exportingStatus.status === "REVOKED" ||
+        exportingStatus.status === "IGNORED")
+    ) {
+      setIsExporting(false);
+      setExportingTaskId(null);
+      toast.error(`Failed to export database data.`, {
+        description: "Please try again later.",
+      });
+    }
+  }, [assignmentId, downloadExportedData, exportingStatus]);
 
   const renameAssignmentHandler = (
     setRenaming: (renaming: boolean) => void
@@ -228,6 +330,37 @@ export default function AssignmentStaffPage({
                 data={groupProjectData.projects}
               />
             )}
+            <Card className="mt-3">
+              <CardContent className="px-4">
+                <div className="flex flex-row gap-5 items-center">
+                  <FileDown className="size-6 flex-shrink-0 text-accent-foreground/60" />
+                  <div className="flex flex-col flex-grow gap-1">
+                    <p className="font-semibold">Export project databases</p>
+                    <p className="text-accent-foreground/80">
+                      Downloads a zip file containing SQL scripts to recreate
+                      all student databases, including all tables and data.
+                      Great for offline grading or as input to a configured
+                      autograder.
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isExporting}
+                    onClick={onExportButtonPressed}
+                    className="flex-shrink-0"
+                  >
+                    {isExporting ? (
+                      <>
+                        <Loader2Icon className="animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>Export</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </>
       )}
