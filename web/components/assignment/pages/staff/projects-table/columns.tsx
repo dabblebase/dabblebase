@@ -22,6 +22,7 @@ export const individualProjectsColumns: ColumnDef<StudentProject>[] = [
       return (
         <ProjectsTableActionsRow
           projectName={project.user_name}
+          studentEmails={project.user_email}
           dbUrl={project.db_url}
         />
       );
@@ -49,6 +50,7 @@ export const groupProjectsColumns: ColumnDef<GroupProject>[] = [
       return (
         <ProjectsTableActionsRow
           projectName={project.group_name}
+          studentEmails={project.group_member_emails.join(",")}
           dbUrl={project.db_url}
         />
       );
