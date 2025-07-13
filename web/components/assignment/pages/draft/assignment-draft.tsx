@@ -95,7 +95,7 @@ export default function AssignmentDraftPage({
 
   return (
     <div className="flex flex-col mx-auto w-full max-w-[800px] px-4 gap-8 my-8">
-      {draftDataLoading && <p>Loading... (replace with skeleton)</p>}
+      {draftDataLoading && <p>Loading...</p>}
       {draftDataError && <ErrorMessage resource="assignment" />}
       {!!draftData && (
         <>

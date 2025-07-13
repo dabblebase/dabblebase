@@ -53,6 +53,49 @@ class GetConfigurationSQLResponse(BaseModel):
     db_url: str | None = None
 
 
+class GetStaffViewResponse(BaseModel):
+    """Model that presents the information for a staff view of an assignment."""
+
+    assignment_id: int
+    name: str
+    is_group: bool
+    state: AssignmentState
+    configuration_sql: str | None = None
+
+
+class GetStudentProjectsResponse_Project(BaseModel):
+    """Model that represents a project in the response for getting student projects."""
+
+    project_id: int
+    user_id: int
+    user_name: str
+    user_email: str
+    db_url: str
+
+
+class GetStudentProjectsResponse(BaseModel):
+    """Model that represents a response for getting student projects of an assignment."""
+
+    projects: list[GetStudentProjectsResponse_Project]
+
+
+class GetGroupProjectsResponse_Project(BaseModel):
+    """Model that represents a group in the response for getting group projects of an assignment."""
+
+    project_id: int
+    group_id: int
+    group_name: str
+    group_members: list[str]
+    group_member_emails: list[str]
+    db_url: str
+
+
+class GetGroupProjectsResponse(BaseModel):
+    """Model that represents a response for getting group projects of an assignment."""
+
+    projects: list[GetGroupProjectsResponse_Project]
+
+
 class CreateDraftRequest(BaseModel):
     """Model that represents a request to create a draft."""
 

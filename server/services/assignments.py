@@ -26,6 +26,11 @@ from ..models.assignment import (
     GetViewResponse,
     GetDraftResponse,
     GetConfigurationSQLResponse,
+    GetStaffViewResponse,
+    GetStudentProjectsResponse_Project,
+    GetStudentProjectsResponse,
+    GetGroupProjectsResponse_Project,
+    GetGroupProjectsResponse,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -240,6 +245,142 @@ class AssignmentService:
             sql_draft_error=assignment.draft_project_configuration_sql_error,
             db_url=db_url,
         )
+
+    def get_staff_view(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStaffViewResponse:
+        """Gets the staff view for an assignment."""
+        # Check for staff permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        # Return the staff view details
+        return GetStaffViewResponse(
+            assignment_id=assignment.id,
+            name=assignment.name,
+            is_group=assignment.is_group_assignment,
+            state=assignment.state,
+            configuration_sql=assignment.project_configuration_sql,
+        )
+
+    def get_student_projects(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentProjectsResponse:
+        """
+        Gets the student projects for an assignment.
+        Note: This should only be used for individual assignments. Group assignments
+        should use the `get_group_projects` method.
+        """
+        # Check for staff permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        if assignment.is_group_assignment:
+            raise InputValidationException(
+                "Cannot get student projects for group assignments."
+            )
+
+        # Load the student projects for the assignment
+        projects_query = (
+            select(ProjectEntity)
+            .join(UserEntity)
+            .where(
+                ProjectEntity.assignment_id == assignment_id,
+                ProjectEntity.group_id.is_(
+                    None
+                ),  # Ensure it's an individual assignment
+            )
+            .order_by(UserEntity.last_name)
+            .options(joinedload(ProjectEntity.user))
+        )
+
+        projects = self._admin_db.scalars(projects_query).all()
+
+        # Convert to models and return
+        project_models = [
+            GetStudentProjectsResponse_Project(
+                project_id=project.id,
+                user_id=project.user.id,
+                user_name=f"{project.user.first_name} {project.user.last_name}",
+                user_email=project.user.email,
+                db_url=self._content_db_cluster_svc.db_url_for_provisioned_db(
+                    project.db_name,
+                    project.admin_role_name,
+                    self._content_db_cluster_svc.decrypt_role_password(
+                        project.encrypted_admin_role_password, assignment_id
+                    ),
+                ),
+            )
+            for project in projects
+            if project.user is not None
+        ]
+
+        return GetStudentProjectsResponse(projects=project_models)
+
+    def get_group_projects(self, subject: Subject, assignment_id: int):
+        """
+        Gets the group projects for a group assignment.
+         Note: This should only be used for group assignments. Individual assignments
+        should use the `get_student_projects` method.
+        """
+        # Check for staff permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STAFF
+        )
+
+        if not assignment.is_group_assignment:
+            raise InputValidationException(
+                "Cannot get group projects for individual assignments."
+            )
+
+        # Load the student projects for the assignment
+        projects_query = (
+            select(ProjectEntity)
+            .join(ProjectGroupEntity)
+            .join(ProjectGroupMemberEntity)
+            .join(UserEntity)
+            .where(
+                ProjectEntity.assignment_id == assignment_id,
+                ProjectEntity.user_id.is_(None),  # Ensure it's a group assignment
+            )
+            .order_by(UserEntity.last_name)
+            .options(
+                joinedload(ProjectEntity.group),
+                joinedload(ProjectEntity.group)
+                .joinedload(ProjectGroupEntity.members)
+                .joinedload(ProjectGroupMemberEntity.user),
+            )
+        )
+
+        projects = self._admin_db.scalars(projects_query).unique().all()
+
+        project_models = [
+            GetGroupProjectsResponse_Project(
+                project_id=project.id,
+                group_id=project.group.id,
+                group_name=project.group.name,
+                group_members=[
+                    f"{member.user.first_name} {member.user.last_name}"
+                    for member in project.group.members
+                ],
+                group_member_emails=[
+                    member.user.email for member in project.group.members
+                ],
+                db_url=self._content_db_cluster_svc.db_url_for_provisioned_db(
+                    project.db_name,
+                    project.admin_role_name,
+                    self._content_db_cluster_svc.decrypt_role_password(
+                        project.encrypted_admin_role_password, assignment_id
+                    ),
+                ),
+            )
+            for project in projects
+            if project.group is not None and project.group.members is not None
+        ]
+
+        return GetGroupProjectsResponse(projects=project_models)
 
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest

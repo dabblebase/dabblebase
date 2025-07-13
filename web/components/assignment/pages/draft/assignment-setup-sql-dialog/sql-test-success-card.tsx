@@ -1,7 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { CircleCheck, Copy } from "lucide-react";
+import CopyText from "@/components/ui/copy-text";
+import { CircleCheck } from "lucide-react";
 
 export default function SQLTestSuccessCard({ dbUrl }: { dbUrl: string }) {
   return (
@@ -16,13 +15,7 @@ export default function SQLTestSuccessCard({ dbUrl }: { dbUrl: string }) {
           first connect to their database.
         </p>
         <p className="text-sm font-medium">Test database URL</p>
-        <div className="flex flex-row gap-2 items-center">
-          <Input id="link" defaultValue={dbUrl} readOnly className="h-9" />
-          <Button variant="outline" type="submit" size="sm" className="px-3">
-            <span className="sr-only">Copy</span>
-            <Copy />
-          </Button>
-        </div>
+        <CopyText text={dbUrl} />
       </CardContent>
     </Card>
   );

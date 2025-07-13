@@ -70,6 +70,11 @@ export default function AssignmentGroupManager({
         <>
           <Card>
             <CardContent className="px-4">
+              {groupData.groups.length === 0 && (
+                <p className="text-accent-foreground/80">
+                  No groups have been created yet - create one now!
+                </p>
+              )}
               {groupData.groups.map((group, index) => (
                 <Fragment key={group.group_id}>
                   <AssignmentGroupManagerRow

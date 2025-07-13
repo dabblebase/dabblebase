@@ -5,6 +5,7 @@ import { GetServerSidePropsContext } from "next";
 import type { components } from "@/models/schema";
 import AssignmentDraftPage from "@/components/assignment/pages/draft/assignment-draft";
 import { useRouter } from "next/router";
+import AssignmentStaffPage from "@/components/assignment/pages/staff/assignment-staff-page";
 
 type Role = components["schemas"]["CourseMembershipRole"];
 type AssignmentState = components["schemas"]["AssignmentState"];
@@ -32,7 +33,7 @@ export default function AssignmentPage({
           assignmentId={assignmentId as unknown as number}
         />
       ) : (
-        <></>
+        <AssignmentStaffPage assignmentId={assignmentId as unknown as number} />
       )}
     </>
   );

@@ -283,6 +283,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/{assignment_id}/staff-view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Staff View
+         * @description Get the staff view of an assignment.
+         */
+        get: operations["get_staff_view_api_assignment__assignment_id__staff_view_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/student-projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Student Projects
+         * @description Get the student projects for an assignment.
+         */
+        get: operations["get_student_projects_api_assignment__assignment_id__student_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/group-projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Group Projects
+         * @description Get the student projects for an assignment.
+         */
+        get: operations["get_group_projects_api_assignment__assignment_id__group_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assignment/draft": {
         parameters: {
             query?: never;
@@ -743,6 +803,32 @@ export interface components {
             is_staff: boolean;
         };
         /**
+         * GetGroupProjectsResponse
+         * @description Model that represents a response for getting group projects of an assignment.
+         */
+        GetGroupProjectsResponse: {
+            /** Projects */
+            projects: components["schemas"]["GetGroupProjectsResponse_Project"][];
+        };
+        /**
+         * GetGroupProjectsResponse_Project
+         * @description Model that represents a group in the response for getting group projects of an assignment.
+         */
+        GetGroupProjectsResponse_Project: {
+            /** Project Id */
+            project_id: number;
+            /** Group Id */
+            group_id: number;
+            /** Group Name */
+            group_name: string;
+            /** Group Members */
+            group_members: string[];
+            /** Group Member Emails */
+            group_member_emails: string[];
+            /** Db Url */
+            db_url: string;
+        };
+        /**
          * GetGroupsResponse
          * @description Model that represents a response for getting groups of an assignment.
          */
@@ -804,6 +890,45 @@ export interface components {
              * @default false
              */
             can_modify_assignments: boolean;
+        };
+        /**
+         * GetStaffViewResponse
+         * @description Model that presents the information for a staff view of an assignment.
+         */
+        GetStaffViewResponse: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Name */
+            name: string;
+            /** Is Group */
+            is_group: boolean;
+            state: components["schemas"]["AssignmentState"];
+            /** Configuration Sql */
+            configuration_sql?: string | null;
+        };
+        /**
+         * GetStudentProjectsResponse
+         * @description Model that represents a response for getting student projects of an assignment.
+         */
+        GetStudentProjectsResponse: {
+            /** Projects */
+            projects: components["schemas"]["GetStudentProjectsResponse_Project"][];
+        };
+        /**
+         * GetStudentProjectsResponse_Project
+         * @description Model that represents a project in the response for getting student projects.
+         */
+        GetStudentProjectsResponse_Project: {
+            /** Project Id */
+            project_id: number;
+            /** User Id */
+            user_id: number;
+            /** User Name */
+            user_name: string;
+            /** User Email */
+            user_email: string;
+            /** Db Url */
+            db_url: string;
         };
         /**
          * GetStudentsForCourseResponse
@@ -1363,6 +1488,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetConfigurationSQLResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_view_api_assignment__assignment_id__staff_view_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStaffViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_projects_api_assignment__assignment_id__student_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentProjectsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_projects_api_assignment__assignment_id__group_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupProjectsResponse"];
                 };
             };
             /** @description Validation Error */

@@ -12,6 +12,9 @@ from ..models.assignment import (
     GetViewResponse,
     GetDraftResponse,
     GetConfigurationSQLResponse,
+    GetStaffViewResponse,
+    GetStudentProjectsResponse,
+    GetGroupProjectsResponse,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -80,6 +83,36 @@ def get_configuration_sql(
 ) -> GetConfigurationSQLResponse:
     """Get the configuration SQL for an assignment."""
     return assignment_svc.get_configuration_sql(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/staff-view", tags=[tag])
+def get_staff_view(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStaffViewResponse:
+    """Get the staff view of an assignment."""
+    return assignment_svc.get_staff_view(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/student-projects", tags=[tag])
+def get_student_projects(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStudentProjectsResponse:
+    """Get the student projects for an assignment."""
+    return assignment_svc.get_student_projects(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/group-projects", tags=[tag])
+def get_group_projects(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetGroupProjectsResponse:
+    """Get the student projects for an assignment."""
+    return assignment_svc.get_group_projects(subject, assignment_id)
 
 
 @api.post("/draft", tags=[tag])
