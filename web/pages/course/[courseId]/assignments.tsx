@@ -4,7 +4,8 @@ import CreateAssignmentDialog from "@/components/assignment/create-assignment-di
 import CourseLayout from "@/components/course/course-layout";
 import ErrorMessage from "@/components/errors/error-message";
 import { Button } from "@/components/ui/button";
-import { api } from "@/utils/api";
+import { useAssignments } from "@/hooks/api/course/use-assignments";
+import { useCourseRole } from "@/hooks/api/course/use-course-role";
 import { protectRoute } from "@/utils/auth";
 import { Plus } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
@@ -17,23 +18,13 @@ export default function CourseAssignmentsPage() {
   const id = courseId as unknown as number;
 
   const {
-    data: assignmentsData,
-    isLoading: assignmentsLoading,
-    error: assignmentsError,
-  } = api.useQuery("get", "/api/course/{course_id}/assignments", {
-    params: { path: { course_id: id } },
-  });
+    assignmentsData,
+    assignmentsLoading,
+    assignmentsError,
+    noAssignmentsFound,
+  } = useAssignments(id);
 
-  const { data: courseRoleData } = api.useQuery(
-    "get",
-    "/api/course/{course_id}/role",
-    {
-      params: { path: { course_id: id } },
-    }
-  );
-
-  const noAssignmentsFound =
-    !!assignmentsData && assignmentsData.assignments.length === 0;
+  const { courseRoleData } = useCourseRole(id);
 
   return (
     <div className="flex flex-col mx-auto w-full max-w-[1200px] px-4 gap-8 my-8">

@@ -1,7 +1,6 @@
 import ErrorMessage from "@/components/errors/error-message";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { api } from "@/utils/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, CircleSlash } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,6 +12,9 @@ import RenameComponent from "@/components/ui/rename";
 import { Separator } from "@/components/ui/separator";
 import AssignmentPublishDialog from "./assignment-publish-dialog";
 import DeleteAssignmentDialog from "../../delete-assignment-dialog";
+import { useConfigurationSql } from "@/hooks/api/assignment/use-configuration-sql";
+import { useAssignmentDraft } from "@/hooks/api/assignment/use-assignment-draft";
+import { useRenameAssignment } from "@/hooks/api/assignment/use-rename-assignment";
 
 export default function AssignmentDraftPage({
   courseId,
@@ -23,30 +25,10 @@ export default function AssignmentDraftPage({
 }) {
   const queryClient = useQueryClient();
 
-  const {
-    data: draftData,
-    isLoading: draftDataLoading,
-    isError: draftDataError,
-    refetch: refetchDraftData,
-  } = api.useQuery("get", "/api/assignment/{assignment_id}/draft", {
-    params: {
-      path: {
-        assignment_id: assignmentId,
-      },
-    },
-  });
+  const { draftData, draftDataLoading, draftDataError } =
+    useAssignmentDraft(assignmentId);
 
-  const { data: sqlData, isLoading: sqlDataLoading } = api.useQuery(
-    "get",
-    "/api/assignment/{assignment_id}/configuration-sql",
-    {
-      params: {
-        path: {
-          assignment_id: assignmentId,
-        },
-      },
-    }
-  );
+  const { sqlData, sqlDataLoading } = useConfigurationSql(assignmentId);
 
   // Hooks and mutations for renaming the assignment
   const [renameText, setRenameText] = useState("");
@@ -57,10 +39,10 @@ export default function AssignmentDraftPage({
     }
   }, [draftData]);
 
-  const { mutate: renameAssignment } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/rename"
-  );
+  const {
+    renameAssignment,
+    refetchOnSuccess: refetchOnRenameAssignmentSuccess,
+  } = useRenameAssignment();
 
   const renameAssignmentHandler = (
     setRenaming: (renaming: boolean) => void
@@ -79,11 +61,8 @@ export default function AssignmentDraftPage({
       {
         onSuccess: () => {
           setRenaming(false);
-          refetchDraftData();
           // Refetch the dropdown data so that the new name is reflected in the header
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/dropdown"],
-          });
+          refetchOnRenameAssignmentSuccess();
         },
         onError: () => {
           toast.error("Error renaming assignment", {

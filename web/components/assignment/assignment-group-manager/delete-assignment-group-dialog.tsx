@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { api } from "@/utils/api";
+import { useDeleteGroup } from "@/hooks/api/assignment/groups/use-delete-group";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,10 +28,7 @@ export default function DeleteAssignmentGroupDialog({
   const [open, setOpen] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
 
-  const { mutate: deleteGroup } = api.useMutation(
-    "delete",
-    "/api/assignment/{assignment_id}/group/{group_id}"
-  );
+  const { deleteGroup } = useDeleteGroup();
 
   const onSubmit = () => {
     setFormSubmitting(true);

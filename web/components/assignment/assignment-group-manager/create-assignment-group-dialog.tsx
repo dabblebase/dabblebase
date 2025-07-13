@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { api } from "@/utils/api";
+import { useCreateGroup } from "@/hooks/api/assignment/groups/use-create-group";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
@@ -47,10 +47,7 @@ export default function CreateAssignmentGroupDialog({
   });
 
   // Hooks related to creating a new group
-  const { mutate: createGroup } = api.useMutation(
-    "post",
-    "/api/assignment/{assignment_id}/group"
-  );
+  const { createGroup } = useCreateGroup();
 
   const [open, setOpen] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);

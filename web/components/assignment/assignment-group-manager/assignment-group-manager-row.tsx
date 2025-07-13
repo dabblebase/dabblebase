@@ -4,11 +4,11 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import RenameComponent from "@/components/ui/rename";
 import type { components } from "@/models/schema";
-import { api } from "@/utils/api";
 import DeleteAssignmentGroupDialog from "./delete-assignment-group-dialog";
 import AssignmentGroupStudentSelector from "./assignment-group-student-selector";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useRenameGroup } from "@/hooks/api/assignment/groups/use-rename-group";
+import { useRemoveGroupMember } from "@/hooks/api/assignment/groups/use-remove-group-member";
 
 type AssignmentGroup = components["schemas"]["GetGroupsResponse_Group"];
 
@@ -23,14 +23,10 @@ export default function AssignmentGroupManagerRow({
   group: AssignmentGroup;
   refetch: () => void;
 }) {
-  const queryClient = useQueryClient();
-
   // Hooks and mutations for renaming the group
   const [renameText, setRenameText] = useState(group.group_name);
-  const { mutate: renameGroup } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/group/{group_id}/rename"
-  );
+  const { renameGroup } = useRenameGroup();
+
   const renamingGroupHandler = (setRenaming: (renaming: boolean) => void) => {
     renameGroup(
       {
@@ -55,10 +51,11 @@ export default function AssignmentGroupManagerRow({
   };
 
   // Hooks and mutations for removing group members
-  const { mutate: removeGroupMember } = api.useMutation(
-    "delete",
-    "/api/assignment/{assignment_id}/group/{group_id}/member/{user_id}"
-  );
+  const {
+    removeGroupMember,
+    refetchOnSuccess: refetchOnRemoveGroupMemberSuccess,
+  } = useRemoveGroupMember();
+
   const onRemoveGroupMember = (userId: number) => {
     removeGroupMember(
       {
@@ -75,9 +72,7 @@ export default function AssignmentGroupManagerRow({
           // Refetch the group data to reflect the changes
           refetch();
           // Refetch the search to ensure that the student is no longer listed
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/course/{course_id}/students"],
-          });
+          refetchOnRemoveGroupMemberSuccess();
         },
         onError: () => {
           toast.error("Failed to remove group member", {

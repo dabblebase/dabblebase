@@ -70,7 +70,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   // If there is a combination of the user role and assignment state that should
   // not be viewable, redirect to the assignments page.
-  console.log(viewData, viewError);
   if (!viewData || viewError || viewData.should_redirect) {
     return {
       redirect: {

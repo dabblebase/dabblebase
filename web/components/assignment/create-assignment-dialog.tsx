@@ -24,11 +24,11 @@ import {
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Card, CardContent } from "../ui/card";
 import { Separator } from "../ui/separator";
-import { api } from "@/utils/api";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
+import { useCreateAssignmentDraft } from "@/hooks/api/assignment/use-create-assignment-draft";
 
 const CreateAssignmentFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -57,10 +57,7 @@ export default function CreateAssignmentDialog({
     },
   });
 
-  const { mutate: createAssignmentDraft } = api.useMutation(
-    "post",
-    "/api/assignment/draft"
-  );
+  const { createAssignmentDraft } = useCreateAssignmentDraft();
 
   const [formSubmitting, setFormSubmitting] = useState(false);
 

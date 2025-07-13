@@ -1,11 +1,11 @@
 /** Custom rename component. */
 
-import { useFocusOnCondition } from "@/hooks/use-focus-on-condition";
+import { useFocusOnCondition } from "@/hooks/ui/use-focus-on-condition";
 import { useState } from "react";
 import { Input } from "./input";
 import { Button } from "./button";
 import { Check, Pencil, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 type RenameComponentProps = {
   initialValue: string;

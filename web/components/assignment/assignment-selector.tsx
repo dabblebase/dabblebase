@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Popover, PopoverContent } from "../ui/popover";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Button } from "../ui/button";
-import { api } from "@/utils/api";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import {
   Command,
@@ -12,10 +11,11 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { useDebounce } from "use-debounce";
 import { Badge } from "../ui/badge";
 import { useRouter } from "next/router";
+import { useAssignmentDropdown } from "@/hooks/api/assignment/use-assignment-dropdown";
 
 export default function AssignmentSelector({
   courseId,
@@ -33,31 +33,12 @@ export default function AssignmentSelector({
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 300);
 
-  const { data: dropdownData } = api.useQuery(
-    "get",
-    "/api/assignment/dropdown",
-    {
-      params: {
-        query: {
-          search: debouncedSearch,
-          course_id: courseId,
-          selected_assignment_id: initialAssignmentId,
-        },
-      },
-    },
-    { placeholderData: (prev) => prev }
+  const { dropdownData, selectedAssignment } = useAssignmentDropdown(
+    courseId,
+    debouncedSearch,
+    initialAssignmentId,
+    selectedAssignmentId
   );
-
-  const assignments = Object.values(dropdownData?.assignments || {}).flat();
-
-  const selectedAssignment =
-    !!dropdownData &&
-    !!dropdownData.selected_assignment &&
-    initialAssignmentId === dropdownData?.selected_assignment.id
-      ? dropdownData?.selected_assignment
-      : assignments.find(
-          (assignment) => `${assignment.id}` === selectedAssignmentId
-        );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

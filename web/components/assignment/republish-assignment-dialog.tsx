@@ -10,9 +10,8 @@ import {
 } from "../ui/dialog";
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { api } from "@/utils/api";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useRepublishAssignment } from "@/hooks/api/assignment/use-republish-assignment";
 
 export default function RepublishAssignmentDialog({
   assignmentId,
@@ -21,14 +20,9 @@ export default function RepublishAssignmentDialog({
   assignmentId: number;
   children: React.ReactNode;
 }) {
-  const queryClient = useQueryClient();
-
   const [open, setOpen] = useState(false);
 
-  const { mutate: republishAssignment } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/republish"
-  );
+  const { republishAssignment, refetchOnSuccess } = useRepublishAssignment();
 
   const onRepublishButtonPressed = () => {
     republishAssignment(
@@ -43,12 +37,7 @@ export default function RepublishAssignmentDialog({
         onSuccess: () => {
           toast.success("Assignment republished successfully.");
           // Invalideate the assignment data to refresh the state
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/staff-view"],
-          });
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/dropdown"],
-          });
+          refetchOnSuccess();
           setOpen(false);
         },
         onError: () => {

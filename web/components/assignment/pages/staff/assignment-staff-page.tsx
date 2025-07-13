@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import RenameComponent from "@/components/ui/rename";
 import { Textarea } from "@/components/ui/textarea";
-import { api, fetchClient } from "@/utils/api";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,7 +26,7 @@ import {
   Pencil,
   Trash,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   groupProjectsColumns,
@@ -38,6 +37,9 @@ import DeleteAssignmentDialog from "../../delete-assignment-dialog";
 import UnpublishAssignmentDialog from "../../unpublish-assignment-dialog";
 import RepublishAssignmentDialog from "../../republish-assignment-dialog";
 import AssignmentGroupManager from "../../assignment-group-manager/assignment-group-manager";
+import { useAssignmentStaffView } from "@/hooks/api/assignment/use-assignment-staff-view";
+import { useRenameAssignment } from "@/hooks/api/assignment/use-rename-assignment";
+import { useDatabaseExportTask } from "@/hooks/api/assignment/use-database-export-task";
 
 export default function AssignmentStaffPage({
   courseId,
@@ -49,48 +51,15 @@ export default function AssignmentStaffPage({
   const queryClient = useQueryClient();
 
   const {
-    data: staffViewData,
-    isLoading: staffViewLoading,
-    isError: staffViewError,
-    refetch: refetchStaffViewData,
-  } = api.useQuery("get", "/api/assignment/{assignment_id}/staff-view", {
-    params: {
-      path: {
-        assignment_id: assignmentId,
-      },
-    },
-  });
-
-  const { data: individualProjectData, isError: individualProjectError } =
-    api.useQuery(
-      "get",
-      "/api/assignment/{assignment_id}/student-projects",
-      {
-        params: {
-          path: {
-            assignment_id: assignmentId,
-          },
-        },
-      },
-      {
-        enabled: !!staffViewData && staffViewData.is_group === false,
-      }
-    );
-
-  const { data: groupProjectData, isError: groupProjectError } = api.useQuery(
-    "get",
-    "/api/assignment/{assignment_id}/group-projects",
-    {
-      params: {
-        path: {
-          assignment_id: assignmentId,
-        },
-      },
-    },
-    {
-      enabled: !!staffViewData && staffViewData.is_group === true,
-    }
-  );
+    staffViewData,
+    staffViewLoading,
+    staffViewError,
+    refetchStaffViewData,
+    individualProjectData,
+    individualProjectError,
+    groupProjectData,
+    groupProjectError,
+  } = useAssignmentStaffView(assignmentId);
 
   // Hooks and mutations for renaming the assignment
   const [renameText, setRenameText] = useState("");
@@ -101,113 +70,10 @@ export default function AssignmentStaffPage({
     }
   }, [staffViewData]);
 
-  const { mutate: renameAssignment } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/rename"
-  );
-
-  // Hooks and mutations for exporting student data
-  // TODO: This is probably best separated into a custom hook - or, generalize it to tasks.
-  const { mutate: startDatabaseExport } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/export"
-  );
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportingTaskId, setExportingTaskId] = useState<string | null>(null);
-
-  // Polling for the status of the exporting task.
-  const { data: exportingStatus } = api.useQuery(
-    "get",
-    "/api/task/{task_id}/status",
-    {
-      params: {
-        path: {
-          task_id: exportingTaskId!,
-        },
-      },
-    },
-    {
-      enabled: !!exportingTaskId, // Only run this query if we have a task ID to poll.
-      refetchInterval: 1000,
-    }
-  );
-
-  const onExportButtonPressed = () => {
-    setIsExporting(true);
-    startDatabaseExport(
-      {
-        params: {
-          path: {
-            assignment_id: assignmentId,
-          },
-        },
-      },
-      {
-        onSuccess: (response) => {
-          // Set the exporting ID, which kicks off the polling for the task to finish.
-          setExportingTaskId(response.task_id);
-        },
-        onError: () => {
-          setIsExporting(false);
-          setExportingTaskId(null);
-          toast.error(`Failed to start publishing assignment`, {
-            description: "Please try again later.",
-          });
-        },
-      }
-    );
-  };
-
-  // Create handler to download the export result.
-  const downloadExportedData = useCallback(async () => {
-    const { data } = await fetchClient.GET(
-      "/api/assignment/{assignment_id}/export-result",
-      {
-        params: {
-          path: {
-            assignment_id: assignmentId,
-          },
-        },
-        parseAs: "blob", // Ensure we parse the response as a blob for file download
-      }
-    );
-    if (!data) {
-      toast.error("Failed to download export file.", {
-        description: "Please try again later.",
-      });
-      return;
-    }
-
-    const url = window.URL.createObjectURL(data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `assignment-export.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }, [assignmentId]);
-
-  // Respond to changes in the publishing status
-  useEffect(() => {
-    if (exportingStatus && exportingStatus.status === "SUCCESS") {
-      setIsExporting(false);
-      setExportingTaskId(null);
-      // Now, download the zip by hitting the download endpoint.
-      downloadExportedData();
-    }
-    if (
-      exportingStatus &&
-      (exportingStatus.status === "FAILURE" ||
-        exportingStatus.status === "REVOKED" ||
-        exportingStatus.status === "IGNORED")
-    ) {
-      setIsExporting(false);
-      setExportingTaskId(null);
-      toast.error(`Failed to export database data.`, {
-        description: "Please try again later.",
-      });
-    }
-  }, [assignmentId, downloadExportedData, exportingStatus]);
+  const {
+    renameAssignment,
+    refetchOnSuccess: refetchOnRenameAssignmentSuccess,
+  } = useRenameAssignment();
 
   const renameAssignmentHandler = (
     setRenaming: (renaming: boolean) => void
@@ -226,6 +92,8 @@ export default function AssignmentStaffPage({
       {
         onSuccess: () => {
           setRenaming(false);
+          refetchOnRenameAssignmentSuccess();
+          // TODO: Remove dependency on refetch queries
           refetchStaffViewData();
           // Refetch the dropdown data so that the new name is reflected in the header
           queryClient.refetchQueries({
@@ -239,6 +107,31 @@ export default function AssignmentStaffPage({
         },
       }
     );
+  };
+
+  // Hooks and mutations for exporting student data
+  const { launchDatabaseExportTask, isExportingDatabase } =
+    useDatabaseExportTask(assignmentId, {
+      onStartingTaskError: () => {
+        toast.error("Failed to start exporting assignment", {
+          description: "Please try again later.",
+        });
+      },
+      onTaskError: () => {
+        toast.error("Failed to export assignment data", {
+          description: "Please try again later.",
+        });
+      },
+    });
+
+  const onExportButtonPressed = () => {
+    launchDatabaseExportTask({
+      params: {
+        path: {
+          assignment_id: assignmentId,
+        },
+      },
+    });
   };
 
   return (
@@ -393,11 +286,11 @@ export default function AssignmentStaffPage({
                   </div>
                   <Button
                     type="submit"
-                    disabled={isExporting}
+                    disabled={isExportingDatabase}
                     onClick={onExportButtonPressed}
                     className="flex-shrink-0"
                   >
-                    {isExporting ? (
+                    {isExportingDatabase ? (
                       <>
                         <Loader2Icon className="animate-spin" />
                         Exporting...

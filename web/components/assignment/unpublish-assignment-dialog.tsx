@@ -10,9 +10,8 @@ import {
 } from "../ui/dialog";
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { api } from "@/utils/api";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useUnpublishAssignment } from "@/hooks/api/assignment/use-unpublish-assignment";
 
 export default function UnpublishAssignmentDialog({
   assignmentId,
@@ -21,14 +20,9 @@ export default function UnpublishAssignmentDialog({
   assignmentId: number;
   children: React.ReactNode;
 }) {
-  const queryClient = useQueryClient();
-
   const [open, setOpen] = useState(false);
 
-  const { mutate: unpublishAssignment } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/unpublish"
-  );
+  const { unpublishAssignment, refetchOnSuccess } = useUnpublishAssignment();
 
   const onUnpublishButtonPressed = () => {
     unpublishAssignment(
@@ -43,12 +37,7 @@ export default function UnpublishAssignmentDialog({
         onSuccess: () => {
           toast.success("Assignment unpublished successfully.");
           // Invalideate the assignment data to refresh the state
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/{assignment_id}/staff-view"],
-          });
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/assignment/dropdown"],
-          });
+          refetchOnSuccess();
           setOpen(false);
         },
         onError: () => {

@@ -12,12 +12,12 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useDebounce } from "use-debounce";
-import { api } from "@/utils/api";
 import { CommandGroup } from "cmdk";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAddGroupMember } from "@/hooks/api/assignment/groups/use-add-group-member";
+import { useStudents } from "@/hooks/api/course/use-students";
 
 export default function AssignmentGroupStudentSelector({
   courseId,
@@ -30,34 +30,17 @@ export default function AssignmentGroupStudentSelector({
   groupId: number;
   refetch: () => void;
 }) {
-  const queryClient = useQueryClient();
-
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 300);
 
-  const { data: studentData } = api.useQuery(
-    "get",
-    "/api/course/{course_id}/students",
-    {
-      params: {
-        path: { course_id: courseId },
-        query: {
-          search: debouncedSearch,
-          assignment_id: assignmentId,
-        },
-      },
-    },
-    { placeholderData: (prev) => prev }
-  );
+  const { studentData } = useStudents(courseId, assignmentId, debouncedSearch);
 
-  const { mutate: addStudentToGroup } = api.useMutation(
-    "post",
-    "/api/assignment/{assignment_id}/group/{group_id}/member"
-  );
+  const { addGroupMember, refetchOnSuccess: refetchOnSuccessAddGroupMember } =
+    useAddGroupMember();
 
   const onSubmit = (studentId: number) => {
-    addStudentToGroup(
+    addGroupMember(
       {
         params: {
           path: { assignment_id: assignmentId },
@@ -71,10 +54,7 @@ export default function AssignmentGroupStudentSelector({
         onSuccess: () => {
           // Refetch the group data to reflect the changes
           refetch();
-          // Refetch the search to ensure that the student is no longer listed
-          queryClient.refetchQueries({
-            queryKey: ["get", "/api/course/{course_id}/students"],
-          });
+          refetchOnSuccessAddGroupMember();
           setOpen(false);
         },
         onError: () => {

@@ -12,13 +12,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/utils/api";
 import { RotateCcw, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import SQLTestErrorCard from "./sql-test-error-card";
 import SQLTestSuccessCard from "./sql-test-success-card";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useConfigurationSql } from "@/hooks/api/assignment/use-configuration-sql";
 
 export default function AssignmentSetupSQLDialog({
   assignmentId,
@@ -27,39 +26,14 @@ export default function AssignmentSetupSQLDialog({
   assignmentId: number;
   children: React.ReactNode;
 }) {
-  const queryClient = useQueryClient();
-
-  const { data: sqlData } = api.useQuery(
-    "get",
-    "/api/assignment/{assignment_id}/configuration-sql",
-    {
-      params: {
-        path: {
-          assignment_id: assignmentId,
-        },
-      },
-    }
-  );
-
-  const { mutate: testConfigurationSQL } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/configuration-sql/test"
-  );
-
-  const { mutate: saveConfigurationSQL } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/configuration-sql/save"
-  );
-
-  const { mutate: removeConfigurationSQL } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/configuration-sql/remove"
-  );
-
-  const { mutate: resetConfigurationSQL } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/configuration-sql/reset"
-  );
+  const {
+    sqlData,
+    testConfigurationSQL,
+    saveConfigurationSQL,
+    removeConfigurationSQL,
+    resetConfigurationSQL,
+    refetchOnSuccess,
+  } = useConfigurationSql(assignmentId);
 
   const onTestButtonPressed = () => {
     testConfigurationSQL(
@@ -75,12 +49,7 @@ export default function AssignmentSetupSQLDialog({
       },
       {
         onSuccess: () => {
-          queryClient.refetchQueries({
-            queryKey: [
-              "get",
-              "/api/assignment/{assignment_id}/configuration-sql",
-            ],
-          });
+          refetchOnSuccess();
         },
       }
     );
@@ -91,12 +60,7 @@ export default function AssignmentSetupSQLDialog({
       { params: { path: { assignment_id: assignmentId } } },
       {
         onSuccess: () => {
-          queryClient.refetchQueries({
-            queryKey: [
-              "get",
-              "/api/assignment/{assignment_id}/configuration-sql",
-            ],
-          });
+          refetchOnSuccess();
           setOpen(false);
         },
         onError: () => {
@@ -113,12 +77,7 @@ export default function AssignmentSetupSQLDialog({
       { params: { path: { assignment_id: assignmentId } } },
       {
         onSuccess: () => {
-          queryClient.refetchQueries({
-            queryKey: [
-              "get",
-              "/api/assignment/{assignment_id}/configuration-sql",
-            ],
-          });
+          refetchOnSuccess();
           setSqlText("");
         },
         onError: () => {
@@ -135,12 +94,7 @@ export default function AssignmentSetupSQLDialog({
       { params: { path: { assignment_id: assignmentId } } },
       {
         onSuccess: () => {
-          queryClient.refetchQueries({
-            queryKey: [
-              "get",
-              "/api/assignment/{assignment_id}/configuration-sql",
-            ],
-          });
+          refetchOnSuccess();
           setSqlText("");
         },
         onError: () => {

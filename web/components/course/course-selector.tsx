@@ -12,7 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { useDebounce } from "use-debounce";
 import { Badge } from "../ui/badge";
 import { useRouter } from "next/router";

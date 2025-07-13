@@ -2,12 +2,13 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/utils/api";
 import ErrorMessage from "@/components/errors/error-message";
 import { Fragment } from "react";
 import CreateAssignmentGroupDialog from "./create-assignment-group-dialog";
 import AssignmentGroupUnassignedStudentSelector from "./assignment-group-unassigned-student-selector";
 import AssignmentGroupManagerRow from "./assignment-group-manager-row";
+import { useGroupData } from "@/hooks/api/assignment/groups/use-group-data";
+import { useAddGroupMember } from "@/hooks/api/assignment/groups/use-add-group-member";
 
 export default function AssignmentGroupManager({
   courseId,
@@ -18,18 +19,9 @@ export default function AssignmentGroupManager({
   assignmentId: number;
   refetch: () => void;
 }) {
-  const { data: groupData, isError: groupDataError } = api.useQuery(
-    "get",
-    "/api/assignment/{assignment_id}/groups",
-    {
-      params: { path: { assignment_id: assignmentId } },
-    }
-  );
+  const { groupData, groupDataError } = useGroupData(assignmentId);
 
-  const { mutate: addStudentToGroup } = api.useMutation(
-    "post",
-    "/api/assignment/{assignment_id}/group/{group_id}/member"
-  );
+  const { addGroupMember } = useAddGroupMember();
 
   type OnSubmitHandler = (
     groupId: number,
@@ -39,7 +31,7 @@ export default function AssignmentGroupManager({
     studentId: number
   ) => {
     return (groupId: number, setOpen: (newValue: boolean) => void) => {
-      addStudentToGroup(
+      addGroupMember(
         {
           params: {
             path: { assignment_id: assignmentId },

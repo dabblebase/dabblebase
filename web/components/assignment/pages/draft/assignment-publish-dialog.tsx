@@ -9,10 +9,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { api } from "@/utils/api";
+import { usePublishAssignmentTask } from "@/hooks/api/assignment/use-publish-assignment-task";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function AssignmentPublishDialog({
@@ -28,86 +28,41 @@ export default function AssignmentPublishDialog({
 
   const [open, setOpen] = useState(false);
 
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [publishingTaskId, setPublishingTaskId] = useState<string | null>(null);
+  // const [isPublishing, setIsPublishing] = useState(false);
+  // const [publishingTaskId, setPublishingTaskId] = useState<string | null>(null);
 
   // Mutation hook to initiate the publish request.
-  // After the mutation succeeds, it will return a task ID that we can use to poll for
-  //the status of the publishing task.
-  const { mutate: publishAssignment } = api.useMutation(
-    "put",
-    "/api/assignment/{assignment_id}/publish"
-  );
-
-  // Polling for the status of the publishing task.
-  const { data: publishingStatus } = api.useQuery(
-    "get",
-    "/api/task/{task_id}/status",
-    {
-      params: {
-        path: {
-          task_id: publishingTaskId!,
-        },
+  const { launchPublishAssignmentTask, isPublishingAssignment } =
+    usePublishAssignmentTask({
+      onSuccess: () => {
+        toast.success("Assignment published successfully!", {
+          description: "Students will now have access to this assignment.",
+        });
+        // Redirect to the courses page to see the changes.
+        router.push(`/course/${courseId}/assignments`);
       },
-    },
-    {
-      enabled: !!publishingTaskId, // Only run this query if we have a task ID to poll.
-      refetchInterval: 1000,
-    }
-  );
-
-  // Respond to changes in the publishing status
-  useEffect(() => {
-    if (publishingStatus && publishingStatus.status === "SUCCESS") {
-      setIsPublishing(false);
-      setPublishingTaskId(null);
-      setOpen(false);
-      toast.success("Assignment published successfully!", {
-        description: "Students will now have access to this assignment.",
-      });
-      // Refetch the queries that might be affected by the publishing action.
-      // Redirect to the courses page to see the changes.
-      router.push(`/course/${courseId}/assignments`);
-    }
-    if (
-      publishingStatus &&
-      (publishingStatus.status === "FAILURE" ||
-        publishingStatus.status === "REVOKED" ||
-        publishingStatus.status === "IGNORED")
-    ) {
-      setIsPublishing(false);
-      setPublishingTaskId(null);
-      toast.error(`Failed to publish assignment`, {
-        description: "Please try again later.",
-      });
-    }
-  }, [courseId, publishingStatus, router]);
+      onStartingTaskError: () => {
+        toast.error(`Failed to start publishing assignment`, {
+          description: "Please try again later.",
+        });
+      },
+      onTaskError: () => {
+        toast.error(`Failed to publish assignment`, {
+          description: "Please try again later.",
+        });
+      },
+    });
 
   const onPublishButtonPressed = () => {
-    setIsPublishing(true);
-    publishAssignment(
-      {
-        params: {
-          path: {
-            assignment_id: assignmentId,
-          },
+    launchPublishAssignmentTask({
+      params: {
+        path: {
+          assignment_id: assignmentId,
         },
       },
-      {
-        onSuccess: (response) => {
-          // Set the publishing ID, which kicks off the polling for the task to finish.
-          setPublishingTaskId(response.task_id);
-        },
-        onError: () => {
-          setIsPublishing(false);
-          setPublishingTaskId(null);
-          toast.error(`Failed to start publishing assignment`, {
-            description: "Please try again later.",
-          });
-        },
-      }
-    );
+    });
   };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -125,10 +80,10 @@ export default function AssignmentPublishDialog({
             </DialogClose>
             <Button
               type="submit"
-              disabled={isPublishing}
+              disabled={isPublishingAssignment}
               onClick={onPublishButtonPressed}
             >
-              {isPublishing ? (
+              {isPublishingAssignment ? (
                 <>
                   <Loader2Icon className="animate-spin" />
                   Publishing...

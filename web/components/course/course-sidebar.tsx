@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
 } from "../ui/sidebar";
 import { useRouter } from "next/router";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 export default function CourseSidebar() {
   return (
