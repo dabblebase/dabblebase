@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Popover, PopoverContent } from "../ui/popover";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Button } from "../ui/button";
-import { api } from "@/utils/api";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import {
   Command,
@@ -16,6 +15,7 @@ import { cn } from "@/utils/cn";
 import { useDebounce } from "use-debounce";
 import { Badge } from "../ui/badge";
 import { useRouter } from "next/router";
+import { useCourseDropdown } from "@/hooks/api/course/use-course-dropdown";
 
 export default function CourseSelector({
   initialCourseId,
@@ -33,25 +33,11 @@ export default function CourseSelector({
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 300);
 
-  const { data: dropdownData } = api.useQuery(
-    "get",
-    "/api/course/dropdown",
-    {
-      params: {
-        query: { search: debouncedSearch, selected_course_id: initialCourseId },
-      },
-    },
-    { placeholderData: (prev) => prev }
+  const { dropdownData, selectedCourse } = useCourseDropdown(
+    debouncedSearch,
+    initialCourseId,
+    selectedCourseId
   );
-
-  const courses = Object.values(dropdownData?.courses || {}).flat();
-
-  const selectedCourse =
-    !!dropdownData &&
-    !!dropdownData.selected_course &&
-    initialCourseId === dropdownData?.selected_course.id
-      ? dropdownData?.selected_course
-      : courses.find((course) => `${course.id}` === selectedCourseId);
 
   if (disableSelect) {
     return (

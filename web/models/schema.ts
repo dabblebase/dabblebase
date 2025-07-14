@@ -343,6 +343,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/{assignment_id}/student-project/database": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Student Project Database
+         * @description Get the database details for a student project.
+         */
+        get: operations["get_student_project_database_api_assignment__assignment_id__student_project_database_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/student-project/auth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Student Project Auth
+         * @description Get the auth details for a student project.
+         */
+        get: operations["get_student_project_auth_api_assignment__assignment_id__student_project_auth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assignment/draft": {
         parameters: {
             query?: never;
@@ -1003,6 +1043,22 @@ export interface components {
             configuration_sql?: string | null;
         };
         /**
+         * GetStudentAuth
+         * @description Model that represents a response for getting the authentication details of a student project.
+         */
+        GetStudentAuth: {
+            /** Auth Public Key */
+            auth_public_key: string;
+        };
+        /**
+         * GetStudentDatabase
+         * @description Model that represents a response for getting the database URL of a student project.
+         */
+        GetStudentDatabase: {
+            /** Db Url */
+            db_url: string;
+        };
+        /**
          * GetStudentProjectsResponse
          * @description Model that represents a response for getting student projects of an assignment.
          */
@@ -1122,6 +1178,8 @@ export interface components {
          * @description Model that represents a response for the dropdown endpoint.
          */
         server__models__assignment__GetDropdownResponse: {
+            /** Is Staff */
+            is_staff: boolean;
             selected_assignment?: components["schemas"]["GetDropdownResponse_Assignment"] | null;
             /** Assignments */
             assignments: components["schemas"]["GetDropdownResponse_Assignment"][];
@@ -1678,6 +1736,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetGroupProjectsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_project_database_api_assignment__assignment_id__student_project_database_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentDatabase"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_project_auth_api_assignment__assignment_id__student_project_auth_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentAuth"];
                 };
             };
             /** @description Validation Error */

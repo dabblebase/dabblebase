@@ -16,6 +16,8 @@ from ..models.assignment import (
     GetStaffViewResponse,
     GetStudentProjectsResponse,
     GetGroupProjectsResponse,
+    GetStudentDatabase,
+    GetStudentAuth,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -115,6 +117,26 @@ def get_group_projects(
 ) -> GetGroupProjectsResponse:
     """Get the student projects for an assignment."""
     return assignment_svc.get_group_projects(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/student-project/database", tags=[tag])
+def get_student_project_database(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStudentDatabase:
+    """Get the database details for a student project."""
+    return assignment_svc.get_student_database(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/student-project/auth", tags=[tag])
+def get_student_project_auth(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStudentAuth:
+    """Get the auth details for a student project."""
+    return assignment_svc.get_student_auth(subject, assignment_id)
 
 
 @api.post("/draft", tags=[tag])

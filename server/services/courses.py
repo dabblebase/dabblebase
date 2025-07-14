@@ -73,43 +73,27 @@ class CourseService:
             )
             .options(
                 joinedload(CourseEntity.members).load_only(CourseMemberEntity.user_id),
-                joinedload(CourseEntity.assignments).load_only(AssignmentEntity.id),
+                joinedload(CourseEntity.assignments).load_only(
+                    AssignmentEntity.id, AssignmentEntity.state
+                ),
             )
         )
         staff_courses = self._admin_db.scalars(staff_courses_query).unique().all()
-        staff_courses_response = [
-            GetDashboardResponse_Course(
-                id=course.id,
-                code=course.code,
-                name=course.name,
-                num_students=len(course.members),
-                num_assignments=len(course.assignments),
-            )
-            for course in staff_courses
-        ]
 
         # Query for courses where the user is a student
         student_courses_query = (
             select(CourseEntity)
             .join(CourseMemberEntity)
+            .join(AssignmentEntity)
             .where(
                 CourseMemberEntity.user_id == subject.id,
                 CourseMemberEntity.role == CourseMembershipRole.STUDENT,
             )
             .options(
-                joinedload(CourseEntity.assignments).load_only(AssignmentEntity.id),
+                joinedload(CourseEntity.assignments),
             )
         )
         student_courses = self._admin_db.scalars(student_courses_query).unique().all()
-        student_courses_response = [
-            GetDashboardResponse_Course(
-                id=course.id,
-                code=course.code,
-                name=course.name,
-                num_assignments=len(course.assignments),
-            )
-            for course in student_courses
-        ]
 
         # Separate by terms and order terms by year and type
         staff_courses_terms: Set[tuple[int, CourseTermType]] = set()
@@ -138,7 +122,13 @@ class CourseService:
                     id=course.id,
                     code=course.code,
                     name=course.name,
-                    num_assignments=len(course.assignments),
+                    num_assignments=len(
+                        [
+                            assignment
+                            for assignment in course.assignments
+                            if assignment.state == AssignmentState.PUBLISHED
+                        ]
+                    ),
                 )
             ]
 

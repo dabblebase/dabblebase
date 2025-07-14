@@ -23,6 +23,7 @@ class GetDropdownResponse_Assignment(BaseModel):
 class GetDropdownResponse(BaseModel):
     """Model that represents a response for the dropdown endpoint."""
 
+    is_staff: bool
     selected_assignment: GetDropdownResponse_Assignment | None = None
     assignments: list[GetDropdownResponse_Assignment]
 
@@ -94,6 +95,18 @@ class GetGroupProjectsResponse(BaseModel):
     """Model that represents a response for getting group projects of an assignment."""
 
     projects: list[GetGroupProjectsResponse_Project]
+
+
+class GetStudentDatabase(BaseModel):
+    """Model that represents a response for getting the database URL of a student project."""
+
+    db_url: str
+
+
+class GetStudentAuth(BaseModel):
+    """Model that represents a response for getting the authentication details of a student project."""
+
+    auth_public_key: str
 
 
 class CreateDraftRequest(BaseModel):

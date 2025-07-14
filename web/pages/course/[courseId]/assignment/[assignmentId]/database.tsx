@@ -1,49 +1,40 @@
 import AssignmentLayout from "@/components/assignment/assignment-layout";
+import CopyText from "@/components/ui/copy-text";
+import { useProjectDatabase } from "@/hooks/api/assignment/student-project/use-project-database";
 import { fetchClient } from "@/utils/api";
 import { protectRoute } from "@/utils/auth";
 import { GetServerSidePropsContext } from "next";
-import type { components } from "@/models/schema";
-import AssignmentDraftPage from "@/components/assignment/pages/draft/assignment-draft";
 import { useRouter } from "next/router";
-import AssignmentStaffPage from "@/components/assignment/pages/staff/assignment-staff-page";
 
-type Role = components["schemas"]["CourseMembershipRole"];
-type AssignmentState = components["schemas"]["AssignmentState"];
-
-type AssignmentViewData = {
-  role: Role;
-  assignment_state: AssignmentState;
-};
-
-export default function AssignmentPage({
-  viewData,
-}: {
-  viewData: AssignmentViewData;
-}) {
+export default function AssignmentDatabasePage() {
   const router = useRouter();
-  const { courseId, assignmentId } = router.query;
+  const { assignmentId } = router.query;
+  const { databaseData } = useProjectDatabase(
+    assignmentId as unknown as number
+  );
 
   return (
-    <>
-      {viewData.role === "student" ? (
-        <p>student view</p>
-      ) : viewData.assignment_state === "draft" ? (
-        <AssignmentDraftPage
-          courseId={courseId as unknown as number}
-          assignmentId={assignmentId as unknown as number}
-        />
-      ) : (
-        <AssignmentStaffPage
-          courseId={courseId as unknown as number}
-          assignmentId={assignmentId as unknown as number}
-        />
+    <div className="flex flex-col mx-auto w-full max-w-[1200px] px-4 gap-8 my-8">
+      <h1 className="text-2xl font-semibold">Database</h1>
+      {!!databaseData && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-bold">Database URL</p>
+          <p className="text-sm text-accent-foreground/80">
+            Connect to your assignment database using the URL below.
+          </p>
+          <CopyText
+            className="w-[500px]"
+            text={databaseData.db_url}
+            buttonVariant={"default"}
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
 /**
- * Determine which assignment page to show based on the assignment ID on the server side.
+ * Determine which page to show based on the assignment ID on the server side.
  */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const protectRouteResponse = protectRoute(context, "/login");
@@ -79,6 +70,20 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     };
   }
 
+  // If the user is a staff member, redirect to the staff page.
+  if (
+    viewData.role === "owner" ||
+    viewData.role === "admin" ||
+    viewData.role === "staff"
+  ) {
+    return {
+      redirect: {
+        destination: `/course/${context.query.courseId}/assignment/${assignmentId}`,
+        permanent: false,
+      },
+    };
+  }
+
   // If the view data is found, return it as props
   return {
     props: {
@@ -87,6 +92,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   };
 }
 
-AssignmentPage.getLayout = function getLayout(page: React.ReactNode) {
+AssignmentDatabasePage.getLayout = function getLayout(page: React.ReactNode) {
   return <AssignmentLayout>{page}</AssignmentLayout>;
 };

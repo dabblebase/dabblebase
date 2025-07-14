@@ -4,13 +4,32 @@ import { toast } from "sonner";
 import { Input } from "./input";
 import { Button } from "./button";
 import { Copy } from "lucide-react";
+import { cn } from "@/utils/cn";
 
-export default function CopyText({ text }: { text: string }) {
+type ButtonVariant =
+  | "outline"
+  | "link"
+  | "default"
+  | "destructive"
+  | "secondary"
+  | "ghost"
+  | null
+  | undefined;
+
+export default function CopyText({
+  className,
+  text,
+  buttonVariant = "outline",
+}: {
+  className: string;
+  text: string;
+  buttonVariant?: ButtonVariant;
+}) {
   return (
-    <div className="flex flex-row gap-2 items-center">
+    <div className={cn("flex flex-row gap-2 items-center", className)}>
       <Input id="link" defaultValue={text} readOnly className="h-9" />
       <Button
-        variant="outline"
+        variant={buttonVariant}
         type="submit"
         size="sm"
         className="px-3"

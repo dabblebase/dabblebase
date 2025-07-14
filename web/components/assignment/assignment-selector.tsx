@@ -49,24 +49,27 @@ export default function AssignmentSelector({
           aria-expanded={open}
           className="justify-between"
         >
-          {!!selectedAssignment ? (
+          {!!dropdownData && !!selectedAssignment ? (
             <div className="flex flex-row items-center">
               {selectedAssignment.name}
-              {selectedAssignment.state === "draft" && (
-                <Badge className="ml-2" variant="outline">
-                  Draft
-                </Badge>
-              )}
-              {selectedAssignment.state === "published" && (
-                <Badge className="ml-2" variant="default">
-                  Published
-                </Badge>
-              )}
-              {selectedAssignment.state === "unpublished" && (
-                <Badge className="ml-2 bg-accent" variant="secondary">
-                  Unpublished
-                </Badge>
-              )}
+              {dropdownData.is_staff &&
+                selectedAssignment.state === "draft" && (
+                  <Badge className="ml-2" variant="outline">
+                    Draft
+                  </Badge>
+                )}
+              {dropdownData.is_staff &&
+                selectedAssignment.state === "published" && (
+                  <Badge className="ml-2" variant="default">
+                    Published
+                  </Badge>
+                )}
+              {dropdownData.is_staff &&
+                selectedAssignment.state === "unpublished" && (
+                  <Badge className="ml-2 bg-accent" variant="secondary">
+                    Unpublished
+                  </Badge>
+                )}
             </div>
           ) : (
             "Select assignment..."
@@ -107,21 +110,26 @@ export default function AssignmentSelector({
                       )}
                     />
                     {assignment.name}
-                    {assignment.state === "draft" && (
+                    {dropdownData.is_staff && assignment.state === "draft" && (
                       <Badge className="ml-auto" variant="outline">
                         Draft
                       </Badge>
                     )}
-                    {assignment.state === "published" && (
-                      <Badge className="ml-auto" variant="default">
-                        Published
-                      </Badge>
-                    )}
-                    {assignment.state === "unpublished" && (
-                      <Badge className="ml-auto bg-accent" variant="secondary">
-                        Unpublished
-                      </Badge>
-                    )}
+                    {dropdownData.is_staff &&
+                      assignment.state === "published" && (
+                        <Badge className="ml-auto" variant="default">
+                          Published
+                        </Badge>
+                      )}
+                    {dropdownData.is_staff &&
+                      assignment.state === "unpublished" && (
+                        <Badge
+                          className="ml-auto bg-accent"
+                          variant="secondary"
+                        >
+                          Unpublished
+                        </Badge>
+                      )}
                   </CommandItem>
                 ))}
             </CommandGroup>

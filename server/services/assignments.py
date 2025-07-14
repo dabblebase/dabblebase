@@ -31,6 +31,8 @@ from ..models.assignment import (
     GetStudentProjectsResponse,
     GetGroupProjectsResponse_Project,
     GetGroupProjectsResponse,
+    GetStudentDatabase,
+    GetStudentAuth,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -134,6 +136,7 @@ class AssignmentService:
 
         # Return the response model
         return GetDropdownResponse(
+            is_staff=role in CourseMembershipRole.staff(),
             assignments=assignments_model,
             selected_assignment=selected_assignment_model,
         )
@@ -386,6 +389,39 @@ class AssignmentService:
         ]
 
         return GetGroupProjectsResponse(projects=project_models)
+
+    def get_student_database(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentDatabase:
+        """Gets the student database for a project."""
+        # Get the project for the student
+        project = self._get_student_project_for_assignment(subject, assignment_id)
+        if project is None:
+            raise ResourceNotFoundException(
+                f"No project found for assignment with ID {assignment_id} for the student."
+            )
+        # Return the data
+        return GetStudentDatabase(
+            db_url=self._content_db_cluster_svc.db_url_for_provisioned_db(
+                project.db_name,
+                project.student_role_name,
+                self._content_db_cluster_svc.decrypt_role_password(
+                    project.encrypted_student_role_password, assignment_id
+                ),
+            ),
+        )
+
+    def get_student_auth(self, subject: Subject, assignment_id: int) -> GetStudentAuth:
+        """Gets the student authentication details for a project."""
+        # Get the project for the student
+        project = self._get_student_project_for_assignment(subject, assignment_id)
+        if project is None:
+            raise ResourceNotFoundException(
+                f"No project found for assignment with ID {assignment_id} for the student."
+            )
+
+        # Return the authentication public key
+        return GetStudentAuth(auth_public_key=project.auth_public_key)
 
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest
@@ -1354,3 +1390,34 @@ class AssignmentService:
             # Remove the draft project from the database
             ...
             raise e
+
+    def _get_student_project_for_assignment(
+        self, subject: Subject, assignment_id: int
+    ) -> ProjectEntity | None:
+        """Gets the student project for an assignment, if it exists"""
+        # Check for student permissions
+        assignment = self._get_assignment_and_verify_permissions(
+            subject, assignment_id, CourseMembershipRole.STUDENT
+        )
+
+        # If the assignment is a group project, load the group project
+        if assignment.is_group_assignment:
+            query = (
+                select(ProjectEntity)
+                .join(ProjectGroupEntity)
+                .join(ProjectGroupMemberEntity)
+                .where(
+                    ProjectEntity.assignment_id == assignment_id,
+                    ProjectGroupMemberEntity.user_id == subject.id,
+                )
+            )
+            project = self._admin_db.scalars(query).one_or_none()
+            return project
+        # If the assignment is a individual project, load the student project
+        else:
+            query = select(ProjectEntity).where(
+                ProjectEntity.assignment_id == assignment_id,
+                ProjectEntity.user_id == subject.id,
+            )
+            project = self._admin_db.scalars(query).one_or_none()
+            return project
