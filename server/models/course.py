@@ -101,6 +101,7 @@ class GetRosterResponse_Member(BaseModel):
 class GetRosterResponse(BaseModel):
     """Model that represents a response for getting the course roster."""
 
+    invite_code: str
     members: list[GetRosterResponse_Member]
 
 

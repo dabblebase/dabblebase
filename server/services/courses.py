@@ -370,6 +370,13 @@ class CourseService:
             subject, course_id, CourseMembershipRole.STAFF
         )
 
+        # Query the course from the database
+        query = select(CourseEntity).where(CourseEntity.id == course_id)
+        course = self._admin_db.scalars(query).one_or_none()
+
+        if not course:
+            raise ResourceNotFoundException(f"Course with ID {course_id} not found.")
+
         # Query the course members
         query = (
             select(CourseMemberEntity)
@@ -388,7 +395,7 @@ class CourseService:
             )
             for member in members
         ]
-        return GetRosterResponse(members=roster_members)
+        return GetRosterResponse(members=roster_members, invite_code=course.invite_code)
 
     def get_staff_settings_view(
         self, subject: Subject, course_id: int
@@ -423,10 +430,10 @@ class CourseService:
         # TODO: Validate on permission for course creation
         ...
         # Validate that the course code does not have spaces or special characters
-        if not request.code.isalnum():
-            raise InputValidationException(
-                "Course code must be alphanumeric and cannot contain spaces or special characters."
-            )
+        # if not request.code.isalnum():
+        #     raise InputValidationException(
+        #         "Course code must be alphanumeric and cannot contain spaces or special characters."
+        #     )
 
         # Generate a random 6-digit invite code for a course
         invite_code = self._generate_invite_code()
@@ -481,10 +488,10 @@ class CourseService:
         )
 
         # Validate that the course code does not have spaces or special characters
-        if not request.code.isalnum():
-            raise InputValidationException(
-                "Course code must be alphanumeric and cannot contain spaces or special characters."
-            )
+        # if not request.code.isalnum():
+        #     raise InputValidationException(
+        #         "Course code must be alphanumeric and cannot contain spaces or special characters."
+        #     )
 
         # Query the course from the database
         query = select(CourseEntity).where(CourseEntity.id == course_id)

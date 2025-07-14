@@ -21,8 +21,8 @@ export default function CopyText({
   text,
   buttonVariant = "outline",
 }: {
-  className: string;
   text: string;
+  className?: string;
   buttonVariant?: ButtonVariant;
 }) {
   return (

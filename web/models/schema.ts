@@ -1162,6 +1162,8 @@ export interface components {
          * @description Model that represents a response for getting the course roster.
          */
         GetRosterResponse: {
+            /** Invite Code */
+            invite_code: string;
             /** Members */
             members: components["schemas"]["GetRosterResponse_Member"][];
         };

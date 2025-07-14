@@ -10,6 +10,19 @@ import { useRouter } from "next/router";
 import type { components } from "@/models/schema";
 import { toast } from "sonner";
 import { useRemoveMember } from "@/hooks/api/course/use-remove-member";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import CopyText from "@/components/ui/copy-text";
 
 type Role = components["schemas"]["CourseMembershipRole"];
 
@@ -80,7 +93,38 @@ export default function CourseRosterPage() {
   };
   return (
     <div className="flex flex-col mx-auto w-full max-w-[1200px] px-4 gap-8 my-8">
-      <h1 className="text-2xl font-semibold">Roster</h1>
+      <div className="flex flex-row w-full items-center justify-between">
+        <h1 className="text-2xl font-semibold">Roster</h1>
+        {!!rosterData && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus />
+                Invite Members
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Invite Members</DialogTitle>
+                <DialogDescription className="my-3 text-accent-foreground/80">
+                  Share this code with anyone you want to invite to your course.
+                  They can use it to join your course.
+                </DialogDescription>
+                <CopyText
+                  text={rosterData.invite_code}
+                  buttonVariant="default"
+                />
+              </DialogHeader>
+              <DialogFooter className="mt-3">
+                <DialogClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
       {!!courseRoleData && !!courseRoleData.role && !!rosterData && (
         <DataTable
           columns={rosterColumnsGenerator(

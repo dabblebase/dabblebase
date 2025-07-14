@@ -5,6 +5,10 @@ import ErrorMessage from "@/components/errors/error-message";
 import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
 import { useDashboard } from "@/hooks/api/course/use-dashboard";
+import JoinCourseDialog from "@/components/dashboard/join-course/join-course-dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import JoinCourseNewStudent from "@/components/dashboard/join-course/join-course-new-student";
 
 export default function DashboardPage() {
   const { dashboardData, dashboardLoading, dashboardError, noCoursesFound } =
@@ -24,7 +28,17 @@ export default function DashboardPage() {
         otherTerms={dashboardData?.other_student_course_terms ?? []}
         courses={dashboardData?.student_courses ?? {}}
       />
-      {noCoursesFound && <p className="text-lg">No courses found.</p>}
+      {!noCoursesFound && (
+        <div>
+          <JoinCourseDialog>
+            <Button variant="outline">
+              <Plus />
+              Join Course
+            </Button>
+          </JoinCourseDialog>
+        </div>
+      )}
+      {noCoursesFound && <JoinCourseNewStudent />}
       {dashboardLoading && <DashboardLoading title="Student Courses" />}
       {dashboardError && <ErrorMessage resource="dashboard" />}
     </div>

@@ -31,22 +31,30 @@ export default function CourseSidebar() {
                 selectedPath="assignments"
               />
               {!!courseRoleData && courseRoleData.is_staff && (
-                <CourseSidebarItem
-                  icon={Users}
-                  tooltip="Roster"
-                  selectedPath="roster"
-                />
+                <>
+                  <CourseSidebarItem
+                    icon={Users}
+                    tooltip="Roster"
+                    selectedPath="roster"
+                  />
+
+                  <CourseSidebarItem
+                    icon={Settings}
+                    tooltip="Settings"
+                    selectedPath="settings"
+                  />
+                </>
               )}
               {/* <CourseSidebarItem
                 icon={ChartSpline}
                 tooltip="Usage"
                 selectedPath="usage"
               /> */}
-              <CourseSidebarItem
+              {/* <CourseSidebarItem
                 icon={Settings}
                 tooltip="Settings"
                 selectedPath="settings"
-              />
+              /> */}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
