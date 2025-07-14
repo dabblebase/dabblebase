@@ -19,7 +19,11 @@ from ..models.course import (
     GetRoleForCourseResponse,
     GetStudentsForCourseResponse,
     GetRosterResponse,
+    GetStaffSettingsViewResponse,
+    UpdateCourseRequest,
     ChangeUserRoleInCourseRequest,
+    JoinCourseRequest,
+    JoinCourseResponse,
     RemoveUserFromCourseRequest,
 )
 
@@ -98,6 +102,56 @@ def get_roster(
 ) -> GetRosterResponse:
     """Get the roster for a course."""
     return course_svc.get_roster(subject, course_id)
+
+
+@api.get("/{course_id}/staff-settings-view", tags=[tag])
+def get_staff_settings_view(
+    course_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> GetStaffSettingsViewResponse:
+    """
+    Get the staff settings view for a course.
+    """
+    return course_svc.get_staff_settings_view(subject, course_id)
+
+
+@api.put("/{course_id}", tags=[tag])
+def update_course(
+    course_id: int,
+    request: UpdateCourseRequest,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> None:
+    """
+    Update the details of a course.
+    """
+    course_svc.update_course(subject, course_id, request)
+
+
+@api.delete("/{course_id}", tags=[tag])
+def delete_course(
+    course_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> None:
+    """
+    Delete a course.
+    """
+    course_svc.delete_course(subject, course_id)
+
+
+@api.post("/join-with-invite-code", tags=[tag])
+def join_with_invite_code(
+    invite_code: str,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> JoinCourseResponse:
+    """
+    Join a course using an invite code.
+    """
+    request = JoinCourseRequest(invite_code=invite_code)
+    return course_svc.join_course(subject, request)
 
 
 @api.put("/{course_id}/member/{user_id}/role", tags=[tag])

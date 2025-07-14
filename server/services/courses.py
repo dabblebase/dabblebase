@@ -27,6 +27,7 @@ from ..models.course import (
     GetStudentsForCourseResponse,
     GetRosterResponse_Member,
     GetRosterResponse,
+    GetStaffSettingsViewResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -389,6 +390,32 @@ class CourseService:
         ]
         return GetRosterResponse(members=roster_members)
 
+    def get_staff_settings_view(
+        self, subject: Subject, course_id: int
+    ) -> GetStaffSettingsViewResponse:
+        """Gets the information that is displayed on the staff settings view."""
+        # Check permissions
+        self.verify_subject_has_permissions_for_course(
+            subject, course_id, CourseMembershipRole.STAFF
+        )
+
+        # Query the course from the database
+        query = select(CourseEntity).where(CourseEntity.id == course_id)
+        course = self._admin_db.scalars(query).one_or_none()
+        if not course:
+            raise ResourceNotFoundException(f"Course with ID {course_id} not found.")
+
+        # Return the course information
+        return GetStaffSettingsViewResponse(
+            id=course.id,
+            code=course.code,
+            name=course.name,
+            description=course.description,
+            invite_code=course.invite_code,
+            term_type=course.term_type,
+            term_year=course.term_year,
+        )
+
     def create_course(
         self, subject: Subject, request: CreateCourseRequest
     ) -> CreateCourseResponse:
@@ -444,11 +471,13 @@ class CourseService:
             invite_code=course.invite_code,
         )
 
-    def update_course(self, subject: Subject, request: UpdateCourseRequest):
+    def update_course(
+        self, subject: Subject, course_id: int, request: UpdateCourseRequest
+    ):
         """Updates a course based on the provided data"""
         # Check permissions
         self.verify_subject_has_permissions_for_course(
-            subject, request.id, CourseMembershipRole.ADMIN
+            subject, course_id, CourseMembershipRole.ADMIN
         )
 
         # Validate that the course code does not have spaces or special characters
@@ -458,10 +487,10 @@ class CourseService:
             )
 
         # Query the course from the database
-        query = select(CourseEntity).where(CourseEntity.id == request.id)
+        query = select(CourseEntity).where(CourseEntity.id == course_id)
         course = self._admin_db.scalars(query).one_or_none()
         if not course:
-            raise ResourceNotFoundException(f"Course with ID {request.id} not found.")
+            raise ResourceNotFoundException(f"Course with ID {course_id} not found.")
 
         # Update the course attributes
         course.code = request.code

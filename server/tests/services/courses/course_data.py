@@ -31,7 +31,6 @@ create_course_request_invalid_code = CreateCourseRequest(
 
 
 update_course_request = UpdateCourseRequest(
-    id=course.id,
     code="NEW1234",
     name="Updated Test Course",
     description="This is an updated test course.",
@@ -40,7 +39,6 @@ update_course_request = UpdateCourseRequest(
 )
 
 update_course_request_invalid_code = UpdateCourseRequest(
-    id=course.id,
     code="TEST 123",
     name="Updated Test Course",
     description="This is an updated test course.",
@@ -49,7 +47,6 @@ update_course_request_invalid_code = UpdateCourseRequest(
 )
 
 update_course_request_not_found = UpdateCourseRequest(
-    id=404,
     code="NEW1234",
     name="Updated Test Course",
     description="This is an updated test course.",

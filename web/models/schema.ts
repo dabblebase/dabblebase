@@ -215,6 +215,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/{course_id}/staff-settings-view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Staff Settings View
+         * @description Get the staff settings view for a course.
+         */
+        get: operations["get_staff_settings_view_api_course__course_id__staff_settings_view_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/{course_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Course
+         * @description Update the details of a course.
+         */
+        put: operations["update_course_api_course__course_id__put"];
+        post?: never;
+        /**
+         * Delete Course
+         * @description Delete a course.
+         */
+        delete: operations["delete_course_api_course__course_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/join-with-invite-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join With Invite Code
+         * @description Join a course using an invite code.
+         */
+        post: operations["join_with_invite_code_api_course_join_with_invite_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/course/{course_id}/member/{user_id}/role": {
         parameters: {
             query?: never;
@@ -847,6 +911,12 @@ export interface components {
          */
         CourseMembershipRole: "owner" | "admin" | "staff" | "student";
         /**
+         * CourseTermType
+         * @description Enum identifying the type of term for a course.
+         * @enum {string}
+         */
+        CourseTermType: "Fall" | "Spring" | "Summer" | "Winter";
+        /**
          * CreateDraftRequest
          * @description Model that represents a request to create a draft.
          */
@@ -1109,6 +1179,25 @@ export interface components {
             role: components["schemas"]["CourseMembershipRole"];
         };
         /**
+         * GetStaffSettingsViewResponse
+         * @description Model that represents the staff settings view response.
+         */
+        GetStaffSettingsViewResponse: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Invite Code */
+            invite_code: string;
+            term_type: components["schemas"]["CourseTermType"];
+            /** Term Year */
+            term_year: number;
+        };
+        /**
          * GetStaffViewResponse
          * @description Model that presents the information for a staff view of an assignment.
          */
@@ -1202,6 +1291,18 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * JoinCourseResponse
+         * @description Model that represents a response after joining a course.
+         */
+        JoinCourseResponse: {
+            /** Course Id */
+            course_id: number;
+            /** Course Code */
+            course_code: string;
+            /** Course Name */
+            course_name: string;
+        };
+        /**
          * Task
          * @description Represents a Celery asychronous task.
          */
@@ -1246,6 +1347,21 @@ export interface components {
             error_message?: string | null;
             /** Db Url */
             db_url?: string | null;
+        };
+        /**
+         * UpdateCourseRequest
+         * @description Model that represents a request to update a course.
+         */
+        UpdateCourseRequest: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            term_type: components["schemas"]["CourseTermType"];
+            /** Term Year */
+            term_year: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -1602,6 +1718,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRosterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_settings_view_api_course__course_id__staff_settings_view_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStaffSettingsViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_course_api_course__course_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_course_api_course__course_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    join_with_invite_code_api_course_join_with_invite_code_post: {
+        parameters: {
+            query: {
+                invite_code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JoinCourseResponse"];
                 };
             };
             /** @description Validation Error */

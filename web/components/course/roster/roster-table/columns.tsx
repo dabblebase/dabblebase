@@ -84,7 +84,7 @@ export const rosterColumnsGenerator = (
       header: () => <></>,
       cell: ({ row }) => {
         return (
-          <div className="ml-auto">
+          <div className="flex flex-row items-end px-2">
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="icon" className="ml-auto">

@@ -1,4 +1,4 @@
-import { Blocks, ChartSpline, Settings, Users } from "lucide-react";
+import { Blocks, Settings, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +10,12 @@ import {
 } from "../ui/sidebar";
 import { useRouter } from "next/router";
 import { cn } from "@/utils/cn";
+import { useCourseRole } from "@/hooks/api/course/use-course-role";
 
 export default function CourseSidebar() {
+  const { courseId } = useRouter().query as { courseId: string };
+  const { courseRoleData } = useCourseRole(courseId as unknown as number);
+
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]! w-[calc(var(--sidebar-width-icon)+1px)]! border-r"
@@ -26,16 +30,18 @@ export default function CourseSidebar() {
                 tooltip="Assignments"
                 selectedPath="assignments"
               />
-              <CourseSidebarItem
-                icon={Users}
-                tooltip="Roster"
-                selectedPath="roster"
-              />
-              <CourseSidebarItem
+              {!!courseRoleData && courseRoleData.is_staff && (
+                <CourseSidebarItem
+                  icon={Users}
+                  tooltip="Roster"
+                  selectedPath="roster"
+                />
+              )}
+              {/* <CourseSidebarItem
                 icon={ChartSpline}
                 tooltip="Usage"
                 selectedPath="usage"
-              />
+              /> */}
               <CourseSidebarItem
                 icon={Settings}
                 tooltip="Settings"

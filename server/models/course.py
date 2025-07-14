@@ -104,6 +104,18 @@ class GetRosterResponse(BaseModel):
     members: list[GetRosterResponse_Member]
 
 
+class GetStaffSettingsViewResponse(BaseModel):
+    """Model that represents the staff settings view response."""
+
+    id: int
+    code: str
+    name: str
+    description: str | None
+    invite_code: str
+    term_type: CourseTermType
+    term_year: int
+
+
 class CreateCourseRequest(BaseModel):
     """Model that represents a request to create a course."""
 
@@ -126,7 +138,6 @@ class CreateCourseResponse(BaseModel):
 class UpdateCourseRequest(BaseModel):
     """Model that represents a request to update a course."""
 
-    id: int
     code: str
     name: str
     description: str | None = None
