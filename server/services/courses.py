@@ -25,6 +25,8 @@ from ..models.course import (
     GetRoleForCourseResponse,
     GetStudentsForCourseResponse_Student,
     GetStudentsForCourseResponse,
+    GetRosterResponse_Member,
+    GetRosterResponse,
     CreateCourseRequest,
     CreateCourseResponse,
     UpdateCourseRequest,
@@ -352,11 +354,40 @@ class CourseService:
         # Convert to models and return
         students = [
             GetStudentsForCourseResponse_Student(
-                user_id=user.id, user_name=f"{user.first_name} {user.last_name}"
+                user_id=user.id,
+                user_name=f"{user.first_name} {user.last_name}",
+                user_email=user.email,
             )
             for user in users
         ]
         return GetStudentsForCourseResponse(students=students)
+
+    def get_roster(self, subject: Subject, course_id: int) -> GetRosterResponse:
+        """Returns the roster for a course"""
+        # Check permissions
+        self.verify_subject_has_permissions_for_course(
+            subject, course_id, CourseMembershipRole.STAFF
+        )
+
+        # Query the course members
+        query = (
+            select(CourseMemberEntity)
+            .where(CourseMemberEntity.course_id == course_id)
+            .options(joinedload(CourseMemberEntity.user))
+        )
+        members = self._admin_db.scalars(query).all()
+
+        # Convert to models and return
+        roster_members = [
+            GetRosterResponse_Member(
+                user_id=member.user.id,
+                user_name=f"{member.user.first_name} {member.user.last_name}",
+                user_email=member.user.email,
+                role=member.role,
+            )
+            for member in members
+        ]
+        return GetRosterResponse(members=roster_members)
 
     def create_course(
         self, subject: Subject, request: CreateCourseRequest

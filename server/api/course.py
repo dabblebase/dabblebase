@@ -18,6 +18,9 @@ from ..models.course import (
     GetAssignmentsResponse,
     GetRoleForCourseResponse,
     GetStudentsForCourseResponse,
+    GetRosterResponse,
+    ChangeUserRoleInCourseRequest,
+    RemoveUserFromCourseRequest,
 )
 
 tag = "Courses"
@@ -85,3 +88,44 @@ def get_students(
     Get the list of students in a specific course.
     """
     return course_svc.get_students_for_course(subject, course_id, assignment_id, search)
+
+
+@api.get("/{course_id}/roster", tags=[tag])
+def get_roster(
+    course_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> GetRosterResponse:
+    """Get the roster for a course."""
+    return course_svc.get_roster(subject, course_id)
+
+
+@api.put("/{course_id}/member/{user_id}/role", tags=[tag])
+def update_member_role(
+    course_id: int,
+    user_id: int,
+    role: CourseMembershipRole,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> None:
+    """
+    Update the role of a member in a course.
+    """
+    request = ChangeUserRoleInCourseRequest(
+        course_id=course_id, user_id=user_id, role=role
+    )
+    course_svc.change_user_role_in_course(subject, request)
+
+
+@api.delete("/{course_id}/member/{user_id}", tags=[tag])
+def delete_member(
+    course_id: int,
+    user_id: int,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> None:
+    """
+    Remove a member from a course.
+    """
+    request = RemoveUserFromCourseRequest(course_id=course_id, user_id=user_id)
+    course_svc.remove_user_from_course(subject, request)

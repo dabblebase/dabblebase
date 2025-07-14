@@ -80,12 +80,28 @@ class GetStudentsForCourseResponse_Student(BaseModel):
 
     user_id: int
     user_name: str
+    user_email: str
 
 
 class GetStudentsForCourseResponse(BaseModel):
     """Model that represents a response for getting students in a course."""
 
     students: list[GetStudentsForCourseResponse_Student]
+
+
+class GetRosterResponse_Member(BaseModel):
+    """Model that represents a member in the course roster response."""
+
+    user_id: int
+    user_name: str
+    user_email: str
+    role: CourseMembershipRole
+
+
+class GetRosterResponse(BaseModel):
+    """Model that represents a response for getting the course roster."""
+
+    members: list[GetRosterResponse_Member]
 
 
 class CreateCourseRequest(BaseModel):

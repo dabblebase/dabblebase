@@ -62,10 +62,10 @@ export function CourseSidebarItem({
   const currentPath = router.asPath.split("/").pop();
   const isSelected = currentPath === selectedPath;
 
-  const { id } = router.query as { id: string };
+  const { courseId } = router.query as { courseId: string };
   const onClick = () => {
     if (selectedPath !== currentPath) {
-      router.push(`/course/${id}/${selectedPath}`);
+      router.push(`/course/${courseId}/${selectedPath}`);
     }
   };
   return (

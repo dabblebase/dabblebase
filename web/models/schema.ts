@@ -195,6 +195,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/{course_id}/roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Roster
+         * @description Get the roster for a course.
+         */
+        get: operations["get_roster_api_course__course_id__roster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/{course_id}/member/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Member Role
+         * @description Update the role of a member in a course.
+         */
+        put: operations["update_member_role_api_course__course_id__member__user_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/{course_id}/member/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Member
+         * @description Remove a member from a course.
+         */
+        delete: operations["delete_member_api_course__course_id__member__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/summary": {
         parameters: {
             query?: never;
@@ -1028,6 +1088,27 @@ export interface components {
             can_modify_assignments: boolean;
         };
         /**
+         * GetRosterResponse
+         * @description Model that represents a response for getting the course roster.
+         */
+        GetRosterResponse: {
+            /** Members */
+            members: components["schemas"]["GetRosterResponse_Member"][];
+        };
+        /**
+         * GetRosterResponse_Member
+         * @description Model that represents a member in the course roster response.
+         */
+        GetRosterResponse_Member: {
+            /** User Id */
+            user_id: number;
+            /** User Name */
+            user_name: string;
+            /** User Email */
+            user_email: string;
+            role: components["schemas"]["CourseMembershipRole"];
+        };
+        /**
          * GetStaffViewResponse
          * @description Model that presents the information for a staff view of an assignment.
          */
@@ -1099,6 +1180,8 @@ export interface components {
             user_id: number;
             /** User Name */
             user_name: string;
+            /** User Email */
+            user_email: string;
         };
         /**
          * GetViewResponse
@@ -1488,6 +1571,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetStudentsForCourseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_roster_api_course__course_id__roster_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRosterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_role_api_course__course_id__member__user_id__role_put: {
+        parameters: {
+            query: {
+                role: components["schemas"]["CourseMembershipRole"];
+            };
+            header?: never;
+            path: {
+                course_id: number;
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_member_api_course__course_id__member__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

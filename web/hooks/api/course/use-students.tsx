@@ -2,8 +2,8 @@ import { api } from "@/utils/api";
 
 export function useStudents(
   courseId: number,
-  assignmentId: number,
-  debouncedSearch: string
+  assignmentId?: number,
+  debouncedSearch: string = ""
 ) {
   const { data: studentData } = api.useQuery(
     "get",
