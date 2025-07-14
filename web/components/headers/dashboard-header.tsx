@@ -6,9 +6,10 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "../ui/breadcrumb";
-import { GalleryVerticalEnd, SlashIcon } from "lucide-react";
+import { SlashIcon } from "lucide-react";
 import { ReactNode } from "react";
 import UserHeaderSection from "./user-header-section";
+import DabblebaseLogo from "../theme/logo";
 
 export function DashboardHeader({ children }: { children: ReactNode }) {
   return (
@@ -18,7 +19,7 @@ export function DashboardHeader({ children }: { children: ReactNode }) {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/dashboard">
-                <GalleryVerticalEnd className="size-4" />
+                <DabblebaseLogo />
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
