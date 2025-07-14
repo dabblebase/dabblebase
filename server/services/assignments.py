@@ -1363,15 +1363,16 @@ class AssignmentService:
                     student_role_password, assignment_id
                 )
             )
-            self._content_db_cluster_svc.provision_role_for_database(
-                db_name, student_role_name, student_role_password
-            )
 
             # Run the configuration SQL on the database
             if configuration_sql is not None:
                 self._content_db_cluster_svc.run_sql_on_database(
                     db_name, admin_role_name, admin_role_password, configuration_sql
                 )
+
+            self._content_db_cluster_svc.provision_role_for_database(
+                db_name, student_role_name, student_role_password
+            )
 
             # Set the credentials for the project
             project.admin_role_name = admin_role_name
