@@ -13,7 +13,13 @@ from ...env import env
 class ProjectAuthService(BaseService):
 
     def get_or_create_user(
-        self, auth_identifier: str, auth_provider: UserAuthenticationProvider
+        self,
+        auth_identifier: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        username: str,
+        auth_provider: UserAuthenticationProvider,
     ) -> UserEntity:
         """
         Retrieves a user based on their authentication identifier and provider, if it exists.
@@ -35,6 +41,10 @@ class ProjectAuthService(BaseService):
         new_user = UserEntity(
             auth_id=auth_identifier,
             auth_provider=auth_provider,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
         )
 
         self._admin_db.add(new_user)

@@ -2,7 +2,119 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-from ..entities import CourseMembershipRole
+from ..entities import CourseMembershipRole, AssignmentState
+from ..entities.course import CourseTermType
+
+
+class GetDashboardResponse_Course(BaseModel):
+    """Model that represents a course in the dashboard response."""
+
+    id: int
+    code: str
+    name: str
+    num_students: int | None = None
+    num_assignments: int
+
+
+class GetDashboardResponse(BaseModel):
+    """Model that represents a response for the dashboard endpoint."""
+
+    most_recent_staff_course_term: str | None
+    most_recent_student_course_term: str | None
+    other_staff_course_terms: list[str]
+    other_student_course_terms: list[str]
+    staff_courses: dict[str, list[GetDashboardResponse_Course]]
+    student_courses: dict[str, list[GetDashboardResponse_Course]]
+
+
+class GetAssignmentsResponse_Assignment(BaseModel):
+    """Model that represents an assignment in the assignments response."""
+
+    id: int
+    name: str
+    is_group: bool
+    state: AssignmentState
+
+
+class GetAssignmentsResponse(BaseModel):
+    """Model that represents a response for the assignments endpoint."""
+
+    is_staff: bool
+    assignments: list[GetAssignmentsResponse_Assignment]
+
+
+class GetDropdownRequest(BaseModel):
+    """Model that represents a request for the dropdown endpoint."""
+
+    search: str
+    selected_course_id: int | None = None
+
+
+class GetDropdownResponse_Course(BaseModel):
+    """Model that represents a course in the dropdown response."""
+
+    id: int
+    code: str
+    name: str
+    is_staff: bool
+
+
+class GetDropdownResponse(BaseModel):
+    """Model that represents a dropdown response."""
+
+    terms: list[str]
+    selected_course: GetDropdownResponse_Course | None = None
+    courses: dict[str, list[GetDropdownResponse_Course]]
+
+
+class GetRoleForCourseResponse(BaseModel):
+    """Model that represents the role of a user in a course."""
+
+    role: CourseMembershipRole | None = None
+    is_staff: bool = False
+    can_modify_assignments: bool = False
+
+
+class GetStudentsForCourseResponse_Student(BaseModel):
+    """Model that represents a student in the course students response."""
+
+    user_id: int
+    user_name: str
+    user_email: str
+
+
+class GetStudentsForCourseResponse(BaseModel):
+    """Model that represents a response for getting students in a course."""
+
+    students: list[GetStudentsForCourseResponse_Student]
+
+
+class GetRosterResponse_Member(BaseModel):
+    """Model that represents a member in the course roster response."""
+
+    user_id: int
+    user_name: str
+    user_email: str
+    role: CourseMembershipRole
+
+
+class GetRosterResponse(BaseModel):
+    """Model that represents a response for getting the course roster."""
+
+    invite_code: str
+    members: list[GetRosterResponse_Member]
+
+
+class GetStaffSettingsViewResponse(BaseModel):
+    """Model that represents the staff settings view response."""
+
+    id: int
+    code: str
+    name: str
+    description: str | None
+    invite_code: str
+    term_type: CourseTermType
+    term_year: int
 
 
 class CreateCourseRequest(BaseModel):
@@ -11,8 +123,8 @@ class CreateCourseRequest(BaseModel):
     code: str
     name: str
     description: str | None = None
-    start_date: datetime
-    end_date: datetime
+    term_type: CourseTermType
+    term_year: int
 
 
 class CreateCourseResponse(BaseModel):
@@ -27,12 +139,11 @@ class CreateCourseResponse(BaseModel):
 class UpdateCourseRequest(BaseModel):
     """Model that represents a request to update a course."""
 
-    id: int
     code: str
     name: str
     description: str | None = None
-    start_date: datetime
-    end_date: datetime
+    term_type: CourseTermType
+    term_year: int
 
 
 class AddUserToCourseRequest(BaseModel):

@@ -27,6 +27,7 @@ from ..seed import (
 )
 
 from .assignment_data import (
+    get_dropdown_request,
     create_draft_request,
     rename_request,
     rename_request_name_empty,
@@ -80,6 +81,30 @@ def test__create_project(assignment_svc: AssignmentService):
     with engine.connect() as conn:
         result = conn.execute(text("SELECT 1"))
         assert result.scalar() == 1
+
+
+def test_get_dropdown(assignment_svc: AssignmentService):
+    """Tests that the dropdown for assignments works correctly."""
+    # Test the dropdown for a course with assignments
+    response = assignment_svc.get_dropdown(
+        instructor_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.assignments) > 0
+
+
+def test_get_view(
+    assignment_svc: AssignmentService,
+):
+    """Tests that the view for assignments works correctly."""
+    # Test the view for a course with assignments
+    response = assignment_svc.get_view(
+        instructor_user.to_subject(),
+        assignment_id=draft_indiv_assignment.id,
+    )
+    assert response is not None
+    assert response.role == CourseMembershipRole.OWNER
+    assert response.assignment_state == AssignmentState.DRAFT
 
 
 def test_create_draft(admin_db_session: Session, assignment_svc: AssignmentService):
@@ -172,14 +197,15 @@ def test_test_configuration_sql_success(assignment_svc: AssignmentService):
 
     # Now, test the configuration SQL
     test_configuration_sql_request_success = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         INSERT INTO test_table (id, name) VALUES (1, 'Test Name');
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_success
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_success,
     )
 
     assert response.success is True
@@ -214,13 +240,14 @@ def test_test_configuration_sql_failure_syntax_error(assignment_svc: AssignmentS
 
     # Now, test the configuration SQL with a syntax error
     test_configuration_sql_request_syntax_error = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATEEE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_syntax_error
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_syntax_error,
     )
 
     assert response.success is False
@@ -252,10 +279,12 @@ def test_test_configuration_sql_failure_naughty_request(
 
     # Now, test the configuration SQL with a create database request
     test_configuration_sql_request_create_db = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id, sql="CREATE DATABASE naughty_db;"
+        sql="CREATE DATABASE naughty_db;"
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_create_db
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_create_db,
     )
 
     assert response.success is False
@@ -273,11 +302,12 @@ def test_test_configuration_sql_failure_naughty_request(
 
     # Now, test the configuration SQL with a create role request
     test_configuration_sql_request_create_role = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="CREATE ROLE naughty_role LOGIN PASSWORD '1234'",
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_create_role
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_create_role,
     )
 
     assert response.success is False
@@ -306,22 +336,20 @@ def test_save_configuration_sql(assignment_svc: AssignmentService):
     ).get(response.assignment_id)
     assert draft_assignment is not None
     test_configuration_sql_request_success = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100));
         INSERT INTO test_table (id, name) VALUES (1, 'Test Name');
         """,
     )
     response = assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request_success
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request_success,
     )
 
     # Now, test saving the configuration SQL
-    save_configuration_sql_request = SaveConfigurationSQLRequest(
-        assignment_id=draft_assignment.id
-    )
     assignment_svc.save_configuration_sql(
-        subject=instructor_user.to_subject(), request=save_configuration_sql_request
+        subject=instructor_user.to_subject(), assignment_id=draft_assignment.id
     )
     saved_assignment: AssignmentEntity | None = assignment_svc._admin_db.query(
         AssignmentEntity
@@ -348,11 +376,12 @@ def test_save_configuration_sql_not_tested(assignment_svc: AssignmentService):
         AssignmentEntity
     ).get(response.assignment_id)
     assert draft_assignment is not None
-    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
 
     # Now, test that an exception is raised
     with pytest.raises(InputValidationException):
-        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+        assignment_svc.save_configuration_sql(
+            instructor_user.to_subject(), draft_assignment.id
+        )
 
 
 def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentService):
@@ -367,25 +396,26 @@ def test_save_configuration_sql_tested_but_failed(assignment_svc: AssignmentServ
     ).get(response.assignment_id)
     assert draft_assignment is not None
     test_configuration_sql_request = TestConfigurationSQLRequest(
-        assignment_id=draft_assignment.id,
         sql="""
         CREATE DATABASE naughty_db;
         """,
     )
     assignment_svc.test_configuration_sql(
-        instructor_user.to_subject(), test_configuration_sql_request
+        instructor_user.to_subject(),
+        draft_assignment.id,
+        test_configuration_sql_request,
     )
-    request = SaveConfigurationSQLRequest(assignment_id=draft_assignment.id)
-
     # Now, test that an exception is raised
     with pytest.raises(InputValidationException):
-        assignment_svc.save_configuration_sql(instructor_user.to_subject(), request)
+        assignment_svc.save_configuration_sql(
+            instructor_user.to_subject(), draft_assignment.id
+        )
 
 
 def test_create_group(admin_db_session: Session, assignment_svc: AssignmentService):
     """Tests that a group can be created for an assignment."""
     response = assignment_svc.create_group(
-        instructor_user.to_subject(), create_group_request
+        instructor_user.to_subject(), draft_group_assignment.id, create_group_request
     )
     group = admin_db_session.get(ProjectGroupEntity, response.group_id)
     assert group is not None
@@ -398,7 +428,9 @@ def test_create_group_for_indiv(
     """Ensures that a group cannot be created for a group assignment."""
     with pytest.raises(InputValidationException):
         assignment_svc.create_group(
-            instructor_user.to_subject(), create_group_request_for_indiv
+            instructor_user.to_subject(),
+            draft_indiv_assignment.id,
+            create_group_request_for_indiv,
         )
 
 
@@ -408,7 +440,9 @@ def test_create_group_for_noname(
     """Ensures that a group cannot be created with an empty name."""
     with pytest.raises(InputValidationException):
         assignment_svc.create_group(
-            instructor_user.to_subject(), create_group_request_for_noname
+            instructor_user.to_subject(),
+            draft_group_assignment.id,
+            create_group_request_for_noname,
         )
 
 
@@ -479,7 +513,7 @@ def test_remove_group_member_not_found_user(
 def test_delete_group(admin_db_session: Session, assignment_svc: AssignmentService):
     """Tests deleting a group from an assignment."""
     response = assignment_svc.create_group(
-        instructor_user.to_subject(), create_group_request
+        instructor_user.to_subject(), draft_group_assignment.id, create_group_request
     )
     delete_group_request.group_id = response.group_id
     assignment_svc.delete_group(instructor_user.to_subject(), delete_group_request)

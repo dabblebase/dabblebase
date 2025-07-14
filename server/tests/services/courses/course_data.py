@@ -11,65 +11,47 @@ from ..seed import (
 from ....models.course import *
 from datetime import datetime, timedelta
 
+get_dropdown_request = GetDropdownRequest(search="")
+
 create_course_request = CreateCourseRequest(
     code="TEST123",
     name="Test Course",
     description="This is a test course.",
-    start_date=datetime.now() - timedelta(days=30),
-    end_date=datetime.now() + timedelta(days=30),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
 )
 
 create_course_request_invalid_code = CreateCourseRequest(
     code="TEST 123",
     name="Test Course",
     description="This is a test course.",
-    start_date=datetime.now() - timedelta(days=30),
-    end_date=datetime.now() + timedelta(days=30),
-)
-
-create_course_request_invalid_date_range = CreateCourseRequest(
-    code="TEST 123",
-    name="Test Course",
-    description="This is a test course.",
-    start_date=datetime.now() + timedelta(days=30),
-    end_date=datetime.now() - timedelta(days=30),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
 )
 
 
 update_course_request = UpdateCourseRequest(
-    id=course.id,
     code="NEW1234",
     name="Updated Test Course",
     description="This is an updated test course.",
-    start_date=datetime.now() - timedelta(days=15),
-    end_date=datetime.now() + timedelta(days=15),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
 )
 
 update_course_request_invalid_code = UpdateCourseRequest(
-    id=course.id,
     code="TEST 123",
     name="Updated Test Course",
     description="This is an updated test course.",
-    start_date=datetime.now() - timedelta(days=15),
-    end_date=datetime.now() + timedelta(days=15),
-)
-
-update_course_request_invalid_date_range = UpdateCourseRequest(
-    id=course.id,
-    code="NEW1234",
-    name="Updated Test Course",
-    description="This is an updated test course.",
-    start_date=datetime.now() + timedelta(days=15),
-    end_date=datetime.now() - timedelta(days=15),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
 )
 
 update_course_request_not_found = UpdateCourseRequest(
-    id=404,
     code="NEW1234",
     name="Updated Test Course",
     description="This is an updated test course.",
-    start_date=datetime.now() - timedelta(days=15),
-    end_date=datetime.now() + timedelta(days=15),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
 )
 
 add_user_to_course_request = AddUserToCourseRequest(

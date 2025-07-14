@@ -13,14 +13,14 @@ from ..seed import (
     student_1_user,
     course,
     nocourse_student_user,
+    assignments,
 )
 from .course_data import (
+    get_dropdown_request,
     create_course_request,
     create_course_request_invalid_code,
-    create_course_request_invalid_date_range,
     update_course_request,
     update_course_request_invalid_code,
-    update_course_request_invalid_date_range,
     update_course_request_not_found,
     add_user_to_course_request,
     add_user_to_course_request_already_member,
@@ -44,6 +44,54 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 
+def test_get_dashboard(course_svc: CourseService):
+    """Test getting the dashboard."""
+    # Test for a staff member
+    response = course_svc.get_dashboard(instructor_user.to_subject())
+    assert response is not None
+    assert len(response.staff_courses) == 1
+    assert len(response.student_courses) == 0
+    # Test for a student
+    response = course_svc.get_dashboard(student_1_user.to_subject())
+    assert response is not None
+    assert len(response.staff_courses) == 0
+    assert len(response.student_courses) == 1
+
+
+def test_get_dropdown(course_svc: CourseService):
+    """Test getting the dropdown."""
+    response = course_svc.get_dropdown(
+        instructor_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.terms) == 1
+    assert len(response.courses) == 1
+
+    # Test for a student
+    response = course_svc.get_dropdown(
+        student_1_user.to_subject(), get_dropdown_request
+    )
+    assert response is not None
+    assert len(response.terms) == 1
+    assert len(response.courses) == 1
+
+
+def test_get_assignments(course_svc: CourseService):
+    """Test getting assignments for a course."""
+    response = course_svc.get_assignments(instructor_user.to_subject(), course.id)
+    assert response is not None
+    assert len(response.assignments) == len(
+        [assignment for assignment in assignments if assignment.course_id == course.id]
+    )
+
+
+def test_get_role_for_course(course_svc: CourseService):
+    """Test getting roles for a course."""
+    response = course_svc.get_role_for_course(instructor_user.to_subject(), course.id)
+    assert response is not None
+    assert response.role == CourseMembershipRole.OWNER
+
+
 def test_create_course(admin_db_session: Session, course_svc: CourseService):
     """Tests creating a course."""
     response = course_svc.create_course(
@@ -65,18 +113,12 @@ def test_create_course_invalid_code(course_svc: CourseService):
         )
 
 
-def test_create_course_invalid_date_range(course_svc: CourseService):
-    """Ensure that creating a course with an invalid date range raises an error."""
-    with pytest.raises(InputValidationException):
-        course_svc.create_course(
-            instructor_user.to_subject(), create_course_request_invalid_date_range
-        )
-
-
 def test_update_course(admin_db_session: Session, course_svc: CourseService):
     """Test updating a course."""
-    course_svc.update_course(instructor_user.to_subject(), update_course_request)
-    updated_course = admin_db_session.get(CourseEntity, update_course_request.id)
+    course_svc.update_course(
+        instructor_user.to_subject(), course.id, update_course_request
+    )
+    updated_course = admin_db_session.get(CourseEntity, course.id)
     assert updated_course is not None
     assert updated_course.code == update_course_request.code
 
@@ -84,7 +126,9 @@ def test_update_course(admin_db_session: Session, course_svc: CourseService):
 def test_updating_course_no_permission(course_svc: CourseService):
     """Ensure that updating a course without permission raises an error."""
     with pytest.raises(UserPermissionException):
-        course_svc.update_course(student_1_user.to_subject(), update_course_request)
+        course_svc.update_course(
+            student_1_user.to_subject(), course.id, update_course_request
+        )
 
 
 def test_updating_course_invalid_code(course_svc: CourseService):
@@ -92,15 +136,8 @@ def test_updating_course_invalid_code(course_svc: CourseService):
     with pytest.raises(InputValidationException):
         course_svc.update_course(
             instructor_user.to_subject(),
+            course.id,
             update_course_request_invalid_code,
-        )
-
-
-def test_updating_course_invalid_date_range(course_svc: CourseService):
-    """Ensure that updating a course with an invalid date range raises an error."""
-    with pytest.raises(InputValidationException):
-        course_svc.update_course(
-            instructor_user.to_subject(), update_course_request_invalid_date_range
         )
 
 
@@ -108,7 +145,7 @@ def test_updating_course_not_found(course_svc: CourseService):
     """Ensure that updating a course that does not exist raises an error."""
     with pytest.raises(ResourceNotFoundException):
         course_svc.update_course(
-            instructor_user.to_subject(), update_course_request_not_found
+            instructor_user.to_subject(), 404, update_course_request_not_found
         )
 
 

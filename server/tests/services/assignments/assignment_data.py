@@ -5,12 +5,19 @@ from ..seed import (
     instructor_user,
     draft_indiv_assignment,
     draft_group_assignment,
+    published_assignment,
     group_assignment_group_1,
     group_assignment_group_1_member,
     student_1_user,
     student_2_user,
 )
 from ....models.assignment import *
+
+get_dropdown_request = GetDropdownRequest(
+    search="",
+    course_id=course.id,
+    selected_assignment_id=published_assignment.id,
+)
 
 create_draft_request = CreateDraftRequest(
     name="Sample Assignment",
@@ -34,17 +41,14 @@ rename_request_not_found = RenameRequest(
 )
 
 create_group_request = CreateGroupRequest(
-    assignment_id=draft_group_assignment.id,
     group_name="Sample Group",
 )
 
 create_group_request_for_indiv = CreateGroupRequest(
-    assignment_id=draft_indiv_assignment.id,
     group_name="Sample Group",
 )
 
 create_group_request_for_noname = CreateGroupRequest(
-    assignment_id=draft_group_assignment.id,
     group_name="",
 )
 

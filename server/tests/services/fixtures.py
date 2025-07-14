@@ -6,10 +6,16 @@ from ...services import (
     CourseService,
     HealthService,
     ProjectAuthService,
+    ProfileService,
 )
 from ...services.content_db_cluster import ContentDbClusterService
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
+
+
+@pytest.fixture()
+def profile_svc(admin_db_session: Session) -> ProfileService:
+    return ProfileService(admin_db_session)
 
 
 @pytest.fixture()

@@ -8,23 +8,29 @@ WORKDIR /workspace
 ENV TZ=America/New_York
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-	&& apt-get install --yes \
-        apt-transport-https \
-        build-essential \
-        ca-certificates \
-	    curl \
-        debian-keyring \
-        debian-archive-keyring \
-	    git \
-        gnupg \
-        locales \
-        postgresql-client \
-        software-properties-common \
-        sudo \
-        tzdata \
-        wget \
-        zsh \
+    && apt-get install --yes \
+    apt-transport-https \
+    build-essential \
+    ca-certificates \
+    curl \
+    debian-keyring \
+    debian-archive-keyring \
+    git \
+    gnupg \
+    locales \
+    software-properties-common \
+    sudo \
+    tzdata \
+    wget \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
+
+# Install the PostgreSQL 15 client
+RUN apt-get update && apt-get install -y wget gnupg lsb-release && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update && apt-get install -y postgresql-client-15 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Caddy web server
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
@@ -46,10 +52,10 @@ RUN mkdir -p /etc/apt/keyrings \
 RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt update \
     && apt install --yes \
-        python3.12 \
-        libpq-dev \
-        python3.12-venv \
-        python3.12-dev \
+    python3.12 \
+    libpq-dev \
+    python3.12-venv \
+    python3.12-dev \
     && rm -rf /var/lib/apt/lists* \
     && unlink /usr/bin/python3 \
     && ln -s /usr/bin/python3.12 /usr/bin/python3
@@ -93,8 +99,8 @@ RUN sudo locale-gen en_US.UTF-8
 # Add `oc` OpenShift Client to DevContainer for compatibility with UNC CloudApps
 RUN arch="$(arch)"; \
     case "$arch" in \
-        x86_64) export TARGET='' ;; \
-        aarch64) export TARGET='arm64-' ;; \
+    x86_64) export TARGET='' ;; \
+    aarch64) export TARGET='arm64-' ;; \
     esac; \
     wget -O /tmp/oc.tgz "https://github.com/okd-project/okd/releases/download/4.15.0-0.okd-2024-03-10-010116/openshift-client-linux-${TARGET}4.15.0-0.okd-2024-03-10-010116.tar.gz" && \
     cd /tmp && \

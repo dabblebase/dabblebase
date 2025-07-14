@@ -8,6 +8,7 @@ from ..project import tag
 from ...env import env
 from ...services import ProjectAuthService
 from ...entities import UserAuthenticationProvider
+from datetime import datetime, timedelta, timezone
 
 api = APIRouter(prefix="/api/project/{project_id}/auth")
 
@@ -58,32 +59,22 @@ def auth_unc_callback(
         project_id, user.id
     )
 
-    return _generate_auth_response(jwt_token, continue_to)
-
-
-def _generate_auth_response(token: str, continue_to: str) -> Response:
-    """
-    Generate an HTML response to be sent to the client after authentication, which
-    contains JavaScript to store the JWT token in localStorage and redirect the user
-    """
-
-    html = f"""
-    <html>
-        <head>
-            <title>Authenticating...</title>
-        </head>
-        <body>
-            <h1>Authenticating...</h1>
-            <script type='application/javascript'>
-                localStorage.setItem('bearerToken', '{token}');
-                window.location.href = '{continue_to}';
-            </script>
-        </body>
-    </html>
-    """
-
-    return Response(
-        content=html,
-        media_type="text/html",
-        headers={"Cache-Control": "no-cache"},
+    # Return a response that contains the JWT token and redirects the user while setting
+    # the token in cookies.
+    response = RedirectResponse(url=continue_to)
+    one_month = 60 * 60 * 24 * 30
+    expires = (datetime.now(timezone.utc) + timedelta(seconds=one_month)).strftime(
+        "%a, %d %b %Y %H:%M:%S GMT"
     )
+    response.set_cookie(
+        key="auth-token",
+        value=jwt_token,
+        httponly=True,
+        secure=False,  # Required for development purposes since student apps will run on localhost
+        samesite="lax",
+        max_age=one_month,
+        expires=expires,
+        path="/",
+    )
+
+    return response

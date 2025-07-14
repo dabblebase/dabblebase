@@ -5,6 +5,27 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
 from datetime import datetime
 from pydantic import BaseModel
+from enum import Enum
+from sqlalchemy import Enum as SQLAlchemyEnum
+
+
+class CourseTermType(Enum):
+    """Enum identifying the type of term for a course."""
+
+    FALL = "Fall"
+    SPRING = "Spring"
+    SUMMER = "Summer"
+    WINTER = "Winter"
+
+    def order(self):
+        """Return the order of the terms for a given year."""
+        ordering = {
+            CourseTermType.SPRING: 1,
+            CourseTermType.SUMMER: 2,
+            CourseTermType.FALL: 3,
+            CourseTermType.WINTER: 4,
+        }
+        return ordering[self]
 
 
 class CourseEntity(BaseAdminEntity):
@@ -27,10 +48,13 @@ class CourseEntity(BaseAdminEntity):
     # Description of the course
     description: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # Start time of the event
-    start_date: Mapped[datetime] = mapped_column(Date, nullable=False)
-    # End time of the event
-    end_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    # Term type of the course (e.g., Fall, Spring, etc.)
+    term_type: Mapped[CourseTermType] = mapped_column(
+        SQLAlchemyEnum(CourseTermType), nullable=False
+    )
+
+    # Term year
+    term_year: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Invite code for students to join the course
     invite_code: Mapped[str] = mapped_column(
@@ -55,8 +79,8 @@ class CourseEntityModel(BaseModel):
     code: str
     name: str
     description: str | None = None
-    start_date: datetime
-    end_date: datetime
+    term_type: CourseTermType
+    term_year: int
     invite_code: str
 
     def to_entity(self) -> CourseEntity:
@@ -66,7 +90,7 @@ class CourseEntityModel(BaseModel):
             code=self.code,
             name=self.name,
             description=self.description,
-            start_date=self.start_date,
-            end_date=self.end_date,
+            term_type=self.term_type,
+            term_year=self.term_year,
             invite_code=self.invite_code,
         )

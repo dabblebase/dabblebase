@@ -11,7 +11,9 @@ from ...services import HealthService
 from ...entities import BaseAdminEntity
 
 
-def reset_database(database: str, user: str, database_url_fn: Callable[[str], str]):
+def reset_database(
+    database: str | None, user: str, database_url_fn: Callable[[str], str]
+):
     """Resets the specified database by dropping and recreating it."""
     engine = create_engine(database_url_fn(""))
     with engine.connect() as connection:
@@ -75,8 +77,9 @@ def reset_database(database: str, user: str, database_url_fn: Callable[[str], st
                 print(f"Failed to drop role {role}: {e}")
 
         # Finally, recreate the test database
-        conn.execute(text(f"CREATE DATABASE {database}"))
-        conn.execute(text(f"GRANT ALL PRIVILEGES ON DATABASE {database} TO {user}"))
+        if database is not None:
+            conn.execute(text(f"CREATE DATABASE {database}"))
+            conn.execute(text(f"GRANT ALL PRIVILEGES ON DATABASE {database} TO {user}"))
 
 
 @pytest.fixture(scope="session")

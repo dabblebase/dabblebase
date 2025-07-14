@@ -1,5 +1,6 @@
 """Seed data for testing purposes."""
 
+from server.entities.course import CourseTermType
 from ...entities import (
     UserEntity,
     UserEntityModel,
@@ -26,22 +27,58 @@ now = datetime.now()
 
 # Sample users
 instructor_user = UserEntityModel(
-    id=1, auth_id="999999999", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=1,
+    auth_id="999999999",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="instructor",
+    first_name="Ina",
+    last_name="Instructor",
+    email="instructor@unc.edu",
 )
 admin_user = UserEntityModel(
-    id=2, auth_id="888888888", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=2,
+    auth_id="888888888",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="admin",
+    first_name="Audrey",
+    last_name="Admin",
+    email="admin@unc.edu",
 )
 ta_user = UserEntityModel(
-    id=3, auth_id="777777777", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=3,
+    auth_id="777777777",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="teddy",
+    first_name="Teddy",
+    last_name="TA",
+    email="ta@unc.edu",
 )
 student_1_user = UserEntityModel(
-    id=4, auth_id="000000001", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=4,
+    auth_id="000000001",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="student_1",
+    first_name="Sally",
+    last_name="Student",
+    email="student1@unc.edu",
 )
 student_2_user = UserEntityModel(
-    id=5, auth_id="000000002", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=5,
+    auth_id="000000002",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="student_2",
+    first_name="Shauna",
+    last_name="Student",
+    email="student2@unc.edu",
 )
 nocourse_student_user = UserEntityModel(
-    id=6, auth_id="000000003", auth_provider=UserAuthenticationProvider.UNC_SSO
+    id=6,
+    auth_id="000000003",
+    auth_provider=UserAuthenticationProvider.UNC_SSO,
+    username="student_nocourse",
+    first_name="Norman",
+    last_name="Nocourse-Student",
+    email="nocoursestudent@unc.edu",
 )
 
 users: list[UserEntityModel] = [
@@ -59,8 +96,8 @@ course = CourseEntityModel(
     code="COMP426",
     name="Modern Web Programming",
     description="A course on modern web programming techniques.",
-    start_date=now - timedelta(days=30),
-    end_date=now + timedelta(days=30),
+    term_type=CourseTermType.FALL,
+    term_year=datetime.now().year,
     invite_code="ABCDEF",
 )
 courses = [course]

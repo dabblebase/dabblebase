@@ -112,6 +112,19 @@ def decode_jwt_with_asymmetric_keys(token: str, public_key: str) -> dict[str, An
     return decoded
 
 
+def sign_jwt_with_symmetric_key(data: dict[str, Any], secret: str) -> str:
+    """Signs a JWT token for use with symmetric keys (HS256 algorithm)."""
+    # Encode the data into a JWT token using the secret key
+    token = jwt.encode(data, secret, algorithm="HS256")
+    return token
+
+
+def decode_jwt_with_symmetric_key(token: str, secret: str) -> dict[str, Any]:
+    """Decodes a JWT token using the symmetric secret key."""
+    decoded = jwt.decode(token, secret, algorithms=["HS256"])
+    return decoded
+
+
 def _convert_private_key_str_to_pem_key(private_key: str) -> bytes:
     """Converts a private key string into the PEM format, required to sign the JWT"""
     der_private_bytes = base64.b64decode(private_key.encode("utf-8"))
