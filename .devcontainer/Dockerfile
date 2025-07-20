@@ -60,6 +60,31 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
     && unlink /usr/bin/python3 \
     && ln -s /usr/bin/python3.12 /usr/bin/python3
 
+# Install dependencies required to run Elixir
+RUN apt-get update && apt-get install -y \
+    curl unzip git ca-certificates gnupg libssl-dev \
+    libncurses-dev autoconf m4 libwxgtk3.0-gtk3-dev libgl1-mesa-dev \
+    libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop \
+    libxml2-utils build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Erlang via OTP precompiled (23+ is sufficient)
+RUN curl -fsSL https://github.com/erlang/otp/releases/download/OTP-26.2.2/otp_src_26.2.2.tar.gz -o otp.tar.gz \
+    && mkdir -p /opt/erlang \
+    && tar -xzf otp.tar.gz -C /opt/erlang --strip-components=1 \
+    && cd /opt/erlang \
+    && ./configure && make -j$(nproc) && make install \
+    && cd / && rm -rf /opt/erlang otp.tar.gz
+
+# Install Elixir precompiled from Hex.pm
+ENV ELIXIR_VERSION=1.16.2
+RUN curl -LO https://repo.hex.pm/builds/elixir/v$ELIXIR_VERSION.zip \
+    && unzip -d /opt/elixir v$ELIXIR_VERSION.zip \
+    && rm v$ELIXIR_VERSION.zip
+
+ENV PATH="$PATH:/opt/elixir/bin"
+
+
 # Use a non-root user per https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user
 ARG USERNAME=vscode
 ARG USER_UID=1000
