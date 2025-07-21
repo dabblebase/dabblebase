@@ -12,7 +12,7 @@ defmodule RealtimeWeb.Endpoint do
   ]
 
   # Sets up the websocket endpoint
-  socket "/socket", RealtimeWeb.UserSocket,
+  socket "/ws", RealtimeWeb.UserSocket,
     websocket: true,
     longpoll: false
 

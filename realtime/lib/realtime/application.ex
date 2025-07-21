@@ -11,6 +11,7 @@ defmodule Realtime.Application do
       {Registry, keys: :unique, name: Realtime.Registry},
       {DynamicSupervisor, strategy: :one_for_one, name: Realtime.ListenerSupervisor},
       Realtime.AdminListener,
+      {Phoenix.PubSub, name: Realtime.PubSub},
       RealtimeWeb.Endpoint
     ]
 

@@ -2,8 +2,8 @@
 
 To start your Phoenix server:
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+- Run `mix setup` to install and setup dependencies
+- Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
@@ -11,8 +11,50 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## Learn more
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+- Official website: https://www.phoenixframework.org/
+- Guides: https://hexdocs.pm/phoenix/overview.html
+- Docs: https://hexdocs.pm/phoenix
+- Forum: https://elixirforum.com/c/phoenix-forum
+- Source: https://github.com/phoenixframework/phoenix
+
+## NOTE:
+
+Working testing component:
+
+```ts
+import { Socket } from "phoenix";
+import { useEffect } from "react";
+
+export default function TestPage() {
+  useEffect(() => {
+    // Create a socket connection
+    const socket = new Socket("ws://localhost:8000/ws");
+
+    socket.connect();
+
+    // Join the channel
+    const channel = socket.channel("project:1", {});
+
+    channel
+      .join()
+      .receive("ok", (resp) => {
+        console.log("✅ Joined successfully", resp);
+      })
+      .receive("error", (resp) => {
+        console.error("❌ Unable to join", resp);
+      });
+
+    // Listen for pg_change events
+    channel.on("pg_change", (payload) => {
+      console.log("📣 Postgres change event:", payload);
+    });
+  }, []);
+
+  return (
+    <div>
+      <h1>WebSocket Test Page</h1>
+      <p>This page is designed to test WebSocket functionality.</p>
+    </div>
+  );
+}
+```
