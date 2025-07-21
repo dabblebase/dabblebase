@@ -23,6 +23,7 @@ RUN apt-get update \
     tzdata \
     wget \
     zsh \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the PostgreSQL 15 client
@@ -68,22 +69,31 @@ RUN apt-get update && apt-get install -y \
     libxml2-utils build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Erlang via OTP precompiled (23+ is sufficient)
-RUN curl -fsSL https://github.com/erlang/otp/releases/download/OTP-26.2.2/otp_src_26.2.2.tar.gz -o otp.tar.gz \
+# Install Erlang/OTP with crypto support
+# Using OTP 26.2.5 (latest 26.x) which includes all crypto functions
+ENV OTP_VERSION=26.2.5
+RUN curl -fsSL https://github.com/erlang/otp/releases/download/OTP-$OTP_VERSION/otp_src_$OTP_VERSION.tar.gz -o otp.tar.gz \
     && mkdir -p /opt/erlang \
     && tar -xzf otp.tar.gz -C /opt/erlang --strip-components=1 \
     && cd /opt/erlang \
-    && ./configure && make -j$(nproc) && make install \
+    && ./configure \
+    --enable-threads \
+    --enable-smp-support \
+    --enable-kernel-poll \
+    --enable-hipe \
+    --with-ssl \
+    --enable-ssl-dynamic-linking \
+    --enable-crypto \
+    && make -j$(nproc) && make install \
     && cd / && rm -rf /opt/erlang otp.tar.gz
 
-# Install Elixir precompiled from Hex.pm
+# Install Elixir (compatible with OTP 26)
 ENV ELIXIR_VERSION=1.16.2
 RUN curl -LO https://repo.hex.pm/builds/elixir/v$ELIXIR_VERSION.zip \
     && unzip -d /opt/elixir v$ELIXIR_VERSION.zip \
     && rm v$ELIXIR_VERSION.zip
 
 ENV PATH="$PATH:/opt/elixir/bin"
-
 
 # Use a non-root user per https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user
 ARG USERNAME=vscode

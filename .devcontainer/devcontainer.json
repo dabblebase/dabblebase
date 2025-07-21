@@ -23,7 +23,8 @@
                 "ckolkman.vscode-postgres",
                 "ms-azuretools.vscode-docker",
                 "bradlc.vscode-tailwindcss",
-                "austenc.tailwind-docs"
+                "austenc.tailwind-docs",
+                "JakeBecker.elixir-ls"
             ],
             "settings": {
                 "editor.formatOnSave": true,
@@ -50,7 +51,8 @@
                     "reportGeneralTypeIssues": "error",
                     "reportDeprecated": "error",
                     "reportImportCycles": "error"
-                }
+                },
+                "elixirLS.projectDir": "/realtime"
             }
         }
     }

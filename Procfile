@@ -8,4 +8,5 @@
 proxy: caddy run
 server: uvicorn --port=8001 --reload server.main:app
 web: cd web && npm run dev
+realtime: cd realtime && mix phx.server
 celery: celery -A server.celery.celery_app worker --loglevel=info
