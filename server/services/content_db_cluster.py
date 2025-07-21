@@ -6,6 +6,7 @@ from sqlalchemy import text, Engine, create_engine
 from .exceptions import ContentDatabaseTransactionException
 from .project import auth_crypto as crypto
 from ..env import env, in_production
+import hashlib
 
 
 class ContentDbClusterService(BaseContentService):
@@ -321,6 +322,97 @@ class ContentDbClusterService(BaseContentService):
             # Directly raise the SQL error up
             raise ContentDatabaseTransactionException(f"{e}")
 
+    def add_realtime_functions_to_database(
+        self, db_name: str, role_name: str, role_password: str
+    ):
+        """Adds the realtime function to the database."""
+        function_sql = """
+        CREATE OR REPLACE FUNCTION dabblebase_notify_postgres_changes() RETURNS trigger AS $$
+        BEGIN
+        PERFORM pg_notify('table_updates', json_build_object(
+            'action', TG_OP,
+            'table', TG_TABLE_NAME,
+            'row', row_to_json(NEW)
+        )::text);
+        RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+        try:
+            engine = self._engine_for_provisioned_db_as_user(
+                db_name, role_name, role_password
+            )
+            with engine.begin() as conn:
+                # Ensure we are not in a transaction
+                conn = conn.execution_options(autocommit=False)
+                conn.execute(text("ROLLBACK"))
+                # Execute the SQL
+                conn.execute(text(function_sql))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Cannot add the realtime function to the database. Error: {e}"
+            )
+
+    def add_realtime_trigger_to_database(
+        self, db_name: str, role_name: str, role_password: str, table_name: str
+    ):
+        """Adds a trigger to the specified table in the database that will notify"""
+        trigger_sql = f"""
+        DO $$
+        BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_trigger
+            WHERE tgrelid = '{table_name}'::regclass
+            AND tgname = 'dabblebase_notify_postgres_changes_trigger'
+        ) THEN
+            CREATE TRIGGER dabblebase_notify_postgres_changes_trigger
+            AFTER INSERT OR UPDATE OR DELETE ON {table_name}
+            FOR EACH ROW EXECUTE FUNCTION dabblebase_notify_postgres_changes();
+        END IF;
+        END$$;
+        """
+        try:
+            engine = self._engine_for_provisioned_db_as_user(
+                db_name, role_name, role_password
+            )
+            with engine.begin() as conn:
+                # Ensure we are not in a transaction
+                conn = conn.execution_options(autocommit=False)
+                conn.execute(text("ROLLBACK"))
+                # Execute the SQL
+                conn.execute(text(trigger_sql))
+        except Exception as e:
+            raise ContentDatabaseTransactionException(
+                f"Cannot add the realtime trigger to the database for table {table_name}. Error: {e}"
+            )
+
+    def get_hash_of_tables_in_database(
+        self, db_name: str, role_name: str, role_password: str
+    ) -> tuple[list[str], str]:
+        """Creates a hash of the tables in a database and returns (tables, hash)."""
+        try:
+            engine = self._engine_for_provisioned_db_as_user(
+                db_name, role_name, role_password
+            )
+            with engine.begin() as conn:
+                # Ensure we are not in a transaction
+                conn = conn.execution_options(autocommit=False)
+                conn.execute(text("ROLLBACK"))
+                # Execute the SQL
+                result = conn.execute(
+                    text(
+                        "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename NOT LIKE 'pg_%'"
+                    )
+                )
+                tables = [row[0] for row in result.fetchall()]
+                return (tables, self._compute_table_hash(tables))
+
+        except Exception as e:
+            # Directly raise the SQL error up
+            raise ContentDatabaseTransactionException(
+                f"Unable to read tables for database {db_name}. Error: {e}"
+            )
+
     def db_url_for_provisioned_db(
         self, db_name: str, role_name: str, role_password: str
     ) -> str:
@@ -358,6 +450,11 @@ class ContentDbClusterService(BaseContentService):
     def _calculate_encryption_key_for_role_password(self, assignment_id: int) -> bytes:
         """Rule for how the encryption key is calculated for role passwords."""
         return crypto.hkdf_derive_encryption_key(env.AUTH_MASTER_SECRET, assignment_id)
+
+    def _compute_table_hash(self, tables: list[str]) -> str:
+        """Creates a hash of the tables in the database."""
+        table_str = ",".join(sorted(tables))
+        return hashlib.sha256(table_str.encode()).hexdigest()
 
 
 class ContentDatabaseNamingConventions:

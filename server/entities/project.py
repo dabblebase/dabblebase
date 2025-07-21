@@ -55,6 +55,11 @@ class ProjectEntity(BaseAdminEntity):
     # Public key used for project-specific authentication
     auth_public_key: Mapped[str] = mapped_column(String, nullable=False)
 
+    # Hash of the table names in the project's database
+    # Note: This is used to determine if the database schema has changed when polling for creating
+    # realtime triggers in the student database.
+    table_hash: Mapped[str] = mapped_column(String, nullable=False, default="")
+
 
 class ProjectEntityModel(BaseModel):
     """Pydantic model for the `ProjectEntity`."""

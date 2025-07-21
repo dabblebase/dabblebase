@@ -1364,6 +1364,11 @@ class AssignmentService:
                 )
             )
 
+            # Add the realtime function to the database
+            self._content_db_cluster_svc.add_realtime_functions_to_database(
+                db_name, admin_role_name, admin_role_password
+            )
+
             # Run the configuration SQL on the database
             if configuration_sql is not None:
                 self._content_db_cluster_svc.run_sql_on_database(
