@@ -101,6 +101,7 @@ def admin_db_session(test_admin_engine: Engine):
     BaseAdminEntity.metadata.drop_all(test_admin_engine)
     BaseAdminEntity.metadata.create_all(test_admin_engine)
     session = Session(test_admin_engine)
+    BaseAdminEntity.setup_functions(session)
     try:
         yield session
     finally:

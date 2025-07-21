@@ -50,4 +50,5 @@ BaseAdminEntity.metadata.create_all(admin_db_engine())
 # Insert seed data
 # TODO: Separate seed data for testing and for demo purposes
 session = Session(admin_db_engine())
+BaseAdminEntity.setup_functions(session)
 insert_seed_data(session)

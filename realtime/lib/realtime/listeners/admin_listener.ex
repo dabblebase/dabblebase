@@ -19,6 +19,8 @@ defmodule Realtime.AdminListener do
   end
 
   def handle_info({:notification, _conn, _pid, "new_project", payload}, conn) do
+    IO.puts("Received new project notification: #{payload}")
+
     %{
       "project_id" => project_id,
       "assignment_id" => assignment_id,
