@@ -58,3 +58,54 @@ export default function TestPage() {
   );
 }
 ```
+
+For testing presence:
+
+```ts
+import { Socket, Channel } from "phoenix";
+import { useEffect, useState } from "react";
+
+export default function PresenceTestPage() {
+  const [presenceChannel, setPresenceChannel] = useState<Channel | null>(null);
+  const [presenceList, setPresenceList] = useState({});
+
+  useEffect(() => {
+    const socket = new Socket("ws://localhost:8000/ws", {
+      params: {
+        realtime_token: "...",
+        auth_token: "...",
+      },
+    });
+
+    socket.connect();
+
+    const chan = socket.channel("presence:1", {});
+
+    chan
+      .join()
+      .receive("ok", (resp) => {
+        console.log("✅ Joined presence channel", resp);
+        setPresenceChannel(chan);
+      })
+      .receive("error", (resp) => {
+        console.error("❌ Unable to join presence channel", resp);
+      });
+
+    chan.on("presence_state", (state) => {
+      console.log("📣 Presence state", state);
+      setPresenceList(state);
+    });
+
+    return () => {
+      chan.leave();
+    };
+  }, []);
+
+  return (
+    <div>
+      <h1>Presence Test</h1>
+      <pre>{JSON.stringify(presenceList, null, 2)}</pre>
+    </div>
+  );
+}
+```

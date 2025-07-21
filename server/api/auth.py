@@ -103,9 +103,7 @@ def auth_unc_callback(
 
     # Retrieve the user's name and email from the UNC directory
     try:
-        user_info_response = requests.get(
-            f"https://directory.unc.edu/api/search//{pid}"
-        )
+        user_info_response = requests.get(f"https://directory.unc.edu/api/search/{pid}")
         if user_info_response.status_code != requests.codes.ok:
             raise HTTPException(
                 status_code=401,

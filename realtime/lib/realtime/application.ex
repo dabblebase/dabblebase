@@ -12,7 +12,8 @@ defmodule Realtime.Application do
       {DynamicSupervisor, strategy: :one_for_one, name: Realtime.ListenerSupervisor},
       Realtime.AdminListener,
       {Phoenix.PubSub, name: Realtime.PubSub},
-      RealtimeWeb.Endpoint
+      RealtimeWeb.Endpoint,
+      RealtimeWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

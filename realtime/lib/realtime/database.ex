@@ -14,6 +14,16 @@ defmodule Realtime.Database do
     }
   end
 
+  def admin_db_connection do
+    Postgrex.start_link(
+      hostname: "db-admin-cluster",
+      port: "5432",
+      username: "postgres",
+      password: "postgres",
+      database: "tinkerbase_admin"
+    )
+  end
+
   @doc """
   Constructs a database URL for the content database using the provided database name, role name, and role password.
   """

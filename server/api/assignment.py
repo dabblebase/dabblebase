@@ -18,6 +18,7 @@ from ..models.assignment import (
     GetGroupProjectsResponse,
     GetStudentDatabase,
     GetStudentAuth,
+    GetStudentRealtime,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -137,6 +138,16 @@ def get_student_project_auth(
 ) -> GetStudentAuth:
     """Get the auth details for a student project."""
     return assignment_svc.get_student_auth(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/student-project/realtime", tags=[tag])
+def get_student_project_realtime(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStudentRealtime:
+    """Get the realtime details for a student project."""
+    return assignment_svc.get_student_realtime(subject, assignment_id)
 
 
 @api.post("/draft", tags=[tag])

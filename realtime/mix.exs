@@ -41,6 +41,7 @@ defmodule Realtime.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
+      {:joken, "~> 2.6"},
       {:jose, "~> 1.11"},
       {:fernetex, "~> 0.5.0"},
       {:hkdf, "~> 0.3.0"}

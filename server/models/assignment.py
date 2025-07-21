@@ -109,6 +109,12 @@ class GetStudentAuth(BaseModel):
     auth_public_key: str
 
 
+class GetStudentRealtime(BaseModel):
+    """Model that represents a response for getting the realtime details of a student project."""
+
+    realtime_token: str
+
+
 class CreateDraftRequest(BaseModel):
     """Model that represents a request to create a draft."""
 

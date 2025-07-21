@@ -34,4 +34,32 @@ defmodule Realtime.Crypto do
 
     {:ok, url_safe_key}
   end
+
+  @doc """
+  Converts a base64-encoded DER public key string into a PEM-formatted string.
+  """
+  @spec convert_base64_der_to_pem(String.t()) :: {:ok, String.t()} | {:error, any()}
+  def convert_base64_der_to_pem(base64_der) do
+    with {:ok, der} <- Base.decode64(base64_der),
+         {:ok, pem_entry} <- wrap_der_in_pem(der) do
+      {:ok, pem_entry}
+    else
+      :error -> {:error, "Invalid base64 DER input"}
+      error -> {:error, error}
+    end
+  end
+
+  defp wrap_der_in_pem(der) do
+    # :public_key.der_encode doesn't help here, since we already have DER
+    pem_lines =
+      der
+      |> Base.encode64()
+      # Insert newlines every 64 chars
+      |> String.replace(~r/.{64}/, "\\0\n")
+      |> String.trim()
+      |> then(&["-----BEGIN PUBLIC KEY-----\n", &1, "\n-----END PUBLIC KEY-----"])
+      |> IO.iodata_to_binary()
+
+    {:ok, pem_lines}
+  end
 end

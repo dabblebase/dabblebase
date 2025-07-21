@@ -23,7 +23,7 @@ defmodule Realtime.Listeners.PgListener do
   end
 
   def handle_info({:notification, _conn, _pid, "table_updates", payload}, state) do
-    RealtimeWeb.Endpoint.broadcast!("project:#{state.project_id}", "pg_change", %{
+    RealtimeWeb.Endpoint.broadcast!("db:#{state.project_id}", "pg_change", %{
       payload: payload
     })
 
