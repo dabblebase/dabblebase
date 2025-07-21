@@ -7,6 +7,21 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+# Initialize all environment variables
+config :realtime,
+  mode: System.get_env("MODE", "development"),
+  host: System.get_env("HOST", "localhost:8000"),
+  admin_db_host: System.get_env("ADMIN_DB_HOST", "db-admin-cluster"),
+  admin_db_port: System.get_env("ADMIN_DB_PORT", "5432"),
+  admin_db_user: System.get_env("ADMIN_DB_USER", "postgres"),
+  admin_db_password: System.get_env("ADMIN_DB_PASSWORD", "postgres"),
+  admin_db_database: System.get_env("ADMIN_DB_NAME", "tinkerbase_admin"),
+  content_db_host: System.get_env("CONTENT_DB_HOST", "db-content-cluster"),
+  content_db_port: System.get_env("CONTENT_DB_PORT", "5432"),
+  content_db_user: System.get_env("CONTENT_DB_USER", "postgres"),
+  content_db_password: System.get_env("CONTENT_DB_PASSWORD", "postgres"),
+  auth_master_secet: System.get_env("AUTH_MASTER_SECRET", "REPLACE_ME")
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server

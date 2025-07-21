@@ -6,11 +6,11 @@ defmodule Realtime.AdminListener do
   def init(_) do
     {:ok, conn} =
       Postgrex.Notifications.start_link(
-        hostname: "db-admin-cluster",
-        port: "5432",
-        username: "postgres",
-        password: "postgres",
-        database: "tinkerbase_admin"
+        hostname: Application.get_env(:realtime, :admin_db_host),
+        port: Application.get_env(:realtime, :admin_db_port),
+        username: Application.get_env(:realtime, :admin_db_user),
+        password: Application.get_env(:realtime, :admin_db_password),
+        database: Application.get_env(:realtime, :admin_db_database)
       )
 
     Postgrex.Notifications.listen(conn, "new_project")

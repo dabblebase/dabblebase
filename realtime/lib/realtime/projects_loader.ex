@@ -1,13 +1,6 @@
 defmodule Realtime.ProjectsLoader do
   def load_existing_projects do
-    {:ok, conn} =
-      Postgrex.start_link(
-        hostname: "db-admin-cluster",
-        port: "5432",
-        username: "postgres",
-        password: "postgres",
-        database: "tinkerbase_admin"
-      )
+    {:ok, conn} = Realtime.Database.admin_db_connection()
 
     {:ok, result} =
       Postgrex.query(
@@ -15,6 +8,8 @@ defmodule Realtime.ProjectsLoader do
         "SELECT id, assignment_id, db_name, admin_role_name, encrypted_admin_role_password FROM projects",
         []
       )
+
+    GenServer.stop(conn)
 
     for [project_id, assignment_id, db_name, admin_role_name, encrypted_admin_role_password] <-
           result.rows do

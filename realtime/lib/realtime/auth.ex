@@ -40,13 +40,18 @@ defmodule Realtime.Auth do
   defp fetch_verification_keys(project_id) do
     {:ok, conn} = Realtime.Database.admin_db_connection()
 
-    case Postgrex.query(
-           conn,
-           "SELECT realtime_verification_key, auth_public_key FROM projects WHERE id = $1",
-           [
-             project_id
-           ]
-         ) do
+    result =
+      Postgrex.query(
+        conn,
+        "SELECT realtime_verification_key, auth_public_key FROM projects WHERE id = $1",
+        [
+          project_id
+        ]
+      )
+
+    GenServer.stop(conn)
+
+    case result do
       {:ok, %Postgrex.Result{rows: [[realtime_verification_key, auth_public_key]]}} ->
         {:ok, realtime_verification_key, auth_public_key}
 

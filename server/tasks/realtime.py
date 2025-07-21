@@ -14,7 +14,7 @@ def update_tracking_databases():
     assignment_svc = get_assignment_service()
     BATCH_SIZE = 100
     try:
-        session: Session = next(admin_db_session())
+        session: Session = next(admin_db_session(echo=False))
         projects = session.query(ProjectEntity).all()
         session.close()
 

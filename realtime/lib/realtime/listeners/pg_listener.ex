@@ -8,10 +8,13 @@ defmodule Realtime.Listeners.PgListener do
   defp via(id), do: {:via, Registry, {Realtime.Registry, id}}
 
   def init(%{project_id: project_id, db_name: db_name, db_role: db_role, db_password: db_password}) do
+    host = Application.get_env(:realtime, :content_db_host)
+    port = Application.get_env(:realtime, :content_db_port)
+
     {:ok, conn} =
       Postgrex.Notifications.start_link(
-        hostname: "db-content-cluster",
-        port: "5432",
+        hostname: host,
+        port: port,
         username: db_role,
         password: db_password,
         database: db_name

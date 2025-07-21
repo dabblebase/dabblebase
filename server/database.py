@@ -16,34 +16,34 @@ def _content_db_url(database: str = env.CONTENT_DB_DATABASE) -> str:
     return f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{database}"
 
 
-def admin_db_engine():
+def admin_db_engine(echo: bool = not in_production()):
     """Injectible generator for the admin db engine."""
     return sqlalchemy.create_engine(
         url=_admin_db_url(),
-        echo=not in_production(),
+        echo=echo,
     )
 
 
-def content_db_engine():
+def content_db_engine(echo: bool = not in_production()):
     """Injectible generator for the admin db engine."""
     return sqlalchemy.create_engine(
         url=_content_db_url(),
-        echo=not in_production(),
+        echo=echo,
     )
 
 
-def admin_db_session():
+def admin_db_session(echo: bool = not in_production()):
     """Injectible generator for the admin db session."""
-    session = Session(admin_db_engine())
+    session = Session(admin_db_engine(echo))
     try:
         yield session
     finally:
         session.close()
 
 
-def content_db_session():
+def content_db_session(echo: bool = not in_production()):
     """Injectible generator for the content db session."""
-    session = Session(content_db_engine())
+    session = Session(content_db_engine(echo))
     try:
         yield session
     finally:
