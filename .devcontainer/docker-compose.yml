@@ -40,6 +40,18 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    depends_on:
+      - db-content-cluster
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./pgbouncer:/etc/pgbouncer
+    command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+    environment:
+      - TZ=America/New_York
 
 volumes:
   tinkerbase-monorepo-node_modules:

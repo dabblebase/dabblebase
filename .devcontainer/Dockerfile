@@ -24,6 +24,8 @@ RUN apt-get update \
     wget \
     zsh \
     iputils-ping \
+    docker \
+    docker-compose \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the PostgreSQL 15 client
@@ -148,7 +150,6 @@ COPY server/requirements.txt /workspace/server/requirements.txt
 WORKDIR /workspace/server
 RUN python3 -m ensurepip
 RUN python3 -m pip install -r requirements.txt
-
 
 # Expose server ports
 EXPOSE 8000
