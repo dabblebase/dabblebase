@@ -1,15 +1,35 @@
 import AssignmentLayout from "@/components/assignment/assignment-layout";
+import CopyText from "@/components/ui/copy-text";
+import { useProjectRealtime } from "@/hooks/api/assignment/student-project/use-project-realtime";
 import { fetchClient } from "@/utils/api";
 import { protectRoute } from "@/utils/auth";
 import { GetServerSidePropsContext } from "next";
+import { useRouter } from "next/router";
 
 export default function AssignmentRealtimePage() {
+  const router = useRouter();
+  const { assignmentId } = router.query;
+  const { realtimeData } = useProjectRealtime(
+    assignmentId as unknown as number
+  );
+
   return (
     <div className="flex flex-col mx-auto w-full max-w-[1200px] px-4 gap-8 my-8">
       <h1 className="text-2xl font-semibold">Realtime</h1>
-      <p className="text-accent-foreground/80">
-        Realtime functionality for student projects coming soon!
-      </p>
+      {!!realtimeData && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-bold">Realtime token</p>
+          <p className="text-sm text-accent-foreground/80">
+            Use the token below as the authentication token for realtime
+            websocket requests.
+          </p>
+          <CopyText
+            className="w-[500px]"
+            text={realtimeData.realtime_token}
+            buttonVariant={"default"}
+          />
+        </div>
+      )}
     </div>
   );
 }

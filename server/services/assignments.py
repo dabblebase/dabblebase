@@ -33,6 +33,7 @@ from ..models.assignment import (
     GetGroupProjectsResponse,
     GetStudentDatabase,
     GetStudentAuth,
+    GetStudentRealtime,
     CreateDraftRequest,
     CreateDraftResponse,
     RenameRequest,
@@ -422,6 +423,31 @@ class AssignmentService:
 
         # Return the authentication public key
         return GetStudentAuth(auth_public_key=project.auth_public_key)
+
+    def get_student_realtime(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentRealtime:
+        # Get the project for the student
+        project = self._get_student_project_for_assignment(subject, assignment_id)
+        if project is None:
+            raise ResourceNotFoundException(
+                f"No project found for assignment with ID {assignment_id} for the student."
+            )
+
+        # Sign the realtime JWT token using the project's realtime signing key.
+        # NOTE: This process should be deterministic since the same signing key is used to sign
+        # the same payload without any expiry.
+        encryption_key = crypto.hkdf_derive_encryption_key(
+            env.AUTH_MASTER_SECRET, project.id
+        )
+        realtime_signing_key = crypto.decrypt(
+            project.realtime_encrypted_signing_key, encryption_key
+        )
+        realtime_token = crypto.sign_jwt_with_asymmetric_keys(
+            {"project_id": project.id}, realtime_signing_key
+        )
+        # Return the token
+        return GetStudentRealtime(realtime_token=realtime_token)
 
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest
@@ -1318,20 +1344,34 @@ class AssignmentService:
             encrypted_student_role_password="",  # Will be set later after database creation
             auth_encrypted_private_key="",  # Will be set later after key generation
             auth_public_key="",  # Will be set later after key generation
+            table_hash="",  # Will be set later after key generation
+            realtime_encrypted_signing_key="",  # Will be set later after key generation
+            realtime_verification_key="",  # Will be set later after key generation
         )
         self._admin_db.add(project)
         self._admin_db.flush()  # Flush to get the project ID before proceeding
 
-        # Handle creating the authentication private key and public key
-        private_key, public_key = crypto.generate_serialied_rsa_keypair()
+        # Handle creating the authentication private key and public key, as well as the
+        # realtime signing and verification keys
+        auth_private_key, auth_public_key = crypto.generate_serialied_rsa_keypair()
+        realtime_signing_key, realtime_verification_key = (
+            crypto.generate_serialied_rsa_keypair()
+        )
+
         encryption_key = crypto.hkdf_derive_encryption_key(
             env.AUTH_MASTER_SECRET, project.id
         )
-        encrypted_private_key = crypto.encrypt(private_key, encryption_key)
 
-        # Update the project with the encrypted private key and public key
-        project.auth_encrypted_private_key = encrypted_private_key
-        project.auth_public_key = public_key
+        encrypted_auth_private_key = crypto.encrypt(auth_private_key, encryption_key)
+        encrypted_realtime_signing_key = crypto.encrypt(
+            realtime_signing_key, encryption_key
+        )
+
+        # Update the project with the keys
+        project.auth_encrypted_private_key = encrypted_auth_private_key
+        project.auth_public_key = auth_public_key
+        project.realtime_encrypted_signing_key = encrypted_realtime_signing_key
+        project.realtime_verification_key = realtime_verification_key
 
         # Create the database for the project
         db_name = ContentDatabaseNamingConventions.name_for_assignment_db(
@@ -1362,6 +1402,11 @@ class AssignmentService:
                 self._content_db_cluster_svc.encrypt_role_password(
                     student_role_password, assignment_id
                 )
+            )
+
+            # Add the realtime function to the database
+            self._content_db_cluster_svc.add_realtime_functions_to_database(
+                db_name, admin_role_name, admin_role_password
             )
 
             # Run the configuration SQL on the database

@@ -55,6 +55,17 @@ class ProjectEntity(BaseAdminEntity):
     # Public key used for project-specific authentication
     auth_public_key: Mapped[str] = mapped_column(String, nullable=False)
 
+    # Hash of the table names in the project's database
+    # Note: This is used to determine if the database schema has changed when polling for creating
+    # realtime triggers in the student database.
+    table_hash: Mapped[str] = mapped_column(String, nullable=False, default="")
+
+    # Encrypted signing key used for signing the realtime JWT token
+    realtime_encrypted_signing_key: Mapped[str] = mapped_column(String, nullable=False)
+
+    # "Public" (to the realtime server) key used for verifying the realtime JWT token
+    realtime_verification_key: Mapped[str] = mapped_column(String, nullable=False)
+
 
 class ProjectEntityModel(BaseModel):
     """Pydantic model for the `ProjectEntity`."""
@@ -70,6 +81,9 @@ class ProjectEntityModel(BaseModel):
     encrypted_student_role_password: str
     auth_encrypted_private_key: str
     auth_public_key: str
+    table_hash: str
+    realtime_encrypted_signing_key: str
+    realtime_verification_key: str
 
     def to_entity(self) -> ProjectEntity:
         """Convert the Pydantic model to a ProjectEntity."""
@@ -85,4 +99,7 @@ class ProjectEntityModel(BaseModel):
             encrypted_student_role_password=self.encrypted_student_role_password,
             auth_encrypted_private_key=self.auth_encrypted_private_key,
             auth_public_key=self.auth_public_key,
+            table_hash=self.table_hash,
+            realtime_encrypted_signing_key=self.realtime_encrypted_signing_key,
+            realtime_verification_key=self.realtime_verification_key,
         )

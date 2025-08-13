@@ -507,6 +507,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assignment/{assignment_id}/student-project/realtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Student Project Realtime
+         * @description Get the realtime details for a student project.
+         */
+        get: operations["get_student_project_realtime_api_assignment__assignment_id__student_project_realtime_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assignment/draft": {
         parameters: {
             query?: never;
@@ -1253,6 +1273,14 @@ export interface components {
             user_email: string;
             /** Db Url */
             db_url: string;
+        };
+        /**
+         * GetStudentRealtime
+         * @description Model that represents a response for getting the realtime details of a student project.
+         */
+        GetStudentRealtime: {
+            /** Realtime Token */
+            realtime_token: string;
         };
         /**
          * GetStudentsForCourseResponse
@@ -2224,6 +2252,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetStudentAuth"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_project_realtime_api_assignment__assignment_id__student_project_realtime_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentRealtime"];
                 };
             };
             /** @description Validation Error */
