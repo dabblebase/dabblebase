@@ -6,8 +6,8 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspace
-      - tinkerbase-monorepo-node_modules:/workspace/node_modules
-      - tinkerbase-web-node_modules:/workspace/web/node_modules
+      - dabblebase-monorepo-node_modules:/workspace/node_modules
+      - dabblebase-web-node_modules:/workspace/web/node_modules
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
       - windir # Defined on Windows but not on other platforms
@@ -19,9 +19,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tinkerbase_admin
+      POSTGRES_DB: dabblebase_admin
     volumes:
-      - tinkerbase-admin-db:/var/lib/postgresql/data
+      - dabblebase-admin-db:/var/lib/postgresql/data
   db-content-cluster:
     image: postgres:15.2
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
-      - tinkerbase-content-db:/var/lib/postgresql/data
+      - dabblebase-content-db:/var/lib/postgresql/data
   redis-cluster:
     image: redis:7
     restart: unless-stopped
@@ -54,8 +54,8 @@ services:
       - TZ=America/New_York
 
 volumes:
-  tinkerbase-monorepo-node_modules:
-  tinkerbase-web-node_modules:
-  tinkerbase-admin-db:
-  tinkerbase-content-db:
+  dabblebase-monorepo-node_modules:
+  dabblebase-web-node_modules:
+  dabblebase-admin-db:
+  dabblebase-content-db:
   redis-data:

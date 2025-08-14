@@ -1,5 +1,5 @@
 tag = "Projects"
 openapi_tags = {
     "name": tag,
-    "description": "Endpoints to interface with Tinkerbase features for each project.",
+    "description": "Endpoints to interface with Dabblebase features for each project.",
 }
