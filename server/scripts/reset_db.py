@@ -40,7 +40,7 @@ with admin_cluster_engine.connect() as connection:
 reset_database(
     database=None,
     user=env.CONTENT_DB_USER,
-    database_url_fn=lambda _: f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}",
+    database_url_fn=lambda db: f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{db}",
 )
 
 # Create the tables in the admin database

@@ -65,7 +65,7 @@ def registered_user_or_none(
 def auth_unc(continue_to: str = "/"):
     """
     This endpoint initiates authentication to the UNC SSO proxy for a project. The proxy will
-    respond with an authorization token and call the `/unc/callback` endpoint for Tinkerbase
+    respond with an authorization token and call the `/unc/callback` endpoint for Dabblebase
     to continue the UNC SSO authentication flow.
     """
     origin = f"{env.HOST}/auth/unc/callback"
@@ -82,7 +82,7 @@ def auth_unc_callback(
 ):
     """
     This endpoint is called by the UNC SSO proxy after the user has authenticated with UNC SSO.
-    Tinkerbase will verify the token and issue a JWT token for the user to be authenticated.
+    Dabblebase will verify the token and issue a JWT token for the user to be authenticated.
     """
     # Verify that the token provided is valid and originated from the UNC SSO proxy
     params = {"token": token}
@@ -143,7 +143,7 @@ def auth_unc_callback(
         auth_provider=UserAuthenticationProvider.UNC_SSO,
     )
 
-    # Issue a new JWT token on behalf of Tinkerbase for the user to be authenticated with
+    # Issue a new JWT token on behalf of Dabblebase for the user to be authenticated with
     # the project, signed with the project's private auth key.
     jwt_token = _generate_token_for_auth_request(user.id)
 

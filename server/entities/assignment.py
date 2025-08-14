@@ -64,7 +64,7 @@ class AssignmentEntity(BaseAdminEntity):
     test_db_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Name of the test db user admin role for accessing the test db
-    # This role is used internally by Tinkerbase to apply the configuration SQL.
+    # This role is used internally by Dabblebase to apply the configuration SQL.
     test_db_admin_role_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Encrypted password of the test db user admin role for accessing the test db
