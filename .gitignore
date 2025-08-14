@@ -6,3 +6,5 @@ deploy_key*
 .DS_Store
 .coverage
 .pytest_cache
+celerybeat-schedule.db
+erl_crash.dump
