@@ -9,9 +9,9 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="Tinkerbase API",
+    title="Dabblebase API",
     version="0.0.1",
-    description="Tinkerbase RESTful API",
+    description="Dabblebase RESTful API",
     openapi_tags=[
         health.openapi_tags,
         task.openapi_tags,

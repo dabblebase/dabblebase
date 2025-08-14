@@ -80,57 +80,64 @@ def reset_database(
         if database is not None:
             conn.execute(text(f"CREATE DATABASE {database}"))
             conn.execute(text(f"GRANT ALL PRIVILEGES ON DATABASE {database} TO {user}"))
-            # Implement pgbouncer function
-            pgbouncer_function = f"""
-            -- Create a schema to hold the auth function (in template1 so NEW DBs inherit it)
-            CREATE SCHEMA IF NOT EXISTS pgbouncer;
 
-            -- Create the lookup function AS SUPERUSER so it can read pg_authid safely.
-            -- SECURITY DEFINER ensures callers don't need superuser.
-            CREATE OR REPLACE FUNCTION pgbouncer.get_auth(in uname text)
-            RETURNS TABLE(usename text, passwd text)
-            LANGUAGE sql
-            SECURITY DEFINER
-            SET search_path = pg_catalog
-            AS $$
-            SELECT rolname::text, rolpassword::text
-            FROM pg_authid
-            WHERE rolname = uname
-            $$;
+        # Implement pgbouncer function for current database
+        pgbouncer_function = f"""
+        -- Create a schema to hold the auth function
+        CREATE SCHEMA IF NOT EXISTS pgbouncer;
 
-            -- Lock down the function a bit
-            REVOKE ALL ON FUNCTION pgbouncer.get_auth(text) FROM PUBLIC;
+        -- Create the lookup function AS SUPERUSER so it can read pg_authid safely.
+        -- SECURITY DEFINER ensures callers don't need superuser.
+        CREATE OR REPLACE FUNCTION pgbouncer.get_auth(in uname text)
+        RETURNS TABLE(usename text, passwd text)
+        LANGUAGE sql
+        SECURITY DEFINER
+        SET search_path = pg_catalog
+        AS $$
+        SELECT rolname::text, rolpassword::text
+        FROM pg_authid
+        WHERE rolname = uname
+        $$;
 
-            -- Create the dedicated "auth user" PgBouncer will use to run auth_query.
-            -- Give it ONLY EXECUTE on the function.
-            DO $$
-            BEGIN
-            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'pgbouncer_auth') THEN
-                CREATE ROLE pgbouncer_auth LOGIN PASSWORD 'dev-auth-password';
-            END IF;
-            END$$;
+        -- Lock down the function a bit
+        REVOKE ALL ON FUNCTION pgbouncer.get_auth(text) FROM PUBLIC;
 
-            GRANT USAGE ON SCHEMA pgbouncer TO pgbouncer_auth;
-            GRANT EXECUTE ON FUNCTION pgbouncer.get_auth(text) TO pgbouncer_auth;
+        -- Create the dedicated "auth user" PgBouncer will use to run auth_query.
+        -- Give it ONLY EXECUTE on the function.
+        DO $$
+        BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'pgbouncer_auth') THEN
+            CREATE ROLE pgbouncer_auth LOGIN PASSWORD 'dev-auth-password';
+        END IF;
+        END$$;
 
-            -- Ensure NEW databases inherit the function (create it in template1 as well)
-            \\c template1
-            CREATE SCHEMA IF NOT EXISTS pgbouncer;
-            CREATE OR REPLACE FUNCTION pgbouncer.get_auth(in uname text)
-            RETURNS TABLE(usename text, passwd text)
-            LANGUAGE sql
-            SECURITY DEFINER
-            SET search_path = pg_catalog
-            AS $$
-            SELECT rolname::text, rolpassword::text
-            FROM pg_authid
-            WHERE rolname = uname
-            $$;
-            REVOKE ALL ON FUNCTION pgbouncer.get_auth(text) FROM PUBLIC;
-            GRANT USAGE ON SCHEMA pgbouncer TO pgbouncer_auth;
-            GRANT EXECUTE ON FUNCTION pgbouncer.get_auth(text) TO pgbouncer_auth;
-            """
-            conn.execute(text(pgbouncer_function))
+        GRANT USAGE ON SCHEMA pgbouncer TO pgbouncer_auth;
+        GRANT EXECUTE ON FUNCTION pgbouncer.get_auth(text) TO pgbouncer_auth;
+        """
+        conn.execute(text(pgbouncer_function))
+        conn.commit()
+
+    # Also create the function in template1 so new databases inherit it
+    engine = create_engine(database_url_fn("template1"))
+    with engine.connect() as conn:
+        template1_function = f"""
+        CREATE SCHEMA IF NOT EXISTS pgbouncer;
+        CREATE OR REPLACE FUNCTION pgbouncer.get_auth(in uname text)
+        RETURNS TABLE(usename text, passwd text)
+        LANGUAGE sql
+        SECURITY DEFINER
+        SET search_path = pg_catalog
+        AS $$
+        SELECT rolname::text, rolpassword::text
+        FROM pg_authid
+        WHERE rolname = uname
+        $$;
+        REVOKE ALL ON FUNCTION pgbouncer.get_auth(text) FROM PUBLIC;
+        GRANT USAGE ON SCHEMA pgbouncer TO pgbouncer_auth;
+        GRANT EXECUTE ON FUNCTION pgbouncer.get_auth(text) TO pgbouncer_auth;
+        """
+        conn.execute(text(template1_function))
+        conn.commit()
 
 
 @pytest.fixture(scope="session")
