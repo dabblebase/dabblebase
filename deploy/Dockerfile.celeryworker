@@ -1,0 +1,10 @@
+# Docker image for the Celery worker.
+
+FROM python:3.12
+RUN python3 -m pip install --upgrade pip
+COPY ../server/requirements.txt /workspace/server/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /workspace/server/requirements.txt
+COPY ../server /workspace/server
+WORKDIR /workspace
+CMD ["celery", "-A", "server.celery.celery_app", "worker", "--loglevel=info"]
+ENV TZ="America/New_York"
