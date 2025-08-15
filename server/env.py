@@ -25,6 +25,7 @@ class EnvModel(BaseModel):
     AUTH_MASTER_SECRET: str
     REDIS_HOST: str
     REDIS_PORT: str
+    REDIS_PASSWORD: str
     PGBOUNCER_PASSWORD: str
 
 
@@ -59,6 +60,7 @@ env = EnvModel(
     AUTH_MASTER_SECRET=get_env("AUTH_MASTER_SECRET"),
     REDIS_HOST=get_env("REDIS_HOST"),
     REDIS_PORT=get_env("REDIS_PORT"),
+    REDIS_PASSWORD=get_env("REDIS_PASSWORD"),
     PGBOUNCER_PASSWORD=get_env("PGBOUNCER_PASSWORD"),
 )
 
