@@ -2,7 +2,7 @@
 
 This is a catalog of the deployment steps needed to run Dabblebase on Carolina CloudApps.
 
-### Part 1: Log into OC Terminal
+## Part 1: Log into OC Terminal
 
 To log into the `OC` terminal interface, access the terminal in the devcontainer.
 
@@ -12,7 +12,7 @@ Look in the top right in the CloudApps console and click on the username, click 
 oc login <token here>
 ```
 
-### Part 2: Create Databases and Redis Cluster
+## Part 2: Create Databases and Redis Cluster
 
 1. Create the admin database cluster by instantiating the PostgreSQL template by RedHat OpenShift with the settings:
 
@@ -39,7 +39,7 @@ oc login <token here>
    - Database Service Name: `redis-cluster`
    - Version of Redis Image: `latest`
 
-### Part 3: Create Secrets
+## Part 3: Create Secrets
 
 1. Create a generic secret called `dabblebase-server-environment` using this command:
 
@@ -65,7 +65,7 @@ oc login <token here>
 
    Add key-value pairs for every environment variable in `/server/.env`. Use the information for the databases by finding the generated secrets for the database in OpenShift and the passwords generated in step 1.
 
-### Part 4: Create DeployKey to Link GitHub Repo to OpenShift
+## Part 4: Create DeployKey to Link GitHub Repo to OpenShift
 
 1. Create a private / public key pair using the following terminal command:
 
@@ -89,4 +89,226 @@ ssh-keygen -t ed25519 -C "GitHub Deploy Key" -f ./deploy_key
    oc secrets link builder dabblebase-deploykey
    ```
 
-### Part 5: Create the Applications
+## Part 5: Create the Applications
+
+### Create the `web` Next.js Application
+
+1. First, we will import the images required for the different containers to run.
+
+   The first image to add is `node:22-alpine`, which is not included by CloudApps:
+
+   ```
+   oc import-image node-22-alpine --from=docker.io/library/node:22-alpine --confirm
+   ```
+
+2. Then, we will create the web app, which consists of running three commands:
+
+   First, we need to create the base app.
+
+   ```
+   oc new-app node-22-alpine~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=web \
+   --strategy=docker
+   ```
+
+   Note that this should create an app called `web`, but this should fail - we need to specify the location of the `Dockerfile`, which we do below:
+
+   ```
+   oc patch buildconfig web --type=merge -p '{
+       "spec": {
+       "source": {
+           "contextDir": "."
+       },
+       "strategy": {
+           "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.web"
+           }
+       }
+   }
+   }'
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build web
+   ```
+
+3. Now, create the service that exposes the application.
+
+   ```
+   oc expose deployment web \
+   --port=80 \
+   --target-port=8002
+   ```
+
+4. Finally, expose the route.
+
+   ```
+   oc create route edge dabblebase-web \
+   --service=web \
+   --hostname=www.dabblebase.dev
+   ```
+
+### Create the `api` FastAPI Application
+
+1. First, we need to create the base app.
+
+   ```
+   oc new-app python:3.12~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=api \
+   --strategy=docker
+   ```
+
+2. Then, specify the location of the API Dockerfile:
+
+   ```
+   oc patch buildconfig api --type=merge -p '{
+       "spec": {
+       "source": {
+           "contextDir": "."
+       },
+       "strategy": {
+           "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.api"
+           }
+       }
+   }
+   }'
+   ```
+
+   Then, set the secrets to the server secrets:
+
+   ```
+   oc set env deployment/api --from=secret/dabblebase-server-environment
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build api
+   ```
+
+3. Now, create the service that exposes the application.
+
+   ```
+   oc expose deployment api \
+   --port=80 \
+   --target-port=8001
+   ```
+
+4. Then, we need to create routes that should redirect to the API, which are `/api`, `/docs`, `/auth`, and `openapi.json`
+
+   ```
+   oc create route edge dabblebase-api \
+   --service=api \
+   --hostname=www.dabblebase.dev \
+   --path=/api
+   ```
+
+   ```
+   oc create route edge dabblebase-docs \
+   --service=api \
+   --hostname=www.dabblebase.dev \
+   --path=/docs
+   ```
+
+   ```
+   oc create route edge dabblebase-auth \
+   --service=api \
+   --hostname=www.dabblebase.dev \
+   --path=/auth
+   ```
+
+   ```
+   oc create route edge dabblebase-openapi \
+   --service=api \
+   --hostname=www.dabblebase.dev \
+   --path=/openapi.json
+   ```
+
+### Create the `celerybeat` Celery Beat Application
+
+1. First, we need to create the base app.
+
+   ```
+   oc new-app python:3.12~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=celerybeat \
+   --strategy=docker
+   ```
+
+2. Then, specify the location of the API Dockerfile:
+
+   ```
+   oc patch buildconfig celerybeat --type=merge -p '{
+       "spec": {
+       "source": {
+           "contextDir": "."
+       },
+       "strategy": {
+           "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.celerybeat"
+           }
+       }
+   }
+   }'
+   ```
+
+   Then, set the secrets to the server secrets:
+
+   ```
+   oc set env deployment/celerybeat --from=secret/dabblebase-server-environment
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build celerybeat
+   ```
+
+   _Note: There is no need for services or routes since this runs internally only._
+
+### Create the `celeryworker` Celery Worker Application
+
+1. First, we need to create the base app.
+
+   ```
+   oc new-app python:3.12~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=celeryworker \
+   --strategy=docker
+   ```
+
+2. Then, specify the location of the API Dockerfile:
+
+   ```
+   oc patch buildconfig celeryworker --type=merge -p '{
+       "spec": {
+       "source": {
+           "contextDir": "."
+       },
+       "strategy": {
+           "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.celeryworker"
+           }
+       }
+   }
+   }'
+   ```
+
+   Then, set the secrets to the server secrets:
+
+   ```
+   oc set env deployment/celeryworker --from=secret/dabblebase-server-environment
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build celeryworker
+   ```
+
+   _Note: There is no need for services or routes since this runs internally only._
