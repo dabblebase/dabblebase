@@ -6,8 +6,8 @@ from .env import env
 
 celery_app = Celery(
     "app",
-    broker=f"redis://{env.REDIS_PASSWORD}@{env.REDIS_HOST}:{env.REDIS_PORT}/0",
-    backend=f"redis://{env.REDIS_PASSWORD}@{env.REDIS_HOST}:{env.REDIS_PORT}/1",
+    broker=f"redis://:{env.REDIS_PASSWORD}@{env.REDIS_HOST}:{env.REDIS_PORT}/0",
+    backend=f"redis://:{env.REDIS_PASSWORD}@{env.REDIS_HOST}:{env.REDIS_PORT}/1",
 )
 
 # Import /tasks to ensure they are registered with Celery
