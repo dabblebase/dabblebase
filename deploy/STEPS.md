@@ -45,9 +45,27 @@ oc login <token here>
 
    ```
    oc create secret generic dabblebase-server-environment \
-    --from-literal=KEY=value \
-    ...
+      --from-literal=MODE=production \
+      --from-literal=HOST=<BASED ON HOST> \
+      --from-literal=ADMIN_DB_USER=postgres \
+      --from-literal=ADMIN_DB_PASSWORD=<FROM ADMIN DB SECRET> \
+      --from-literal=ADMIN_DB_HOST=db-admin-cluster \
+      --from-literal=ADMIN_DB_PORT=5433 \
+      --from-literal=ADMIN_DB_DATABASE=dabblebase_admin \
+      --from-literal=CONTENT_DB_USER=postgres \
+      --from-literal=CONTENT_DB_PASSWORD=<FROM CONTENT DB SECRET> \
+      --from-literal=CONTENT_DB_HOST=db-content-cluster \
+      --from-literal=CONTENT_DB_PORT=5434 \
+      --from-literal=CONTENT_DB_DATABASE=postgres \
+      --from-literal=REDIS_HOST=redis-cluster \
+      --from-literal=REDIS_PORT=6379 \
+      --from-literal=REDIS_PASSWORD=<FROM REDIS SECRET> \
+      --from-literal=PGBOUNCER_PASSWORD=<GENERATE SECRET> \
+      --from-literal=JWT_SECRET=<GENERATE SECRET> \
+      --from-literal=AUTH_MASTER_SECRET=<GENERATE SECRET> \
    ```
+
+   **_NOTE: Add additional secrets to this command if needed and these steps are out of date._**
 
    Add key-value pairs for every environment variable in `/server/.env`. Use the information for the databases by finding the generated secrets for the database in OpenShift. Make sure that the port for the database is `5433` and `5434` respectively. For all passwords, generate the password in the DevContainer terminal using the command:
 
@@ -59,9 +77,22 @@ oc login <token here>
 
    ```
    oc create secret generic dabblebase-realtime-environment \
-    --from-literal=KEY=value \
-    ...
+      --from-literal=MODE=production \
+      --from-literal=HOST=<BASED ON HOST> \
+      --from-literal=ADMIN_DB_USER=postgres \
+      --from-literal=ADMIN_DB_PASSWORD=<FROM ADMIN DB SECRET> \
+      --from-literal=ADMIN_DB_HOST=db-admin-cluster \
+      --from-literal=ADMIN_DB_PORT=5433 \
+      --from-literal=ADMIN_DB_DATABASE=dabblebase_admin \
+      --from-literal=CONTENT_DB_USER=postgres \
+      --from-literal=CONTENT_DB_PASSWORD=<FROM CONTENT DB SECRET> \
+      --from-literal=CONTENT_DB_HOST=db-content-cluster \
+      --from-literal=CONTENT_DB_PORT=5434 \
+      --from-literal=CONTENT_DB_DATABASE=postgres \
+      --from-literal=AUTH_MASTER_SECRET=<GENERATE SECRET> \
    ```
+
+   **_NOTE: Add additional secrets to this command if needed and these steps are out of date._**
 
    Add key-value pairs for every environment variable in `/server/.env`. Use the information for the databases by finding the generated secrets for the database in OpenShift and the passwords generated in step 1.
 
@@ -229,48 +260,6 @@ ssh-keygen -t ed25519 -C "GitHub Deploy Key" -f ./deploy_key
    --path=/openapi.json
    ```
 
-### Create the `celerybeat` Celery Beat Application
-
-1. First, we need to create the base app.
-
-   ```
-   oc new-app python:3.12~git@github.com:dabblebase/dabblebase.git#main \
-   --source-secret=dabblebase-deploykey \
-   --name=celerybeat \
-   --strategy=docker
-   ```
-
-2. Then, specify the location of the API Dockerfile:
-
-   ```
-   oc patch buildconfig celerybeat --type=merge -p '{
-       "spec": {
-       "source": {
-           "contextDir": "."
-       },
-       "strategy": {
-           "dockerStrategy": {
-               "dockerfilePath": "deploy/Dockerfile.celerybeat"
-           }
-       }
-   }
-   }'
-   ```
-
-   Then, set the secrets to the server secrets:
-
-   ```
-   oc set env deployment/celerybeat --from=secret/dabblebase-server-environment
-   ```
-
-   Finally, we rebuild the application.
-
-   ```
-   oc start-build celerybeat
-   ```
-
-   _Note: There is no need for services or routes since this runs internally only._
-
 ### Create the `celeryworker` Celery Worker Application
 
 1. First, we need to create the base app.
@@ -309,6 +298,48 @@ ssh-keygen -t ed25519 -C "GitHub Deploy Key" -f ./deploy_key
 
    ```
    oc start-build celeryworker
+   ```
+
+   _Note: There is no need for services or routes since this runs internally only._
+
+### Create the `celerybeat` Celery Beat Application
+
+1. First, we need to create the base app.
+
+   ```
+   oc new-app python:3.12~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=celerybeat \
+   --strategy=docker
+   ```
+
+2. Then, specify the location of the API Dockerfile:
+
+   ```
+   oc patch buildconfig celerybeat --type=merge -p '{
+       "spec": {
+       "source": {
+           "contextDir": "."
+       },
+       "strategy": {
+           "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.celerybeat"
+           }
+       }
+   }
+   }'
+   ```
+
+   Then, set the secrets to the server secrets:
+
+   ```
+   oc set env deployment/celerybeat --from=secret/dabblebase-server-environment
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build celerybeat
    ```
 
    _Note: There is no need for services or routes since this runs internally only._
