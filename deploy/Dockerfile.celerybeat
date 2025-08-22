@@ -5,6 +5,10 @@ RUN python3 -m pip install --upgrade pip
 COPY ../server/requirements.txt /workspace/server/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /workspace/server/requirements.txt
 COPY ../server /workspace/server
+
+# Create a writable directory for Celery beat schedule files
+RUN mkdir -p /workspace/celery_data && chmod 755 /workspace/celery_data
+
 WORKDIR /workspace
-CMD ["celery", "-A", "server.celery.celery_app", "beat", "--loglevel=info"]
+CMD ["celery", "-A", "server.celery.celery_app", "beat", "--loglevel=info", "--schedule=/workspace/celery_data/celerybeat-schedule"]
 ENV TZ="America/New_York"
