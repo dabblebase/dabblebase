@@ -10,6 +10,21 @@ config :realtime, Realtime.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+# Configure application environment variables for development
+config :realtime,
+  mode: "development",
+  host: "localhost:4000",
+  admin_db_host: "db-admin-cluster",
+  admin_db_port: "5432",
+  admin_db_user: "postgres",
+  admin_db_password: "postgres",
+  admin_db_database: "dabblebase_admin",
+  content_db_host: "db-content-cluster",
+  content_db_port: "5432",
+  content_db_user: "postgres",
+  content_db_password: "postgres",
+  auth_master_secret: "dev_secret_key_please_change_in_production"
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

@@ -7,20 +7,22 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
-# Initialize all environment variables
-config :realtime,
-  mode: System.get_env("MODE", "development"),
-  host: System.get_env("HOST", "localhost:8000"),
-  admin_db_host: System.get_env("ADMIN_DB_HOST", "db-admin-cluster"),
-  admin_db_port: System.get_env("ADMIN_DB_PORT", "5432"),
-  admin_db_user: System.get_env("ADMIN_DB_USER", "postgres"),
-  admin_db_password: System.get_env("ADMIN_DB_PASSWORD", "postgres"),
-  admin_db_database: System.get_env("ADMIN_DB_NAME", "dabblebase_admin"),
-  content_db_host: System.get_env("CONTENT_DB_HOST", "db-content-cluster"),
-  content_db_port: System.get_env("CONTENT_DB_PORT", "5432"),
-  content_db_user: System.get_env("CONTENT_DB_USER", "postgres"),
-  content_db_password: System.get_env("CONTENT_DB_PASSWORD", "postgres"),
-  auth_master_secet: System.get_env("AUTH_MASTER_SECRET", "REPLACE_ME")
+# Initialize all environment variables - only in production
+if config_env() == :prod do
+  config :realtime,
+    mode: System.get_env("MODE", "development"),
+    host: System.get_env("HOST", "localhost:8000"),
+    admin_db_host: System.get_env("ADMIN_DB_HOST", "db-admin-cluster"),
+    admin_db_port: System.get_env("ADMIN_DB_PORT", "5433"),
+    admin_db_user: System.get_env("ADMIN_DB_USER", "postgres"),
+    admin_db_password: System.get_env("ADMIN_DB_PASSWORD", "postgres"),
+    admin_db_database: System.get_env("ADMIN_DB_DATABASE", "dabblebase_admin"),
+    content_db_host: System.get_env("CONTENT_DB_HOST", "db-content-cluster"),
+    content_db_port: System.get_env("CONTENT_DB_PORT", "5434"),
+    content_db_user: System.get_env("CONTENT_DB_USER", "postgres"),
+    content_db_password: System.get_env("CONTENT_DB_PASSWORD", "postgres"),
+    auth_master_secret: System.get_env("AUTH_MASTER_SECRET", "REPLACE_ME")
+end
 
 # ## Using releases
 #
@@ -41,7 +43,12 @@ if config_env() == :prod do
   config :realtime, Realtime.Repo,
     # ssl: true,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
+    socket_options: maybe_ipv6,
+    hostname: System.get_env("ADMIN_DB_HOST", "db-admin-cluster"),
+    port: String.to_integer(System.get_env("ADMIN_DB_PORT", "5433")),
+    username: System.get_env("ADMIN_DB_USER", "postgres"),
+    password: System.get_env("ADMIN_DB_PASSWORD", "postgres"),
+    database: System.get_env("ADMIN_DB_DATABASE", "dabblebase_admin")
 
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
