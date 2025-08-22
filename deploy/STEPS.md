@@ -343,3 +343,57 @@ ssh-keygen -t ed25519 -C "GitHub Deploy Key" -f ./deploy_key
    ```
 
    _Note: There is no need for services or routes since this runs internally only._
+
+### Create the `realtime` Elixir Server Application
+
+1. First, we will import the images required for the different containers to run.
+
+   The first image to add is `elixir`, which is not included by CloudApps:
+
+   ```
+   oc import-image elixir --from=docker.io/hexpm/elixir:1.16.2-erlang-26.2.5-debian-bullseye-20240513-slim --confirm
+   ```
+
+   ```
+   oc import-image debian-bullseye-slim --from=docker.io/library/debian:bullseye-20240513-slim --confirm
+   ```
+
+2. Then, we will create the realtime app, which consists of running three commands:
+
+   First, we need to create the base app.
+
+   ```
+   oc new-app elixir~git@github.com:dabblebase/dabblebase.git#main \
+   --source-secret=dabblebase-deploykey \
+   --name=realtime \
+   --strategy=docker
+   ```
+
+   Note that this should create an app called `realtime`, but this should fail - we need to specify the location of the `Dockerfile`, which we do below:
+
+   ```
+   oc patch buildconfig realtime --type=merge -p '{
+      "spec": {
+      "source": {
+         "contextDir": "."
+      },
+      "strategy": {
+         "dockerStrategy": {
+               "dockerfilePath": "deploy/Dockerfile.realtime"
+         }
+      }
+   }
+   }'
+   ```
+
+   Set the environment variables:
+
+   ```
+   oc set env deployment/realtime --from=secret/dabblebase-realtime-environment
+   ```
+
+   Finally, we rebuild the application.
+
+   ```
+   oc start-build realtime
+   ```
