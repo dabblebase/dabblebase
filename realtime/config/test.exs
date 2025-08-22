@@ -17,7 +17,6 @@ config :realtime, Realtime.Repo,
 # you can enable the server option below.
 config :realtime, RealtimeWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "UkYJvXnSwKbqU2xJZz7+w+qcis+Oo0pq6vXOUWo+oJ8DucHtN4zw4UJZ7or2ibev",
   server: false
 
 # Print only warnings and errors during test
