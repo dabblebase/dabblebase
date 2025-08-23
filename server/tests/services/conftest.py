@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text, Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from ...env import env
-from ...database import _admin_db_url, _content_db_url
+from ...database import admin_db_url, content_db_url
 from ...services import HealthService
 from ...entities import BaseAdminEntity
 
@@ -143,15 +143,15 @@ def reset_database(
 @pytest.fixture(scope="session")
 def test_admin_engine() -> Engine:
     test_admin_database = f"{env.ADMIN_DB_DATABASE}_test"
-    reset_database(test_admin_database, env.ADMIN_DB_USER, _admin_db_url)
-    return create_engine(_admin_db_url(test_admin_database))
+    reset_database(test_admin_database, env.ADMIN_DB_USER, admin_db_url)
+    return create_engine(admin_db_url(test_admin_database))
 
 
 @pytest.fixture(scope="function")
 def test_content_engine() -> Engine:
     test_content_database = f"{env.CONTENT_DB_DATABASE}_test"
-    reset_database(test_content_database, env.CONTENT_DB_USER, _content_db_url)
-    return create_engine(_content_db_url(test_content_database))
+    reset_database(test_content_database, env.CONTENT_DB_USER, content_db_url)
+    return create_engine(content_db_url(test_content_database))
 
 
 @pytest.fixture(scope="function")
