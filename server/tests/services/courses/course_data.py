@@ -1,6 +1,6 @@
 """Data models specific to course testing"""
 
-from ..seed import (
+from ....seeds.demo import (
     course,
     nocourse_student_user,
     student_1_user,

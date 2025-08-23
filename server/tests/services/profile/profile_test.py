@@ -6,8 +6,8 @@ from ....models.profile import *
 from ....models.auth import Subject
 from ....services import ProfileService
 from ..fixtures import profile_svc
-from ..seed import (
-    seed_database,
+from ....seeds.demo import (
+    seed_demo_fixture,
     instructor_user,
     admin_user,
     ta_user,

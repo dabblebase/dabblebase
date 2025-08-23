@@ -5,8 +5,8 @@ from ....entities import CourseEntity, CourseMemberEntity
 from ....models.course import *
 from ....services import CourseService
 from ..fixtures import course_svc
-from ..seed import (
-    seed_database,
+from ....seeds.demo import (
+    seed_demo_fixture,
     instructor_user,
     admin_user,
     ta_user,
