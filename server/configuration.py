@@ -7,7 +7,7 @@ from server.database import (
     content_db_url,
 )
 from .env import env
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import create_engine, text
 from .entities import BaseAdminEntity
 
 
@@ -102,6 +102,22 @@ def setup_content_db_cluster():
         """
         conn.execute(text(pgbouncer_function))
         conn.commit()
+
+        # Set up pgbouncer admin user
+        setup_pgbouncer_sql = f"""
+        DO $$
+        BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='pgbouncer_auth') THEN
+            CREATE ROLE pgbouncer_auth LOGIN PASSWORD '{env.PGBOUNCER_PASSWORD}';
+        ELSE
+            ALTER ROLE pgbouncer_auth WITH LOGIN PASSWORD '{env.PGBOUNCER_PASSWORD}';
+        END IF;
+        END$$;
+
+        -- show the stored hash (SCRAM by default on PG15)
+        SELECT rolpassword FROM pg_authid WHERE rolname='pgbouncer_auth';
+        """
+        connection.execute(text(setup_pgbouncer_sql))
 
     # Also create the function in template1 so new databases inherit it
     template1_engine = create_engine(content_db_url("template1"))
