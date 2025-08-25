@@ -6,20 +6,30 @@ from .env import env, in_production
 from celery import Celery
 
 
-def _admin_db_url(database: str = env.ADMIN_DB_DATABASE) -> str:
-    """Construct the URL for the admin database."""
-    return f"postgresql+psycopg2://{env.ADMIN_DB_USER}:{env.ADMIN_DB_PASSWORD}@{env.ADMIN_DB_HOST}:{env.ADMIN_DB_PORT}/{database}"
+def admin_db_cluster_url() -> str:
+    """Constructs a url for the admin db cluster"""
+    return f"postgresql+psycopg2://{env.ADMIN_DB_USER}:{env.ADMIN_DB_PASSWORD}@{env.ADMIN_DB_HOST}:{env.ADMIN_DB_PORT}"
 
 
-def _content_db_url(database: str = env.CONTENT_DB_DATABASE) -> str:
-    """Construct the URL for the content database."""
-    return f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}/{database}"
+def admin_db_url(database: str = env.ADMIN_DB_DATABASE) -> str:
+    """Construct the URL a database in the admin db cluster."""
+    return f"{admin_db_cluster_url()}/{database}"
+
+
+def content_db_cluster_url() -> str:
+    """Constructs a url for the content db cluster"""
+    return f"postgresql+psycopg2://{env.CONTENT_DB_USER}:{env.CONTENT_DB_PASSWORD}@{env.CONTENT_DB_HOST}:{env.CONTENT_DB_PORT}"
+
+
+def content_db_url(database: str = env.CONTENT_DB_DATABASE) -> str:
+    """Construct the URL a database in the content db cluster."""
+    return f"{content_db_cluster_url()}/{database}"
 
 
 def admin_db_engine(echo: bool = not in_production()):
     """Injectible generator for the admin db engine."""
     return sqlalchemy.create_engine(
-        url=_admin_db_url(),
+        url=admin_db_url(),
         echo=echo,
     )
 
@@ -27,7 +37,7 @@ def admin_db_engine(echo: bool = not in_production()):
 def content_db_engine(echo: bool = not in_production()):
     """Injectible generator for the admin db engine."""
     return sqlalchemy.create_engine(
-        url=_content_db_url(),
+        url=content_db_url(),
         echo=echo,
     )
 

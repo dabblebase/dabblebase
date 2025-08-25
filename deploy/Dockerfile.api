@@ -6,7 +6,7 @@ RUN python3 -m pip install --upgrade pip
 COPY ../server/requirements.txt /workspace/server/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /workspace/server/requirements.txt
 COPY ../server /workspace/server
-# COPY ../alembic.ini /workspace/alembic.ini
+COPY ../alembic.ini /workspace/alembic.ini
 WORKDIR /workspace
 CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "3"]
 ENV TZ="America/New_York"

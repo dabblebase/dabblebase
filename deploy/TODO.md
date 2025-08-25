@@ -1,3 +1,3 @@
 # TODO
 
-- [ ] Add Alembic
+- [x] Add Alembic

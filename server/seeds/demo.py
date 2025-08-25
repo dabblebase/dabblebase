@@ -1,7 +1,8 @@
 """Seed data for testing purposes."""
 
+from server.database import admin_db_engine
 from server.entities.course import CourseTermType
-from ...entities import (
+from ..entities import (
     UserEntity,
     UserEntityModel,
     UserAuthenticationProvider,
@@ -172,7 +173,7 @@ groups = [group_assignment_group_1]
 group_members = [group_assignment_group_1_member]
 
 
-def insert_seed_data(session: Session):
+def insert_seed_data(session: Session = Session(admin_db_engine(echo=False))):
 
     for user in users:
         session.add(user.to_entity())
@@ -207,7 +208,7 @@ def insert_seed_data(session: Session):
 
 
 @pytest.fixture(autouse=True)
-def seed_database(admin_db_session: Session):
+def seed_demo_fixture(admin_db_session: Session):
     insert_seed_data(admin_db_session)
     admin_db_session.commit()
     yield

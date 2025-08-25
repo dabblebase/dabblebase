@@ -12,8 +12,8 @@ from ....entities import (
 from ....models.assignment import *
 from ....services import AssignmentService
 from ..fixtures import assignment_svc
-from ..seed import (
-    seed_database,
+from ....seeds.demo import (
+    seed_demo_fixture,
     instructor_user,
     admin_user,
     ta_user,
