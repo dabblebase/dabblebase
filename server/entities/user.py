@@ -60,9 +60,9 @@ class UserEntity(BaseAdminEntity):
         back_populates="user", cascade="all,delete"
     )
 
-    # All of the roles associated with the user.
-    roles: Mapped[list["RoleEntity"]] = relationship(
-        secondary="user_roles", back_populates="users"
+    # All of the permissions associated with the user.
+    permissions: Mapped[list["PermissionEntity"]] = relationship(  # type: ignore
+        back_populates="user", cascade="all,delete"
     )
 
     def to_subject(self) -> Subject:

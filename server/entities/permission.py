@@ -20,6 +20,6 @@ class PermissionEntity(BaseAdminEntity):
     # Represents what which specific data the users can control
     resource: Mapped[str] = mapped_column(String)
 
-    # Role permission is attached to
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), primary_key=True)
-    role: Mapped["RoleEntity"] = relationship(back_populates="permissions")  # type: ignore
+    # User assigned the permission
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    user: Mapped["UserEntity"] = relationship(back_populates="permissions")  # type: ignore
