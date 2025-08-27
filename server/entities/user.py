@@ -60,6 +60,11 @@ class UserEntity(BaseAdminEntity):
         back_populates="user", cascade="all,delete"
     )
 
+    # All of the roles associated with the user.
+    roles: Mapped[list["RoleEntity"]] = relationship(
+        secondary="user_roles", back_populates="users"
+    )
+
     def to_subject(self) -> Subject:
         """Convert the user entity to a Subject object."""
         return Subject(id=self.id)
