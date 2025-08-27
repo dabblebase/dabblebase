@@ -1,7 +1,7 @@
 """Definition of the `users` table in the admin database."""
 
 from enum import Enum
-from sqlalchemy import Integer, String
+from sqlalchemy import Boolean, Integer, String, null
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseAdminEntity
@@ -65,6 +65,9 @@ class UserEntity(BaseAdminEntity):
         back_populates="user", cascade="all,delete"
     )
 
+    # Flag to determine if a user is verified as an instructor
+    is_instructor: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
     def to_subject(self) -> Subject:
         """Convert the user entity to a Subject object."""
         return Subject(id=self.id)
@@ -80,6 +83,7 @@ class UserEntityModel(BaseModel):
     first_name: str
     last_name: str
     email: str
+    is_instructor: bool
 
     def to_entity(self) -> UserEntity:
         """Convert the Pydantic model to a UserEntity."""
@@ -91,6 +95,7 @@ class UserEntityModel(BaseModel):
             first_name=self.first_name,
             last_name=self.last_name,
             email=self.email,
+            is_instructor=self.is_instructor,
         )
 
     def to_subject(self) -> Subject:

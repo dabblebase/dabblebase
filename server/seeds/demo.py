@@ -35,6 +35,7 @@ instructor_user = UserEntityModel(
     first_name="Ina",
     last_name="Instructor",
     email="instructor@unc.edu",
+    is_instructor=True,
 )
 admin_user = UserEntityModel(
     id=2,
@@ -44,6 +45,7 @@ admin_user = UserEntityModel(
     first_name="Audrey",
     last_name="Admin",
     email="admin@unc.edu",
+    is_instructor=False,
 )
 ta_user = UserEntityModel(
     id=3,
@@ -53,6 +55,7 @@ ta_user = UserEntityModel(
     first_name="Teddy",
     last_name="TA",
     email="ta@unc.edu",
+    is_instructor=False,
 )
 student_1_user = UserEntityModel(
     id=4,
@@ -62,6 +65,7 @@ student_1_user = UserEntityModel(
     first_name="Sally",
     last_name="Student",
     email="student1@unc.edu",
+    is_instructor=False,
 )
 student_2_user = UserEntityModel(
     id=5,
@@ -71,6 +75,7 @@ student_2_user = UserEntityModel(
     first_name="Shauna",
     last_name="Student",
     email="student2@unc.edu",
+    is_instructor=False,
 )
 nocourse_student_user = UserEntityModel(
     id=6,
@@ -80,6 +85,7 @@ nocourse_student_user = UserEntityModel(
     first_name="Norman",
     last_name="Nocourse-Student",
     email="nocoursestudent@unc.edu",
+    is_instructor=False,
 )
 
 users: list[UserEntityModel] = [
