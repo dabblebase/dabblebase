@@ -427,13 +427,14 @@ class CourseService:
         self, subject: Subject, request: CreateCourseRequest
     ) -> CreateCourseResponse:
         """Creates a course based on the required data"""
-        # TODO: Validate on permission for course creation
-        ...
-        # Validate that the course code does not have spaces or special characters
-        # if not request.code.isalnum():
-        #     raise InputValidationException(
-        #         "Course code must be alphanumeric and cannot contain spaces or special characters."
-        #     )
+        # Validate that the subject is an instructor
+        user_query = select(UserEntity).where(UserEntity.id == subject.id)
+        user = self._admin_db.scalars(user_query).one_or_none()
+
+        if not user.is_instructor:
+            raise UserPermissionException(
+                f"You must be an instructor to create a course."
+            )
 
         # Generate a random 6-digit invite code for a course
         invite_code = self._generate_invite_code()
