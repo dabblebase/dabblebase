@@ -4,21 +4,26 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    MODE: z.enum(["development", "production"]),
-    HOST: z.string(),
-    AUTH_MASTER_SECRET: z.string(),
+    MODE: z.enum(["development", "production"]).default("production"),
+    HOST: z.string().default("www.dabblebase.com"),
+    AUTH_MASTER_SECRET: z
+      .string()
+      .default("default-secret-change-in-production"),
   },
   client: {
-    NEXT_PUBLIC_MODE: z.enum(["development", "production"]),
-    NEXT_PUBLIC_HOST: z.string(),
-    NEXT_PUBLIC_AUTH_MASTER_SECRET: z.string(),
+    NEXT_PUBLIC_MODE: z
+      .enum(["development", "production"])
+      .default("production"),
+    NEXT_PUBLIC_HOST: z.string().default("www.dabblebase.com"),
   },
   runtimeEnv: {
-    MODE: process.env.NEXT_PUBLIC_MODE,
-    HOST: process.env.NEXT_PUBLIC_HOST,
-    AUTH_MASTER_SECRET: process.env.NEXT_PUBLIC_AUTH_MASTER_SECRET,
+    // Server variables (not exposed to client)
+    MODE: process.env.MODE,
+    HOST: process.env.HOST,
+    AUTH_MASTER_SECRET: process.env.AUTH_MASTER_SECRET,
+    // Client variables (exposed to client)
     NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
     NEXT_PUBLIC_HOST: process.env.NEXT_PUBLIC_HOST,
-    NEXT_PUBLIC_AUTH_MASTER_SECRET: process.env.NEXT_PUBLIC_AUTH_MASTER_SECRET,
   },
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
