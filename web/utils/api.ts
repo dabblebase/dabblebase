@@ -3,12 +3,15 @@
 import createFetchClient from "openapi-fetch";
 import createClient from "openapi-react-query";
 import type { paths } from "../models/schema";
-import { env } from "./env";
 
-const protocol = env.MODE === "development" ? "http" : "https";
+// TODO: Improve this process here.
+const url =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:8000"
+    : "https://www.dabblebase.dev";
 
 export const fetchClient = createFetchClient<paths>({
-  baseUrl: `${protocol}://${env.HOST}`,
+  baseUrl: url,
   credentials: "include",
 });
 
