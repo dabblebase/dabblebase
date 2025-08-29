@@ -92,6 +92,15 @@ oc login <token here>
       --from-literal=AUTH_MASTER_SECRET=<GENERATE SECRET> \
    ```
 
+3. Create a generic secret called `dabblebase-web-environment` using this command:
+
+   ```
+   oc create secret generic dabblebase-web-environment \
+      --from-literal=MODE=production \
+      --from-literal=HOST=<BASED ON HOST> \
+      --from-literal=AUTH_MASTER_SECRET=<GENERATE SECRET>
+   ```
+
    **_NOTE: Add additional secrets to this command if needed and these steps are out of date._**
 
    Add key-value pairs for every environment variable in `/server/.env`. Use the information for the databases by finding the generated secrets for the database in OpenShift and the passwords generated in step 1.
@@ -158,6 +167,12 @@ ssh-keygen -t ed25519 -C "GitHub Deploy Key" -f ./deploy_key
        }
    }
    }'
+   ```
+
+   Then, set the secrets to the web secrets:
+
+   ```
+   oc set env deployment/web --from=secret/dabblebase-web-environment
    ```
 
    Finally, we rebuild the application.
