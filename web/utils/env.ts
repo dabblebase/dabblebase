@@ -1,19 +1,24 @@
 /** Helper to easily load env values with validation. */
-
+import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const EnvType = z.object({
-  MODE: z.enum(["development", "production"]),
-  HOST: z.string(),
-  AUTH_MASTER_SECRET: z.string(),
+export const env = createEnv({
+  server: {
+    MODE: z.enum(["development", "production"]),
+    HOST: z.string(),
+    AUTH_MASTER_SECRET: z.string(),
+  },
+  client: {
+    NEXT_PUBLIC_MODE: z.enum(["development", "production"]),
+    NEXT_PUBLIC_HOST: z.string(),
+    NEXT_PUBLIC_AUTH_MASTER_SECRET: z.string(),
+  },
+  runtimeEnv: {
+    MODE: process.env.NEXT_PUBLIC_MODE,
+    HOST: process.env.NEXT_PUBLIC_HOST,
+    AUTH_MASTER_SECRET: process.env.NEXT_PUBLIC_AUTH_MASTER_SECRET,
+    NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
+    NEXT_PUBLIC_HOST: process.env.NEXT_PUBLIC_HOST,
+    NEXT_PUBLIC_AUTH_MASTER_SECRET: process.env.NEXT_PUBLIC_AUTH_MASTER_SECRET,
+  },
 });
-
-// For client-side, we need to access the environment variables differently
-// In Next.js, NEXT_PUBLIC_ variables are available on both client and server
-const clientEnv = {
-  MODE: process.env.NEXT_PUBLIC_MODE,
-  HOST: process.env.NEXT_PUBLIC_HOST,
-  AUTH_MASTER_SECRET: process.env.NEXT_PUBLIC_AUTH_MASTER_SECRET,
-};
-
-export const env = EnvType.parse(clientEnv);
