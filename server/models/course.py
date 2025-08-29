@@ -19,6 +19,7 @@ class GetDashboardResponse_Course(BaseModel):
 class GetDashboardResponse(BaseModel):
     """Model that represents a response for the dashboard endpoint."""
 
+    is_instructor: bool
     most_recent_staff_course_term: str | None
     most_recent_student_course_term: str | None
     other_staff_course_terms: list[str]

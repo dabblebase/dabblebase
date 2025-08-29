@@ -303,6 +303,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/course/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Course
+         * @description Creates a new course
+         */
+        post: operations["create_course_api_course__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/course/{course_id}": {
         parameters: {
             query?: never;
@@ -1005,6 +1025,35 @@ export interface components {
          */
         CourseTermType: "Fall" | "Spring" | "Summer" | "Winter";
         /**
+         * CreateCourseRequest
+         * @description Model that represents a request to create a course.
+         */
+        CreateCourseRequest: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            term_type: components["schemas"]["CourseTermType"];
+            /** Term Year */
+            term_year: number;
+        };
+        /**
+         * CreateCourseResponse
+         * @description Model that represents a response after creating a course.
+         */
+        CreateCourseResponse: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Invite Code */
+            invite_code: string;
+        };
+        /**
          * CreateDraftRequest
          * @description Model that represents a request to create a draft.
          */
@@ -1086,6 +1135,8 @@ export interface components {
          * @description Model that represents a response for the dashboard endpoint.
          */
         GetDashboardResponse: {
+            /** Is Instructor */
+            is_instructor: boolean;
             /** Most Recent Staff Course Term */
             most_recent_staff_course_term: string | null;
             /** Most Recent Student Course Term */
@@ -2033,6 +2084,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetStaffSettingsViewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_course_api_course__post: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateCourseResponse"];
                 };
             };
             /** @description Validation Error */

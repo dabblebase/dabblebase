@@ -66,6 +66,11 @@ class CourseService:
 
     def get_dashboard(self, subject: Subject) -> GetDashboardResponse:
         """Returns the dashboard for the user"""
+        # Gets the user
+        user = self._admin_db.get(UserEntity, subject.id)
+        if not user:
+            raise ResourceNotFoundException(f"No user with the id: {subject.id}")
+
         # Query for courses where the user is a staff member
         staff_courses_query = (
             select(CourseEntity)
@@ -153,6 +158,7 @@ class CourseService:
 
         # Return the dashboard response
         return GetDashboardResponse(
+            is_instructor=user.is_instructor,
             most_recent_staff_course_term=(
                 staff_courses_terms_list[0] if staff_courses_terms_list else None
             ),
