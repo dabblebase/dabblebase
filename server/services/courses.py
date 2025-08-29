@@ -66,6 +66,11 @@ class CourseService:
 
     def get_dashboard(self, subject: Subject) -> GetDashboardResponse:
         """Returns the dashboard for the user"""
+        # Gets the user
+        user = self._admin_db.get(UserEntity, subject.id)
+        if not user:
+            raise ResourceNotFoundException(f"No user with the id: {subject.id}")
+
         # Query for courses where the user is a staff member
         staff_courses_query = (
             select(CourseEntity)
@@ -153,6 +158,7 @@ class CourseService:
 
         # Return the dashboard response
         return GetDashboardResponse(
+            is_instructor=user.is_instructor,
             most_recent_staff_course_term=(
                 staff_courses_terms_list[0] if staff_courses_terms_list else None
             ),
@@ -427,13 +433,14 @@ class CourseService:
         self, subject: Subject, request: CreateCourseRequest
     ) -> CreateCourseResponse:
         """Creates a course based on the required data"""
-        # TODO: Validate on permission for course creation
-        ...
-        # Validate that the course code does not have spaces or special characters
-        # if not request.code.isalnum():
-        #     raise InputValidationException(
-        #         "Course code must be alphanumeric and cannot contain spaces or special characters."
-        #     )
+        # Validate that the subject is an instructor
+        user_query = select(UserEntity).where(UserEntity.id == subject.id)
+        user = self._admin_db.scalars(user_query).one_or_none()
+
+        if not user.is_instructor:
+            raise UserPermissionException(
+                f"You must be an instructor to create a course."
+            )
 
         # Generate a random 6-digit invite code for a course
         invite_code = self._generate_invite_code()

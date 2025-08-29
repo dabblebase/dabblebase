@@ -28,7 +28,7 @@ class ProfileService:
             return None
         user = self._admin_db.get(UserEntity, subject.id)
         if not user:
-            raise ResourceNotFoundException(f"Userr with id {subject.id} not found.")
+            raise ResourceNotFoundException(f"User with id {subject.id} not found.")
 
         initials = (
             user.first_name[0].upper() + user.last_name[0].upper()

@@ -21,6 +21,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is Admin */
+        get: operations["is_admin_api_admin__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["list_users_api_admin_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/instructor/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Add Instructor */
+        put: operations["add_instructor_api_admin_instructor_add_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/instructor/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Remove Instructor */
+        put: operations["remove_instructor_api_admin_instructor_remove_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/task/{task_id}/status": {
         parameters: {
             query?: never;
@@ -229,6 +297,26 @@ export interface paths {
         get: operations["get_staff_settings_view_api_course__course_id__staff_settings_view_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/course/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Course
+         * @description Creates a new course
+         */
+        post: operations["create_course_api_course__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -937,6 +1025,35 @@ export interface components {
          */
         CourseTermType: "Fall" | "Spring" | "Summer" | "Winter";
         /**
+         * CreateCourseRequest
+         * @description Model that represents a request to create a course.
+         */
+        CreateCourseRequest: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            term_type: components["schemas"]["CourseTermType"];
+            /** Term Year */
+            term_year: number;
+        };
+        /**
+         * CreateCourseResponse
+         * @description Model that represents a response after creating a course.
+         */
+        CreateCourseResponse: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Invite Code */
+            invite_code: string;
+        };
+        /**
          * CreateDraftRequest
          * @description Model that represents a request to create a draft.
          */
@@ -1018,6 +1135,8 @@ export interface components {
          * @description Model that represents a response for the dashboard endpoint.
          */
         GetDashboardResponse: {
+            /** Is Instructor */
+            is_instructor: boolean;
             /** Most Recent Staff Course Term */
             most_recent_staff_course_term: string | null;
             /** Most Recent Student Course Term */
@@ -1333,6 +1452,36 @@ export interface components {
             course_name: string;
         };
         /**
+         * ListUsersResponse
+         * @description Model that represents a response for the list users endpoint
+         */
+        ListUsersResponse: {
+            /** Users */
+            users: components["schemas"]["ListUsersResponse_User"][];
+        };
+        /**
+         * ListUsersResponse_User
+         * @description Model that represents a user for the list users endpoint
+         */
+        ListUsersResponse_User: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Is Instructor */
+            is_instructor: boolean;
+        };
+        /**
+         * Subject
+         * @description Represents a user making a request to the Dabblebase API
+         */
+        Subject: {
+            /** Id */
+            id: number;
+        };
+        /**
          * Task
          * @description Represents a Celery asychronous task.
          */
@@ -1437,7 +1586,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     health_check_api_health_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1451,6 +1602,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    is_admin_api_admin__get: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_api_admin_users_get: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListUsersResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_instructor_api_admin_instructor_add_put: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Subject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_instructor_api_admin_instructor_remove_put: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Subject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1544,6 +1836,7 @@ export interface operations {
             query: {
                 token: string;
                 continue_to?: string;
+                echo?: boolean;
             };
             header?: never;
             path: {
@@ -1575,7 +1868,9 @@ export interface operations {
     };
     get_dashboard_api_course_dashboard_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1607,6 +1902,7 @@ export interface operations {
             query?: {
                 search?: string;
                 selected_course_id?: number | null;
+                echo?: boolean;
             };
             header?: never;
             path?: never;
@@ -1636,7 +1932,9 @@ export interface operations {
     };
     get_assignments_api_course__course_id__assignments_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1667,7 +1965,9 @@ export interface operations {
     };
     get_course_role_api_course__course_id__role_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1701,6 +2001,7 @@ export interface operations {
             query?: {
                 assignment_id?: number | null;
                 search?: string;
+                echo?: boolean;
             };
             header?: never;
             path: {
@@ -1732,7 +2033,9 @@ export interface operations {
     };
     get_roster_api_course__course_id__roster_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1763,7 +2066,9 @@ export interface operations {
     };
     get_staff_settings_view_api_course__course_id__staff_settings_view_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1792,9 +2097,46 @@ export interface operations {
             };
         };
     };
+    create_course_api_course__post: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateCourseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_course_api_course__course_id__put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1829,7 +2171,9 @@ export interface operations {
     };
     delete_course_api_course__course_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1862,6 +2206,7 @@ export interface operations {
         parameters: {
             query: {
                 invite_code: string;
+                echo?: boolean;
             };
             header?: never;
             path?: never;
@@ -1893,6 +2238,7 @@ export interface operations {
         parameters: {
             query: {
                 role: components["schemas"]["CourseMembershipRole"];
+                echo?: boolean;
             };
             header?: never;
             path: {
@@ -1925,7 +2271,9 @@ export interface operations {
     };
     delete_member_api_course__course_id__member__user_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 course_id: number;
@@ -1957,7 +2305,9 @@ export interface operations {
     };
     get_summary_api_profile_summary_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1990,6 +2340,7 @@ export interface operations {
                 course_id: number;
                 search?: string;
                 selected_assignment_id?: number | null;
+                echo?: boolean;
             };
             header?: never;
             path?: never;
@@ -2019,7 +2370,9 @@ export interface operations {
     };
     get_view_api_assignment__assignment_id__view_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2050,7 +2403,9 @@ export interface operations {
     };
     get_draft_api_assignment__assignment_id__draft_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2081,7 +2436,9 @@ export interface operations {
     };
     get_configuration_sql_api_assignment__assignment_id__configuration_sql_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2112,7 +2469,9 @@ export interface operations {
     };
     get_staff_view_api_assignment__assignment_id__staff_view_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2143,7 +2502,9 @@ export interface operations {
     };
     get_student_projects_api_assignment__assignment_id__student_projects_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2174,7 +2535,9 @@ export interface operations {
     };
     get_group_projects_api_assignment__assignment_id__group_projects_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2205,7 +2568,9 @@ export interface operations {
     };
     get_student_project_database_api_assignment__assignment_id__student_project_database_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2236,7 +2601,9 @@ export interface operations {
     };
     get_student_project_auth_api_assignment__assignment_id__student_project_auth_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2267,7 +2634,9 @@ export interface operations {
     };
     get_student_project_realtime_api_assignment__assignment_id__student_project_realtime_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2298,7 +2667,9 @@ export interface operations {
     };
     create_draft_api_assignment_draft_post: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2333,6 +2704,7 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
+                echo?: boolean;
             };
             header?: never;
             path: {
@@ -2364,7 +2736,9 @@ export interface operations {
     };
     test_configuration_sql_api_assignment__assignment_id__configuration_sql_test_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2399,7 +2773,9 @@ export interface operations {
     };
     save_configuration_sql_api_assignment__assignment_id__configuration_sql_save_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2430,7 +2806,9 @@ export interface operations {
     };
     remove_configuration_sql_api_assignment__assignment_id__configuration_sql_remove_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2461,7 +2839,9 @@ export interface operations {
     };
     reset_configuration_sql_api_assignment__assignment_id__configuration_sql_reset_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2492,7 +2872,9 @@ export interface operations {
     };
     get_groups_api_assignment__assignment_id__groups_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2525,6 +2907,7 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
+                echo?: boolean;
             };
             header?: never;
             path: {
@@ -2557,7 +2940,9 @@ export interface operations {
     };
     create_group_api_assignment__assignment_id__group_post: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2592,7 +2977,9 @@ export interface operations {
     };
     delete_group_api_assignment__assignment_id__group__group_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2624,7 +3011,9 @@ export interface operations {
     };
     add_group_member_api_assignment__assignment_id__group__group_id__member_post: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2659,7 +3048,9 @@ export interface operations {
     };
     remove_group_member_api_assignment__assignment_id__group__group_id__member__user_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2754,7 +3145,9 @@ export interface operations {
     };
     unpublish_assignment_api_assignment__assignment_id__unpublish_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2785,7 +3178,9 @@ export interface operations {
     };
     republish_assignment_api_assignment__assignment_id__republish_put: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;
@@ -2847,7 +3242,9 @@ export interface operations {
     };
     get_export_result_api_assignment__assignment_id__export_result_get: {
         parameters: {
-            query?: never;
+            query?: {
+                echo?: boolean;
+            };
             header?: never;
             path: {
                 assignment_id: number;

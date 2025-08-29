@@ -9,6 +9,7 @@ import JoinCourseDialog from "@/components/dashboard/join-course/join-course-dia
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import JoinCourseNewStudent from "@/components/dashboard/join-course/join-course-new-student";
+import CreateCourseDialog from "@/components/dashboard/create-course/create-course-dialog";
 
 export default function DashboardPage() {
   const { dashboardData, dashboardLoading, dashboardError, noCoursesFound } =
@@ -29,7 +30,15 @@ export default function DashboardPage() {
         courses={dashboardData?.student_courses ?? {}}
       />
       {!noCoursesFound && (
-        <div>
+        <div className="flex flex-row gap-4 items-center">
+          {!!dashboardData && dashboardData.is_instructor && (
+            <CreateCourseDialog>
+              <Button>
+                <Plus />
+                Create Course
+              </Button>
+            </CreateCourseDialog>
+          )}
           <JoinCourseDialog>
             <Button variant="outline">
               <Plus />
@@ -38,7 +47,9 @@ export default function DashboardPage() {
           </JoinCourseDialog>
         </div>
       )}
-      {noCoursesFound && <JoinCourseNewStudent />}
+      {!!dashboardData && noCoursesFound && (
+        <JoinCourseNewStudent isInstructor={dashboardData.is_instructor} />
+      )}
       {dashboardLoading && <DashboardLoading title="Student Courses" />}
       {dashboardError && <ErrorMessage resource="dashboard" />}
     </div>

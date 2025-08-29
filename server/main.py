@@ -1,7 +1,7 @@
 """Exposes the main FastAPI server for the application."""
 
 from fastapi import FastAPI
-from .api import health, auth, course, profile, assignment, task
+from .api import health, auth, course, profile, assignment, task, admin
 from .api.project import openapi_tags as project_openapi_tags
 from .api.project import auth as project_auth
 
@@ -14,6 +14,7 @@ app = FastAPI(
     description="Dabblebase RESTful API",
     openapi_tags=[
         health.openapi_tags,
+        admin.openapi_tags,
         task.openapi_tags,
         course.openapi_tags,
         profile.openapi_tags,
@@ -34,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-feature_apis = [health, task, auth, project_auth, course, profile, assignment]
+feature_apis = [health, admin, task, auth, project_auth, course, profile, assignment]
 
 for feature_api in feature_apis:
     app.include_router(feature_api.api)

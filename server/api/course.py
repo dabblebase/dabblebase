@@ -12,6 +12,8 @@ from ..services.project import auth_crypto as crypto
 from ..api.auth import registered_user
 from ..models.auth import Subject
 from ..models.course import (
+    CreateCourseRequest,
+    CreateCourseResponse,
     GetDashboardResponse,
     GetDropdownRequest,
     GetDropdownResponse,
@@ -114,6 +116,16 @@ def get_staff_settings_view(
     Get the staff settings view for a course.
     """
     return course_svc.get_staff_settings_view(subject, course_id)
+
+
+@api.post("/", tags=[tag])
+def create_course(
+    request: CreateCourseRequest,
+    subject: Subject = Depends(registered_user),
+    course_svc: CourseService = Depends(),
+) -> CreateCourseResponse:
+    """Creates a new course"""
+    return course_svc.create_course(subject, request)
 
 
 @api.put("/{course_id}", tags=[tag])

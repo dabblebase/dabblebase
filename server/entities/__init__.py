@@ -15,3 +15,4 @@ from .project_group_member import (
     ProjectGroupMemberEntityModel,
 )
 from .assignment import AssignmentEntity, AssignmentState, AssignmentEntityModel
+from .permission import PermissionEntity
