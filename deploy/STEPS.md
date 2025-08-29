@@ -98,6 +98,7 @@ oc login <token here>
    oc create secret generic dabblebase-web-environment \
       --from-literal=MODE=production \
       --from-literal=HOST=<BASED ON HOST> \
+      --from-literal=AUTH_MASTER_SECRET=<GENERATE SECRET>
    ```
 
    **_NOTE: Add additional secrets to this command if needed and these steps are out of date._**
