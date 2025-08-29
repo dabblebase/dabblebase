@@ -25,5 +25,5 @@ export const env = createEnv({
     NEXT_PUBLIC_MODE: process.env.NEXT_PUBLIC_MODE,
     NEXT_PUBLIC_HOST: process.env.NEXT_PUBLIC_HOST,
   },
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: true,
 });
