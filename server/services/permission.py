@@ -8,9 +8,9 @@ from functools import lru_cache
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..entities import PermissionEntity
-from ..services.exceptions import UserPermissionException
+from ..services.exceptions import ResourceNotFoundException, UserPermissionException
 from ..database import admin_db_session
-from ..entities.user import Subject
+from ..entities.user import Subject, UserEntity
 
 
 class PermissionService:
@@ -26,6 +26,14 @@ class PermissionService:
         NOTE: This function does not check for permissions itself and should only be used
         via a script in production or development.
         """
+        # Ensure that the user exists
+        user = self._session.get(UserEntity, grantee.id)
+        if not user:
+            raise ResourceNotFoundException(
+                f"User with if {grantee.id} does not exist!"
+            )
+
+        # Grant permission
         permission = PermissionEntity(action="*", resource="*", user_id=grantee.id)
         self._session.add(permission)
         self._session.commit()

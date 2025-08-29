@@ -12,7 +12,7 @@ class PermissionEntity(BaseAdminEntity):
     __tablename__ = "permissions"
 
     # Unique ID for the permission entry
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     # Represents what a user or entity can do
     action: Mapped[str] = mapped_column(String)
