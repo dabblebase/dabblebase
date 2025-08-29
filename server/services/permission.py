@@ -42,6 +42,10 @@ class PermissionService:
         """Raises an exception if a user does not have admin permissions."""
         self.enforce_permission(subject, "*", "*")
 
+    def check_admin_permissions(self, subject: Subject) -> bool:
+        """Returns whether or not the subject is an admin user"""
+        return self.check_permission(subject, "*", "*")
+
     def enforce_permission(self, subject: Subject, action: str, resource: str):
         """Raises an exception if a user does not have permission."""
         if not self.check_permission(subject, action, resource):
