@@ -8,3 +8,5 @@ deploy_key*
 .pytest_cache
 celerybeat-schedule.db
 erl_crash.dump
+*.csr
+*.key
