@@ -8,7 +8,7 @@ import type { paths } from "../models/schema";
 const url =
   process.env.NODE_ENV === "development"
     ? "http://localhost:8000"
-    : "https://www.dabblebase.dev";
+    : "https://dabblebase.unc.edu";
 
 export const fetchClient = createFetchClient<paths>({
   baseUrl: url,
