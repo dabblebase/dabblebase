@@ -72,7 +72,7 @@ export default function PresenceTestPage() {
   useEffect(() => {
     const socket = new Socket("ws://localhost:8000/ws", {
       params: {
-        realtime_token: "...",
+        project_token: "...",
         auth_token: "...",
       },
     });

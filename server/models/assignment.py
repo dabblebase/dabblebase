@@ -110,9 +110,9 @@ class GetStudentAuth(BaseModel):
 
 
 class GetStudentRealtime(BaseModel):
-    """Model that represents a response for getting the realtime details of a student project."""
+    """Model that represents a response for getting the project details of a student project."""
 
-    realtime_token: str
+    project_token: str
 
 
 class CreateDraftRequest(BaseModel):
