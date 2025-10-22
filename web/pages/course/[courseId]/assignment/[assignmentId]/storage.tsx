@@ -1,15 +1,33 @@
 import AssignmentLayout from "@/components/assignment/assignment-layout";
+import CopyText from "@/components/ui/copy-text";
+import { useProjectStorage } from "@/hooks/api/assignment/student-project/use-project-storage";
 import { fetchClient } from "@/utils/api";
 import { protectRoute } from "@/utils/auth";
 import { GetServerSidePropsContext } from "next";
+import { useRouter } from "next/router";
 
 export default function AssignmentStoragePage() {
+  const router = useRouter();
+  const { assignmentId } = router.query;
+  const { storageData } = useProjectStorage(assignmentId as unknown as number);
+
   return (
     <div className="flex flex-col mx-auto w-full max-w-[1200px] px-4 gap-8 my-8">
       <h1 className="text-2xl font-semibold">Storage</h1>
-      <p className="text-accent-foreground/80">
-        Storage functionality for student projects coming soon!
-      </p>
+      {!!storageData && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-bold">Project token</p>
+          <p className="text-sm text-accent-foreground/80">
+            Use the token below as the authentication token for storage
+            requests.
+          </p>
+          <CopyText
+            className="w-[500px]"
+            text={storageData.project_token}
+            buttonVariant={"default"}
+          />
+        </div>
+      )}
     </div>
   );
 }

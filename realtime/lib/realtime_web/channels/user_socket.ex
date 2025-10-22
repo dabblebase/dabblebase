@@ -7,11 +7,11 @@ defmodule RealtimeWeb.UserSocket do
 
   @spec connect(map(), any(), any()) :: :error | {:ok, Phoenix.Socket.t()}
   def connect(
-        %{"realtime_token" => realtime_token, "auth_token" => auth_token},
+        %{"project_token" => project_token, "auth_token" => auth_token},
         socket,
         _connect_info
       ) do
-    case Realtime.Auth.verify_realtime_token(realtime_token) do
+    case Realtime.Auth.verify_project_token(project_token) do
       {:ok, %{"project_id" => project_id}} ->
         case Realtime.Auth.verify_auth_token(project_id, auth_token) do
           {:ok, %{"id" => user_id}} ->
@@ -33,11 +33,11 @@ defmodule RealtimeWeb.UserSocket do
 
   @spec connect(map(), any(), any()) :: :error | {:ok, Phoenix.Socket.t()}
   def connect(
-        %{"realtime_token" => realtime_token},
+        %{"project_token" => project_token},
         socket,
         _connect_info
       ) do
-    case Realtime.Auth.verify_realtime_token(realtime_token) do
+    case Realtime.Auth.verify_project_token(project_token) do
       {:ok, %{"project_id" => project_id}} ->
         {:ok, assign(socket, :project_id, Integer.to_string(project_id))}
 

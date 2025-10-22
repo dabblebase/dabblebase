@@ -18,14 +18,14 @@ export default function AssignmentRealtimePage() {
       <h1 className="text-2xl font-semibold">Realtime</h1>
       {!!realtimeData && (
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-bold">Realtime token</p>
+          <p className="text-sm font-bold">Project token</p>
           <p className="text-sm text-accent-foreground/80">
             Use the token below as the authentication token for realtime
             websocket requests.
           </p>
           <CopyText
             className="w-[500px]"
-            text={realtimeData.realtime_token}
+            text={realtimeData.project_token}
             buttonVariant={"default"}
           />
         </div>

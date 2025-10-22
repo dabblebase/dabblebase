@@ -169,6 +169,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/project/{project_id}/storage/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Create Presigned Download
+         * @description Generate a presigned GET URL to download the image.
+         */
+        get: operations["create_presigned_download_api_project__project_id__storage__path__get"];
+        put?: never;
+        /**
+         * Create Presigned Upload
+         * @description Generate a presigned PUT URL for uploading directly to MinIO.
+         */
+        post: operations["create_presigned_upload_api_project__project_id__storage__path__post"];
+        /**
+         * Delete Image
+         * @description Delete the image from MinIO.
+         */
+        delete: operations["delete_image_api_project__project_id__storage__path__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/course/dashboard": {
         parameters: {
             query?: never;
@@ -587,6 +615,26 @@ export interface paths {
          * @description Get the auth details for a student project.
          */
         get: operations["get_student_project_auth_api_assignment__assignment_id__student_project_auth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assignment/{assignment_id}/student-project/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Student Project Storage
+         * @description Get the storage details for a student project.
+         */
+        get: operations["get_student_project_storage_api_assignment__assignment_id__student_project_storage_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1398,8 +1446,16 @@ export interface components {
          * @description Model that represents a response for getting the realtime details of a student project.
          */
         GetStudentRealtime: {
-            /** Realtime Token */
-            realtime_token: string;
+            /** Project Token */
+            project_token: string;
+        };
+        /**
+         * GetStudentStorage
+         * @description Model that represents a response for getting the storage details of a student project.
+         */
+        GetStudentStorage: {
+            /** Project Token */
+            project_token: string;
         };
         /**
          * GetStudentsForCourseResponse
@@ -1841,6 +1897,102 @@ export interface operations {
             header?: never;
             path: {
                 project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_presigned_download_api_project__project_id__storage__path__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_presigned_upload_api_project__project_id__storage__path__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_image_api_project__project_id__storage__path__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                path: string;
             };
             cookie?: never;
         };
@@ -2619,6 +2771,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetStudentAuth"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_project_storage_api_assignment__assignment_id__student_project_storage_get: {
+        parameters: {
+            query?: {
+                echo?: boolean;
+            };
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStudentStorage"];
                 };
             };
             /** @description Validation Error */

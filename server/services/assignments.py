@@ -23,6 +23,7 @@ from ..models.assignment import (
     GetDropdownRequest,
     GetDropdownResponse_Assignment,
     GetDropdownResponse,
+    GetStudentStorage,
     GetViewResponse,
     GetDraftResponse,
     GetConfigurationSQLResponse,
@@ -424,9 +425,7 @@ class AssignmentService:
         # Return the authentication public key
         return GetStudentAuth(auth_public_key=project.auth_public_key)
 
-    def get_student_realtime(
-        self, subject: Subject, assignment_id: int
-    ) -> GetStudentRealtime:
+    def _get_student_project_token(self, subject: Subject, assignment_id: int):
         # Get the project for the student
         project = self._get_student_project_for_assignment(subject, assignment_id)
         if project is None:
@@ -434,20 +433,35 @@ class AssignmentService:
                 f"No project found for assignment with ID {assignment_id} for the student."
             )
 
-        # Sign the realtime JWT token using the project's realtime signing key.
+        # Sign the project JWT token using the project's project signing key.
         # NOTE: This process should be deterministic since the same signing key is used to sign
         # the same payload without any expiry.
         encryption_key = crypto.hkdf_derive_encryption_key(
             env.AUTH_MASTER_SECRET, project.id
         )
-        realtime_signing_key = crypto.decrypt(
-            project.realtime_encrypted_signing_key, encryption_key
+        project_signing_key = crypto.decrypt(
+            project.project_encrypted_signing_key, encryption_key
         )
-        realtime_token = crypto.sign_jwt_with_asymmetric_keys(
-            {"project_id": project.id}, realtime_signing_key
+        project_token = crypto.sign_jwt_with_asymmetric_keys(
+            {"project_id": project.id}, project_signing_key
         )
+        return project_token
+
+    def get_student_storage(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentStorage:
+        # Get the project token for the student
+        project_token = self._get_student_project_token(subject, assignment_id)
         # Return the token
-        return GetStudentRealtime(realtime_token=realtime_token)
+        return GetStudentStorage(project_token=project_token)
+
+    def get_student_realtime(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentRealtime:
+        # Get the project token for the student
+        project_token = self._get_student_project_token(subject, assignment_id)
+        # Return the token
+        return GetStudentRealtime(project_token=project_token)
 
     def create_draft(
         self, subject: Subject, request: CreateDraftRequest
@@ -1345,16 +1359,16 @@ class AssignmentService:
             auth_encrypted_private_key="",  # Will be set later after key generation
             auth_public_key="",  # Will be set later after key generation
             table_hash="",  # Will be set later after key generation
-            realtime_encrypted_signing_key="",  # Will be set later after key generation
-            realtime_verification_key="",  # Will be set later after key generation
+            project_encrypted_signing_key="",  # Will be set later after key generation
+            project_verification_key="",  # Will be set later after key generation
         )
         self._admin_db.add(project)
         self._admin_db.flush()  # Flush to get the project ID before proceeding
 
         # Handle creating the authentication private key and public key, as well as the
-        # realtime signing and verification keys
+        # project signing and verification keys
         auth_private_key, auth_public_key = crypto.generate_serialied_rsa_keypair()
-        realtime_signing_key, realtime_verification_key = (
+        project_signing_key, project_verification_key = (
             crypto.generate_serialied_rsa_keypair()
         )
 
@@ -1363,15 +1377,15 @@ class AssignmentService:
         )
 
         encrypted_auth_private_key = crypto.encrypt(auth_private_key, encryption_key)
-        encrypted_realtime_signing_key = crypto.encrypt(
-            realtime_signing_key, encryption_key
+        encrypted_project_signing_key = crypto.encrypt(
+            project_signing_key, encryption_key
         )
 
         # Update the project with the keys
         project.auth_encrypted_private_key = encrypted_auth_private_key
         project.auth_public_key = auth_public_key
-        project.realtime_encrypted_signing_key = encrypted_realtime_signing_key
-        project.realtime_verification_key = realtime_verification_key
+        project.project_encrypted_signing_key = encrypted_project_signing_key
+        project.project_verification_key = project_verification_key
 
         # Create the database for the project
         db_name = ContentDatabaseNamingConventions.name_for_assignment_db(

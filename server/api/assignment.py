@@ -10,6 +10,7 @@ from ..models.auth import Subject
 from ..models.assignment import (
     GetDropdownRequest,
     GetDropdownResponse,
+    GetStudentStorage,
     GetViewResponse,
     GetDraftResponse,
     GetConfigurationSQLResponse,
@@ -138,6 +139,16 @@ def get_student_project_auth(
 ) -> GetStudentAuth:
     """Get the auth details for a student project."""
     return assignment_svc.get_student_auth(subject, assignment_id)
+
+
+@api.get("/{assignment_id}/student-project/storage", tags=[tag])
+def get_student_project_storage(
+    assignment_id: int,
+    subject: Subject = Depends(registered_user),
+    assignment_svc: AssignmentService = Depends(),
+) -> GetStudentStorage:
+    """Get the storage details for a student project."""
+    return assignment_svc.get_student_storage(subject, assignment_id)
 
 
 @api.get("/{assignment_id}/student-project/realtime", tags=[tag])

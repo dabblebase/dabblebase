@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from .api import health, auth, course, profile, assignment, task, admin
 from .api.project import openapi_tags as project_openapi_tags
 from .api.project import auth as project_auth
+from .api.project import storage as project_storage
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,7 +36,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-feature_apis = [health, admin, task, auth, project_auth, course, profile, assignment]
+feature_apis = [
+    health,
+    admin,
+    task,
+    auth,
+    project_auth,
+    project_storage,
+    course,
+    profile,
+    assignment,
+]
 
 for feature_api in feature_apis:
     app.include_router(feature_api.api)
