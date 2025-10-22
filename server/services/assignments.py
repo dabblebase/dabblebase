@@ -23,6 +23,7 @@ from ..models.assignment import (
     GetDropdownRequest,
     GetDropdownResponse_Assignment,
     GetDropdownResponse,
+    GetStudentStorage,
     GetViewResponse,
     GetDraftResponse,
     GetConfigurationSQLResponse,
@@ -424,9 +425,7 @@ class AssignmentService:
         # Return the authentication public key
         return GetStudentAuth(auth_public_key=project.auth_public_key)
 
-    def get_student_realtime(
-        self, subject: Subject, assignment_id: int
-    ) -> GetStudentRealtime:
+    def _get_student_project_token(self, subject: Subject, assignment_id: int):
         # Get the project for the student
         project = self._get_student_project_for_assignment(subject, assignment_id)
         if project is None:
@@ -446,6 +445,21 @@ class AssignmentService:
         project_token = crypto.sign_jwt_with_asymmetric_keys(
             {"project_id": project.id}, project_signing_key
         )
+        return project_token
+
+    def get_student_storage(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentStorage:
+        # Get the project token for the student
+        project_token = self._get_student_project_token(subject, assignment_id)
+        # Return the token
+        return GetStudentStorage(project_token=project_token)
+
+    def get_student_realtime(
+        self, subject: Subject, assignment_id: int
+    ) -> GetStudentRealtime:
+        # Get the project token for the student
+        project_token = self._get_student_project_token(subject, assignment_id)
         # Return the token
         return GetStudentRealtime(project_token=project_token)
 

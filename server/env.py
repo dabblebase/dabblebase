@@ -27,6 +27,10 @@ class EnvModel(BaseModel):
     REDIS_PORT: str
     REDIS_PASSWORD: str
     PGBOUNCER_PASSWORD: str
+    S3_ENDPOINT: str
+    S3_REGION: str
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
 
 
 # Load envirnment variables from .env file upon module start.
@@ -62,6 +66,10 @@ env = EnvModel(
     REDIS_PORT=get_env("REDIS_PORT"),
     REDIS_PASSWORD=get_env("REDIS_PASSWORD"),
     PGBOUNCER_PASSWORD=get_env("PGBOUNCER_PASSWORD"),
+    S3_ENDPOINT=get_env("S3_ENDPOINT"),
+    S3_REGION=get_env("S3_REGION"),
+    S3_ACCESS_KEY=get_env("S3_ACCESS_KEY"),
+    S3_SECRET_KEY=get_env("S3_SECRET_KEY"),
 )
 
 
