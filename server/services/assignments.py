@@ -442,7 +442,7 @@ class AssignmentService:
         project_signing_key = crypto.decrypt(
             project.project_encrypted_signing_key, encryption_key
         )
-        project_token = crypto.sign_jwt_with_asymmetric_keys(
+        project_token = crypto.sign_jwt_with_symmetric_key(
             {"project_id": project.id}, project_signing_key
         )
         return project_token

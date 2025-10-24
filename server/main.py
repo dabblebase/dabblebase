@@ -27,11 +27,11 @@ app = FastAPI(
 # Use GZip middleware for compressing HTML responses over the network
 app.add_middleware(GZipMiddleware)
 
-# Add CORS middleware so that credentials can be passed along via cookies
+# Add CORS middleware so that requests can be made from any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

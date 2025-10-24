@@ -123,3 +123,13 @@ def auth_unc_callback(
     )
 
     return response
+
+
+@api.get("/logout", tags=[tag])
+def logout(continue_to: str = "/"):
+    """
+    Logs out the user by clearing the auth token cookie.
+    """
+    response = RedirectResponse(url=continue_to)
+    response.delete_cookie("auth-token", path="/")
+    return response
