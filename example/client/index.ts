@@ -12,8 +12,7 @@ export type ClientConfiguration = {
   projectUrl: string;
   dabblebaseUrl?: string;
   authVerifyKey?: string;
-  projectVerifyKey?: string;
-  realtimeToken?: string;
+  projectToken?: string;
   useSecureWebsocketConnection?: boolean;
 };
 
@@ -40,8 +39,7 @@ export function createClient({
   projectUrl,
   dabblebaseUrl = "www.dabblebase.dev",
   authVerifyKey,
-  projectVerifyKey,
-  realtimeToken,
+  projectToken,
   useSecureWebsocketConnection = true,
 }: ClientConfiguration) {
   return {
@@ -54,7 +52,7 @@ export function createClient({
     storage: createStorageClient({
       projectId,
       dabblebaseUrl,
-      projectVerifyKey: projectVerifyKey,
+      projectToken: projectToken,
     }),
   } as DabblebaseClient;
 }

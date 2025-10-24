@@ -55,7 +55,7 @@ export default function AuthenticatedPage({
       const timestamp = Date.now();
       const fileName = `uploads/${timestamp}-${file.name}`;
 
-      const result = await dabblebase.storage.uploadDirect({
+      const result = await dabblebase.storage.upload({
         file,
         path: fileName,
       });
@@ -85,7 +85,7 @@ export default function AuthenticatedPage({
       setImageUrl(null);
 
       // Use the proxy endpoint instead of presigned URL to avoid CORS issues
-      const proxyUrl = dabblebase.storage.getViewUrl(fileName.trim());
+      const proxyUrl = dabblebase.storage.getUrl(fileName.trim());
       setImageUrl(proxyUrl);
       alert("Image loaded successfully!");
     } catch (error) {
