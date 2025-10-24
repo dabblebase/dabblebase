@@ -157,7 +157,7 @@ def auth_unc_callback(
     response.set_cookie(
         key="auth-token",
         value=jwt_token,
-        httponly=True,
+        httponly=False,
         secure=False,  # Required for development purposes since student apps will run on localhost
         samesite="lax",
         max_age=one_month,
@@ -188,7 +188,7 @@ def auth_as(user_id: int, continue_to: str = "/dashboard"):
     response.set_cookie(
         key="auth-token",
         value=jwt_token,
-        httponly=True,
+        httponly=False,
         secure=False,  # Required for development purposes since student apps will run on localhost
         samesite="lax",
         max_age=one_month,

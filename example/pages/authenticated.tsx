@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { dabblebase } from "@/utils/dabblebase/client";
 import { AuthSubject } from "@/client/internal/auth";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import type {
+  PresenceState,
+  PresenceSocketConnection,
+} from "@/client/internal/realtime";
 
 export default function AuthenticatedPage({
   subject,
@@ -25,6 +29,53 @@ export default function AuthenticatedPage({
   const [isListing, setIsListing] = useState(false);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Presence state
+  const [presenceState, setPresenceState] = useState<PresenceState>({});
+  const [presenceConnection, setPresenceConnection] =
+    useState<PresenceSocketConnection | null>(null);
+  const [presenceConnected, setPresenceConnected] = useState(false);
+
+  // Connect to presence on component mount
+  useEffect(() => {
+    const connectToPresence = async () => {
+      try {
+        console.log("🔄 Attempting to connect to presence...");
+        const connection = dabblebase.realtime.listenToPresenceChanges({
+          onConnect: () => {
+            console.log("✅ Connected to presence successfully");
+            setPresenceConnected(true);
+          },
+          onConnectError: (error) => {
+            console.error("❌ Presence connection error:", error);
+            setPresenceConnected(false);
+          },
+          onReceivePresenceState: (state) => {
+            console.log("👥 Presence state updated:", state);
+            setPresenceState(state);
+          },
+          onPresenceJoin: (userId, presence) => {
+            console.log(`👋 ${userId} joined at ${presence.online_at}`);
+          },
+          onPresenceLeave: (userId) => {
+            console.log(`👋 ${userId} left`);
+          },
+        });
+        setPresenceConnection(connection);
+      } catch (error) {
+        console.error("Failed to connect to presence:", error);
+      }
+    };
+
+    connectToPresence();
+  }, []);
+
+  // Clean up presence connection on unmount
+  useEffect(() => {
+    return () => {
+      presenceConnection?.disconnect();
+    };
+  }, [presenceConnection]);
 
   const signOut = async () => {
     dabblebase.auth.signOut({
@@ -159,6 +210,24 @@ export default function AuthenticatedPage({
       <h1 className="text-lg font-bold">
         Authenticated as User #{subject.id}!
       </h1>
+
+      {/* Presence Indicator */}
+      <div className="flex items-center gap-2 text-sm">
+        <span
+          className={`w-2 h-2 rounded-full ${
+            presenceConnected ? "bg-green-500" : "bg-red-500"
+          }`}
+        ></span>
+        <span>
+          Realtime: {presenceConnected ? "Connected" : "Disconnected"}
+        </span>
+        {Object.keys(presenceState).length > 0 && (
+          <span className="text-gray-600">
+            ({Object.keys(presenceState).length} user
+            {Object.keys(presenceState).length !== 1 ? "s" : ""} online)
+          </span>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <h2 className="text-md font-semibold">Upload an Image</h2>

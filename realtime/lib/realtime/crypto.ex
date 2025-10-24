@@ -24,7 +24,7 @@ defmodule Realtime.Crypto do
   end
 
   @spec derive_key(String.t(), integer()) :: {:ok, String.t()} | {:error, any()}
-  defp derive_key(secret, assignment_id) do
+  def derive_key(secret, assignment_id) do
     info = Integer.to_string(assignment_id)
 
     pseudorandom_key = HKDF.extract(:sha256, secret, <<>>)

@@ -5,6 +5,10 @@ import {
   createStorageClient,
   DabblebaseStorageClient,
 } from "./internal/storage";
+import {
+  createRealtimeClient,
+  DabblebaseRealtimeClient,
+} from "./internal/realtime";
 
 /** Configuration for the Dabblebase client */
 export type ClientConfiguration = {
@@ -13,6 +17,7 @@ export type ClientConfiguration = {
   dabblebaseUrl?: string;
   authVerifyKey?: string;
   projectToken?: string;
+  realtimeUrl?: string;
   useSecureWebsocketConnection?: boolean;
 };
 
@@ -22,6 +27,8 @@ export interface DabblebaseClient {
   auth: DabblebaseAuthClient;
   /** Storage client used to interface with Dabblebase Storage */
   storage: DabblebaseStorageClient;
+  /** Realtime client used to interface with Dabblebase Realtime */
+  realtime: DabblebaseRealtimeClient;
 }
 
 /**
@@ -32,7 +39,9 @@ export interface DabblebaseClient {
  *    the official one at `www.dabblebase.dev`, provide another URL.
  * - authVerifyKey: Used by the Dabblebase Auth client to verify that a user
  *    has signed in legitimately and correctly.
- * - realtimeToken: Used to authenticate with Dabblebase Realtime.
+ * - projectToken: Used to authenticate with Dabblebase Storage and Realtime.
+ * - realtimeUrl: URL for the realtime server (defaults to port 8000 on dabblebaseUrl host)
+ * - useSecureWebsocketConnection: Whether to use wss:// instead of ws:// for realtime
  */
 export function createClient({
   projectId,
@@ -40,8 +49,15 @@ export function createClient({
   dabblebaseUrl = "www.dabblebase.dev",
   authVerifyKey,
   projectToken,
-  useSecureWebsocketConnection = true,
+  realtimeUrl,
+  useSecureWebsocketConnection = false,
 }: ClientConfiguration) {
+  // Default realtime URL to port 8000 on the same host as dabblebaseUrl
+  const defaultRealtimeUrl =
+    realtimeUrl ||
+    dabblebaseUrl?.replace(/:\d+$/, "") + ":8000" ||
+    "localhost:8000";
+
   return {
     auth: createAuthClient({
       projectId,
@@ -53,6 +69,12 @@ export function createClient({
       projectId,
       dabblebaseUrl,
       projectToken: projectToken,
+    }),
+    realtime: createRealtimeClient({
+      projectId,
+      realtimeUrl: defaultRealtimeUrl,
+      projectToken: projectToken || "",
+      useSecureWebsocketConnection,
     }),
   } as DabblebaseClient;
 }
