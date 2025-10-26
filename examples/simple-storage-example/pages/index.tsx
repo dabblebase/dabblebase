@@ -1,4 +1,4 @@
-import { LockKeyholeOpen } from "lucide-react";
+import { Archive, LockKeyholeOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { dabblebase } from "@/utils/dabblebase";
@@ -19,11 +19,11 @@ export default function HomePage() {
             <div className="flex flex-col items-center gap-2 text-center">
               <div className="flex flex-col items-center gap-2 font-medium">
                 <div className="flex size-8 items-center justify-center rounded-md">
-                  <LockKeyholeOpen className="size-6" />
+                  <Archive className="size-6" />
                 </div>
-                <span className="sr-only">Auth Example</span>
+                <span className="sr-only">Storage Example</span>
               </div>
-              <h1 className="text-xl font-bold">Dabblebase Auth Example</h1>
+              <h1 className="text-xl font-bold">Dabblebase Storage Example</h1>
             </div>
             <Field>
               <Button onClick={authenticate}>Authenticate</Button>
