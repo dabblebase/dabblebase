@@ -1,4 +1,4 @@
-import { LockKeyholeOpen, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { dabblebase } from "@/utils/dabblebase";

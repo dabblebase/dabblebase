@@ -3,12 +3,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { dabblebase } from "@/utils/dabblebase";
-import {
-  AuthSubject,
-  PresenceSocketConnection,
-  PresenceState,
-} from "@dabblebase/dabblebase-ts";
-import { useState, useRef, useEffect } from "react";
+import { AuthSubject } from "@dabblebase/dabblebase-ts";
+import { useState, useRef } from "react";
 
 export default function AuthenticatedPage({
   subject,
