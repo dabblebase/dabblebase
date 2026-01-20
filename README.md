@@ -7,9 +7,9 @@ Dabblebase is the backend cloud platform for the classroom - enabling instructor
 
 With Dabblebase, instructors can give their students access to a full PostgreSQL database, S3-like object storage, user authentication (with university SSO), and realtime functionality - allowing them to build feature-rich applications and gain experience using production-grade tools.
 
-Students can also use client packages, including [**dabblebase-ts**](), to connect to Dabblebase's services.
+Students can also use client packages, including [**dabblebase-ts**](https://github.com/dabblebase/dabblebase-ts), to connect to Dabblebase's services.
 
-The design and implementation of Dabblebase was the subject of my Master's paper at UNC-Chapel Hill. Access the paper [here]().
+The design and implementation of Dabblebase was the subject of my Master's paper at UNC-Chapel Hill. Access the paper [here](https://github.com/dabblebase/dabblebase/blob/main/PAPER.pdf).
 
 ## Core Features
 
@@ -35,16 +35,17 @@ by TypeScript and Next.js.
 On this site, instructors have the ability to manage courses and the course roster, create and publish new assignments, and access information about student projects after an assignment
 has been published. The instructor’s console view shows all of the assignments they have created, their publish status, and whether or not these assignments are group or individual projects:
 
-[ img ]
+<img width="1693" height="1148" alt="instructor-portal" src="https://github.com/user-attachments/assets/c931d8f1-fed7-45ee-bd56-0a2a5c94b55f" />
 
 When creating a new assignment, instructors can select whether assignments are group or individual projects and provide a setup SQL script to run on all student databases when the
 assignment is published. Instructors can use this script to pre-populate tables or seed data in student databases, which may be useful for various types of assignments. Instructors can also configure groups based on their course’s roster:
 
-[ img ]
+<img width="1693" height="1148" alt="instructor-draft-assignment" src="https://github.com/user-attachments/assets/6a13047c-b9d0-41dd-8c05-f6de58ee9c38" />
 
 After an assignment is published, instructors can view credentials to connect to student databases and even download the dump files for all databases, which is helpful for autograding:
 
-[ img ]
+<img width="1693" height="1148" alt="instructor-published-assignment" src="https://github.com/user-attachments/assets/64b2ce87-73ca-44ad-8270-253ba2435f65" />
+
 
 ### Student View
 
@@ -58,7 +59,8 @@ Students are able to see the courses they are a member of and all published assi
 
 These credentials are separated into different tabs like so:
 
-[ img ]
+<img width="1000" alt="student-portal" src="https://github.com/user-attachments/assets/01767710-d710-45ff-b178-c5a2aebd4fbf" />
+
 
 The website also provides information to the student on how to use these credentials in combination with the [Dabblebase Client]() to interact with Dabblebase services in their own applications.
 
