@@ -81,7 +81,7 @@ implementing backend features for the first time, Dabblebase and its APIs must b
 written in a way that is easy to use, and its documentation must be presented in a way
 that is digestible and accessible.
 
-- Pedagogical Value: Many existing BaaS solutions design their APIs in a way that obscures how features they provide work. Without compromising on usability, Dabblebase’s APIs should be designed in a way that reveals to students the core technologies behind how features work (such as cookies / JWTs for authentication, SQL for databases, or web sockets for realtime).
+- **Pedagogical Value**: Many existing BaaS solutions design their APIs in a way that obscures how features they provide work. Without compromising on usability, Dabblebase’s APIs should be designed in a way that reveals to students the core technologies behind how features work (such as cookies / JWTs for authentication, SQL for databases, or web sockets for realtime).
 
 - **Self-Hostable and Open Source**: Dabblebase should be able to be self-hosted by instructors or university departments so their students are able to use it. Dabblebase is a tool for educators and students alike, so it should be entirely open-source for future development.
 
